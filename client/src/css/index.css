@@ -1,6 +1,14 @@
 * {
   user-select: none;
 }
+.placeholder {
+  pointer-events: none; /* Make placeholders not hoverable */
+  user-select: none; /* Make text not selectable */
+  color: transparent; /* Set the color for the "-" */
+  background-color: transparent; /* Ensure background is transparent */
+  border: none; /* Remove any borders */
+  text-align: center; /* Center the text */
+}
 body, input, textarea, button {
   font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
 }
@@ -22,6 +30,7 @@ body {
   background-size: 100% 100%;
   background-repeat: no-repeat;
 }
+
 .tooltip {
   position: relative;
 }
@@ -85,6 +94,7 @@ body {
   z-index: 1000;
   border-radius: 4%;
 }
+
 .keybind-section-container {
   display: flex;
   justify-content: space-between;
@@ -662,9 +672,7 @@ ul, li {
 #deckBuilderButton:hover {
   background: linear-gradient(to bottom, #bca668, #8c7e46);
 }
-#decklistButton:hover {
-  background: linear-gradient(to bottom, #8b50a8, #46364f);
-}
+
 #importButtonContainer {
   width: 100%;
   display: flex;
@@ -680,24 +688,6 @@ ul, li {
   border: none;
   font-size: 2vh;
   background-color: rgba(171, 171, 171, 0.864);
-}
-#decklistTable {
-  z-index: 1000;
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 76%;
-  height: 100%;
-  background: rgba(222, 221, 221, 0.852);
-  z-index: 1000;
-  overflow: auto;
-  padding: 30px;
-  box-sizing: border-box;
-  font-size: 1.75vh;
-}
-#decklistTable td {
-  padding: 0.3vh 2vw;
 }
 .main-select {
   font-weight: bold;
@@ -843,20 +833,6 @@ ul, li {
 }
 #randomButton:hover {
   background: linear-gradient(to bottom, #bca668, #8c7e46);
-}
-#decklistsButton {
-  margin-left: .3vw;
-  border: none;
-  font-size: x-large;
-  cursor: pointer;
-  border-radius: .5rem;
-  box-sizing: border-box;
-  padding-bottom: .3vh;
-  padding-top: .5vh;
-  background: linear-gradient(to bottom, #b0b0b0, #909090);
-}
-#decklistsButton:hover {
-  background: linear-gradient(to bottom, #a4a4a4, #807f7f);
 }
 #successText, #failedText, #loadingText, #invalidText {
   display: none;
@@ -1024,39 +1000,7 @@ a:hover {
   text-align: left;
   width: fit-content;
 }
-.decklists-context-menu {
-  display: none;
-  position: absolute;
-  border-radius: 5px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid #ccc;
-  z-index: 2;
-  height: fit-content;
-}
-.decklists-context-menu-item {
-  padding: .3vh 1vw;
-  cursor: pointer;
-  font-size: small;
-}
-.decklists-context-menu-sub-menu {
-  font-weight: normal;
-  display: none;
-  position: absolute;
-  background-color: #c1c1c1;
-  left: 99%; 
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  top: 0;
-  height: 100%;
-  width: 112%;
-  color: #141414;
-}
-.decklist-highlight {
-  background-color: #f0f0f0;
-  font-weight: bold;
-}
+
 .custom-popup {
   position: fixed;
   top: 50%;

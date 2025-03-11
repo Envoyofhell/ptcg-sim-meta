@@ -14,24 +14,36 @@ export const VSTARGXFunction = (user, type, emit = true) => {
   }
 
   const selfGXButton = selfContainerDocument.getElementById('GXButton');
-  const selfVSTARButton = selfContainerDocument.getElementById('VSTARButton');
   const oppGXButton = oppContainerDocument.getElementById('GXButton');
+  const selfVSTARButton = selfContainerDocument.getElementById('VSTARButton');
   const oppVSTARButton = oppContainerDocument.getElementById('VSTARButton');
+  const selfForteButton = selfContainerDocument.getElementById('ForteButton');
+  const oppForteButton = oppContainerDocument.getElementById('ForteButton');
 
   let button;
   if (user === 'self') {
     if (type === 'GX') {
       button = selfGXButton;
-    } else {
+    } else if (type === 'VSTAR') {
       button = selfVSTARButton;
+    } else if (type === 'Forte') {
+      button = selfForteButton;
     }
   } else {
     if (type === 'GX') {
       button = oppGXButton;
-    } else {
+    } else if (type === 'VSTAR') {
       button = oppVSTARButton;
+    } else if (type === 'Forte') {
+      button = oppForteButton;
     }
   }
+
+  if (!button) {
+    console.error(`Button for ${type} not found for user ${user}`);
+    return;
+  }
+
   if (button.classList.contains('used-special-move')) {
     button.classList.remove('used-special-move');
     const message = determineUsername(user) + ' reset their ' + type;

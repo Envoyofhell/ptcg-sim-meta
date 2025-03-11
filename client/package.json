@@ -1,3 +1,6 @@
 {
-  "name": "ptcg-sim-client"
+  "name": "ptcg-sim-client",
+  "dependencies": {
+    "csv-parser": "^3.2.0"
+  }
 }

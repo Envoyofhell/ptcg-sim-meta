@@ -35,10 +35,11 @@ export const updateCounters = (
     }
   }
   //remove special conditions if the pokemon is no longer in the active
-  if (movingCard.image.specialCondition && !['active'].includes(dZoneId)) {
+ /* if (movingCard.image.specialCondition && !['active'].includes(dZoneId)) {
     movingCard.image.specialCondition.textContent = '0';
     movingCard.image.specialCondition.handleRemove();
   }
+  */
   //update damage counter placements on all cards from the same origin/destination zones
   if (counterZones.includes(oZoneId)) {
     for (let i = 0; i < oZone.getCount(); i++) {
