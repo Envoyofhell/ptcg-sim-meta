@@ -6,6 +6,7 @@ import { instrument } from '@socket.io/admin-ui';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { Pool } from 'pg';
 import { fileURLToPath } from 'url';
 
 // Handle __dirname in ES modules and adjust for client folder
