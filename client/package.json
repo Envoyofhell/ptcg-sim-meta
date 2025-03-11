@@ -1,12 +1,12 @@
 {
-  "name": "ptcg-sim-client",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "some-local-server-command",
-    "build": "some-build-command"
-  },
-  "devDependencies": {
-      "some-local-server": "^1.0.0",
-      "some-build-tool": "^1.0.0"
-  }
+    "name": "ptcg-sim-client",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "webpack-dev-server --mode development",
+        "build": "webpack --mode production"
+    },
+    "devDependencies": {
+        "webpack": "^5.0.0",
+        "webpack-dev-server": "^4.0.0"
+    }
 }
