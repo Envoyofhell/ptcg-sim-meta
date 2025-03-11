@@ -1,0 +1,48 @@
+name: Deploy PTCG Sim
+
+on:
+  push:
+    branches:
+      - main # or your main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Or your desired Node.js version
+          cache: 'pnpm' # Enable pnpm caching
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest' # Or specify a pnpm version
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format
+
+      - name: Build client
+        run: pnpm -C client build
+
+      - name: Start server (for testing or if needed)
+        run: pnpm -C server start & # Use & to run in background
+
+      - name: Deploy to GitHub Pages
+        run: |
+          git config --global user.email "your-email@example.com"
+          git config --global user.name "Your Name"
+          pnpm run deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Important for gh-pages
