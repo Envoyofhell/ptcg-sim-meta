@@ -1,0 +1,33 @@
+name: Update pnpm-lock.yaml
+
+on:
+  push:
+    paths:
+      - '**/package.json' # Trigger on changes to any package.json file
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies and update lockfile
+        run: pnpm install
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: Update pnpm-lock.yaml'
+          branch: ${{ github.ref_name }} # Push to the same branch that triggered the action
