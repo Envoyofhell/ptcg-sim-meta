@@ -11,5 +11,7 @@
             "src": "/(.*)",
             "dest": "server/server.js"
         }
-    ]
+    ],
+    "installCommand": "cd server && pnpm install",
+    "buildCommand": "cd server && pnpm build"
 }
