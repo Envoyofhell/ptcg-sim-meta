@@ -6,7 +6,7 @@ import { instrument } from '@socket.io/admin-ui';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { Pool } from 'pg'; // Correct pg import
+import pg from 'pg'; // Correct pg import
 const { Pool } = pg; //destructure pool
 import ejs from 'ejs'; // Correct ejs import
 import { fileURLToPath } from 'url';
