@@ -12,6 +12,6 @@
             "dest": "server/server.js"
         }
     ],
-    "installCommand": "cd server && pnpm install",
-    "buildCommand": "cd server && pnpm build"
+    "installCommand": "cd server && npm install",
+    "buildCommand": "cd server && npm run build"
 }
