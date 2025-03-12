@@ -1,17 +1,18 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
+    "version": 2,
+    "builds": [
+        {
+            "src": "server/server.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "server/server.js"
+        }
+    ],
+    "engines": {
+        "node": "20.x"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "server/server.js"
-    }
-  ],
-  "installCommand": "pnpm install",
-  "buildCommand": "echo 'No build step needed'"
 }
