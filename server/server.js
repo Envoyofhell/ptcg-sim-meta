@@ -6,15 +6,14 @@ import { instrument } from '@socket.io/admin-ui';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
-import pg from 'pg'; // import default export
-const { Pool } = pg; //destructure pool
+import { Pool } from 'pg'; // Correct pg import
+import ejs from 'ejs'; // Correct ejs import
 import { fileURLToPath } from 'url';
 
 // Handle __dirname in ES modules and adjust for client folder
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDir = path.join(__dirname, '../client');
-const ejs = require('ejs');
 const envFilePath = path.join(__dirname, 'socket-admin-password.env');
 dotenv.config({ path: envFilePath });
 
