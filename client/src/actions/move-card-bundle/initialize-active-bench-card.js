@@ -46,6 +46,9 @@ export const initializeActiveBenchCard = (user, movingCard, dZoneId, dZone) => {
             if (image.damageCounter) {
               addDamageCounter(user, 'bench', i, false, false);
             }
+            if (image.specialCondition) {
+              addSpecialCondition(user, 'bench', i, false);
+            }
             if (image.abilityCounter) {
               addAbilityCounter(user, 'bench', i);
             }
@@ -86,6 +89,9 @@ export const initializeActiveBenchCard = (user, movingCard, dZoneId, dZone) => {
           }
           if (image.abilityCounter) {
             addAbilityCounter(user, 'bench', i);
+          }
+          if (image.specialCondition) {
+            addSpecialCondition(user, 'bench', i, false);
           }
         }
       }

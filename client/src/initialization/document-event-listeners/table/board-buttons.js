@@ -52,6 +52,19 @@ export const initializeBoardButtons = () => {
     }
   });
 
+  const selfForteButton = selfContainerDocument.getElementById('ForteButton');
+  selfForteButton.addEventListener('click', () => {
+    if (
+      !(
+        systemState.isTwoPlayer &&
+        document.getElementById('spectatorModeCheckbox').checked
+      ) &&
+      !systemState.isReplay
+    ) {
+      VSTARGXFunction('self', 'Forte');
+    }
+  });
+
   const oppVSTARButton = oppContainerDocument.getElementById('VSTARButton');
   oppVSTARButton.addEventListener('click', () => {
     if (
@@ -75,6 +88,19 @@ export const initializeBoardButtons = () => {
       !systemState.isReplay
     ) {
       VSTARGXFunction('opp', 'GX');
+    }
+  });
+
+  const oppForteButton = oppContainerDocument.getElementById('ForteButton');
+  oppForteButton.addEventListener('click', () => {
+    if (
+      !(
+        systemState.isTwoPlayer &&
+        document.getElementById('spectatorModeCheckbox').checked
+      ) &&
+      !systemState.isReplay
+    ) {
+      VSTARGXFunction('opp', 'Forte');
     }
   });
 };

@@ -5,8 +5,8 @@ import { getZone } from '../../setup/zones/get-zone.js';
 export const version = '1.5.1';
 
 // exports a WebSocket connection using the Socket.IO library, loaded via CDN in index.ejs
-export const socket = io('https://ptcg-sim-meta.vercel.app/');
-// export const socket = io('http://localhost:4000/');
+//export const socket = io('https://ptcg-sim-meta.vercel.app/');
+export const socket = io('http://localhost:4000/');
 
 // export references to HTML elements 'selfContainer' and 'oppContainer', and their respective content window documents for ease of access to the iframes
 export const selfContainer = document.getElementById('selfContainer');
