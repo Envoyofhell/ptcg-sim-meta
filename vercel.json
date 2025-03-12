@@ -2,18 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/server.js",
+      "src": "package.json",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "client/static/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "server/server.js"
     }
-  ]
+  ],
+  "installCommand": "pnpm install",
+  "buildCommand": "echo 'No build step needed'",
+  "publicDirectory": "client/static"
 }
