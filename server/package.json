@@ -1,5 +1,6 @@
 {
   "name": "ptcg-sim-server",
+  "version": "1.0.0", 
   "scripts": {
     "start": "nodemon server.js"
   },
