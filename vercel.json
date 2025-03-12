@@ -13,6 +13,5 @@
     }
   ],
   "installCommand": "pnpm install",
-  "buildCommand": "echo 'No build step needed'",
-  "publicDirectory": "client/static"
+  "buildCommand": "echo 'No build step needed'"
 }
