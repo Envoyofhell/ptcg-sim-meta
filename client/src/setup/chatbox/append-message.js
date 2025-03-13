@@ -1,4 +1,7 @@
-import { socket, systemState } from '../../global-variables.js';
+import {
+  socket,
+  systemState,
+} from './initialization/global-variables/global-variables.js';
 //import { socket, systemState } from '../../front-end.js';
 
 export const appendMessage = (user, message, type, emit = true) => {

@@ -1,5 +1,8 @@
 //import { socket, systemState } from '../../front-end.js';
-import { socket, systemState } from '../../global-variables.js';
+import {
+  socket,
+  systemState,
+} from './initialization/global-variables/global-variables.js';
 
 export const resyncActions = () => {
   const data = {

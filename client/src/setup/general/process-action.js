@@ -1,5 +1,8 @@
-import { socket, systemState } from '../../global-variables.js';
-//import { socket, systemState } from '../../global-variables.js';
+import {
+  socket,
+  systemState,
+} from './initialization/global-variables/global-variables.js';
+//import { socket, systemState } from './initialization/global-variables/global-variables.js';
 //import { systemState } from '../../initialization/global-variables/global-variables.js'; // Update the path accordingly
 // Redundant import
 

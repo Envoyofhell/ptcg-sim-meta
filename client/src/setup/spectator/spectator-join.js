@@ -1,6 +1,9 @@
 import { reset } from '../../actions/general/reset.js';
 //import { socket, systemState } from '../../front-end.js';
-import { socket, systemState } from '../../global-variables.js';
+import {
+  socket,
+  systemState,
+} from './initialization/global-variables/global-variables.js';
 import { appendMessage } from '../chatbox/append-message.js';
 import { acceptAction } from '../general/accept-action.js';
 import { cleanActionData } from '../general/clean-action-data.js';

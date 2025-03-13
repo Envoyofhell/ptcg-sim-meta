@@ -10,7 +10,10 @@ import {
   stopLookingAtCards,
   stopLookingShortcut,
 } from '../../actions/general/reveal-and-hide.js';
-import { socket, systemState } from '../../global-variables.js';
+import {
+  socket,
+  systemState,
+} from './initialization/global-variables/global-variables.js';
 //import { socket, systemState } from '../../front-end.js';
 import { appendMessage } from '../../setup/chatbox/append-message.js';
 import { exchangeData } from '../../setup/deck-constructor/exchange-data.js';
