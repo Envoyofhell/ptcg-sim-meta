@@ -4,8 +4,12 @@ import { initializeTable } from './table/initialize-table.js';
 import { initializeWindow } from './window/window.js';
 
 export const initializeDOMEventListeners = () => {
-  initializeCardContextMenu();
-  initializeSidebox();
-  initializeTable();
-  initializeWindow();
+  try {
+    initializeCardContextMenu();
+    initializeSidebox();
+    initializeTable();
+    initializeWindow();
+  } catch (error) {
+    console.error("Error initializing DOM event listeners:", error);
+  }
 };
