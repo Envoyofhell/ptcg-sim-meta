@@ -6,7 +6,7 @@
     
     <!-- Content Security Policy to control resource loading -->
     <meta http-equiv="Content-Security-Policy" 
-      content="script-src 'self' https://cdn.socket.io 'unsafe-inline' 'unsafe-eval'; module-src 'self'; object-src 'none';">
+      content="script-src 'self' https://cdn.socket.io 'unsafe-inline' 'unsafe-eval'; object-src 'none';">
     <!-- Meta tags for SEO (Search Engine Optimization) -->
     <meta name="description"
           content="PTCG-sim is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
@@ -45,8 +45,8 @@
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 
     <!-- Load application scripts -->
-    <script type="module" src="src/init.js" defer></script>
-    <script type="module" src="src/front-end.js" defer></script>
+    <script type="module" src="/src/init.js" defer></script>
+    <script type="module" src="/src/front-end.js" defer></script>
 
     <!-- Alert user if they are on a mobile device -->
     <script>
@@ -261,15 +261,6 @@
         <br>
         <div id="keybindReminder">
             Hold (<span class="shift-font">shift</span>) to view keybinds
-        </div>
-        <div id="twitterDescription">
-            <div>Please reach out if you have any questions, suggestions, bugs etc.!</div>
-            <a href="https://twitter.com/xxmichaellong" target="_blank" rel="noopener noreferrer">
-                <div id="twitterHandle">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logoof_Twitter.svg/512px-Logo_of_Twitter.svg.png" alt="Twitter Logo">
-                    <span id="username">@xxmichaellong</span>
-                </div>
-            </a>
         </div>
     </div>
 

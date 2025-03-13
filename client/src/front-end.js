@@ -4,6 +4,14 @@ import { initializeSidebox } from './initialization/document-event-listeners/sid
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
 
+console.log('Front-end.js is loading');
+console.log('Imports:', {
+  initializeCardContextMenu: typeof initializeCardContextMenu,
+  initializeSidebox: typeof initializeSidebox,
+  initializeTable: typeof initializeTable,
+  initializeWindow: typeof initializeWindow,
+});
+
 // Main function to initialize all DOM event listeners
 const initializeDOMEventListeners = () => {
   try {
