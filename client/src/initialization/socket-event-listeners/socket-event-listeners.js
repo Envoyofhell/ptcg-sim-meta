@@ -10,7 +10,8 @@ import {
   stopLookingAtCards,
   stopLookingShortcut,
 } from '../../actions/general/reveal-and-hide.js';
-import { socket, systemState } from '../../front-end.js';
+import { socket, systemState } from '../../global-variables.js';
+//import { socket, systemState } from '../../front-end.js';
 import { appendMessage } from '../../setup/chatbox/append-message.js';
 import { exchangeData } from '../../setup/deck-constructor/exchange-data.js';
 import { acceptAction } from '../../setup/general/accept-action.js';
@@ -46,11 +47,11 @@ export const initializeSocketEventListeners = () => {
     lobby.style.display = 'none';
     p2ExplanationBox.style.display = 'none';
     flipBoardButton.style.display = 'none';
-    
+
     if (systemState.initiator === 'opp') {
       flipBoard();
     }
-    
+
     systemState.isTwoPlayer = true;
     cleanActionData('self');
     cleanActionData('opp');
@@ -79,7 +80,7 @@ export const initializeSocketEventListeners = () => {
         const data = {
           selfUsername: systemState.p2SelfUsername,
           selfDeckData: systemState.selfDeckData,
-  oppDeckData: systemState.p2OppDeckData,
+          oppDeckData: systemState.p2OppDeckData,
           oppUsername: systemState.p2OppUsername,
           roomId: systemState.roomId,
           spectatorActionData: systemState.exportActionData,
@@ -112,7 +113,8 @@ export const initializeSocketEventListeners = () => {
     container.style.color = '#fff';
 
     let message = document.createElement('p');
-    message.innerHTML = 'Room is full.<br>Enable spectator mode to watch the game.';
+    message.innerHTML =
+      'Room is full.<br>Enable spectator mode to watch the game.';
     message.style.fontSize = '24px';
 
     container.appendChild(message);
@@ -186,7 +188,10 @@ export const initializeSocketEventListeners = () => {
       document.getElementById('spectatorModeCheckbox').checked &&
       systemState.isTwoPlayer
     );
-    if ((notSpectator && data.counter === systemState.selfCounter) || isImporting) {
+    if (
+      (notSpectator && data.counter === systemState.selfCounter) ||
+      isImporting
+    ) {
       startKeybindsSleep();
       acceptAction('self', data.action, data.parameters);
     }
@@ -215,7 +220,7 @@ export const initializeSocketEventListeners = () => {
       }
       if (data.counter === parseInt(systemState.oppCounter) + 1) {
         systemState.oppCounter++;
-        if (data.action !== 'exchangeData'&& data.action !== 'loadDeckData') {
+        if (data.action !== 'exchangeData' && data.action !== 'loadDeckData') {
           systemState.exportActionData.push({
             user: 'opp',
             emit: true,

@@ -1,4 +1,5 @@
-import { socket, systemState } from '../../front-end.js';
+import { socket, systemState } from '../../global-variables.js';
+//import { socket, systemState } from '../../front-end.js';
 import { appendMessage } from '../../setup/chatbox/append-message.js';
 import { determineUsername } from '../../setup/general/determine-username.js';
 import { showPopup } from '../../setup/general/pop-up-message.js';
