@@ -1,6 +1,8 @@
 import { reset } from '../../../../actions/general/reset.js';
-import { socket, systemState } from '../global-variables/global-variables.js';
-//import { socket, systemState } from '../../../../front-end.js';
+import {
+  socket,
+  systemState,
+} from '../../global-variables/global-variables.js';
 import { cleanActionData } from '../../../../setup/general/clean-action-data.js';
 import { processAction } from '../../../../setup/general/process-action.js';
 import { handleSpectatorButtons } from '../../../../setup/spectator/handle-spectator-buttons.js';
