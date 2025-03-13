@@ -13,11 +13,11 @@
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "server/server.js" // route API requests to Node server
+            "dest": "server/server.js"
         },
         {
             "src": "/(.*)",
-            "dest": "client/build/$1" // serve static files from the client build
+            "dest": "client/build/$1"
         }
     ],
     "installCommand": "npm install"
