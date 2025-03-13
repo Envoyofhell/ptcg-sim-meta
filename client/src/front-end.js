@@ -17,11 +17,6 @@ export const initializeDOMEventListeners = () => {
     }
 };
 
-// Safeguard for undefined exports
-if (typeof exports === 'undefined') {
-    var exports = {};
-}
-
 // Function to initialize with retries
 const initializeWithRetry = () => {
     let retryCount = 0;
@@ -47,8 +42,4 @@ const initializeWithRetry = () => {
     }
 };
 
-// Call the function to initialize with retries
-initializeWithRetry();
-
-// Optional: Export the initialization function if needed in other modules
-exports.initializeDOMEventListeners = initializeDOMEventListeners;
+// Call the function to init
