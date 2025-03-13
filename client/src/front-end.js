@@ -1,48 +1,54 @@
-// Log the module context type
-console.log('Module type:', typeof exports);
-
-// Import individual functions from the respective modules
+// Import functions from their respective modules
 import { initializeCardContextMenu } from './initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js';
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
 
-// Initialize DOM event listeners with redundancy
+// Main function to initialize all DOM event listeners
 export const initializeDOMEventListeners = () => {
     try {
-        initializeCardContextMenu(); // Initialize card context menu
-        initializeSidebox();          // Initialize sidebox
-        initializeTable();            // Initialize table setup
-        initializeWindow();           // Initialize window-specific features
+        initializeCardContextMenu();
+        console.log('Card context menu initialized successfully.');
     } catch (error) {
-        console.error("Error initializing DOM event listeners:", error);
-        // Optional: Retry logic or alternative handling can be added here.
+        console.error("Failed to initialize card context menu:", error);
+    }
+
+    try {
+        initializeSidebox();
+        console.log('Sidebox initialized successfully.');
+    } catch (error) {
+        console.error("Failed to initialize sidebox:", error);
+    }
+
+    try {
+        initializeTable();
+        console.log('Table initialized successfully.');
+    } catch (error) {
+        console.error("Failed to initialize table:", error);
+    }
+
+    try {
+        initializeWindow();
+        console.log('Window initialized successfully.');
+    } catch (error) {
+        console.error("Failed to initialize window:", error);
     }
 };
 
-// Function to initialize with retries
+// Initialize DOM event listeners and handle retries if needed
 const initializeWithRetry = () => {
-    let retryCount = 0;
     const maxRetries = 3;
 
-    while (retryCount < maxRetries) {
+    for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
         try {
-            // Check if the function exists before invoking it
-            if (typeof initializeDOMEventListeners === 'function') {
-                initializeDOMEventListeners();
-                break; // If successful, exit the loop
-            } else {
-                console.error("initializeDOMEventListeners is not defined.");
-                break; // Exit if function isn't defined
-            }
+            initializeDOMEventListeners();
+            console.log('DOM event listeners initialized successfully on attempt', retryCount + 1);
+            break; // Exit if successful
         } catch (error) {
-            console.error(`Initialization failed (attempt ${retryCount + 1}):`, error);
-            retryCount++;
+            console.error(`Initialization attempt ${retryCount + 1} failed:`, error);
         }
-    }
-    if (retryCount === maxRetries) {
-        console.error("Max retries reached. Initialization failed.");
     }
 };
 
-// Call the function to init
+// Call the initialization function
+initializeWithRetry();
