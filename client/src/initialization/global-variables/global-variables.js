@@ -2,18 +2,21 @@
 import { preloadImage } from '../../setup/general/preload-image.js';
 import { getZone } from '../../setup/zones/get-zone.js';
 
+// Application version
 export const version = '1.5.1';
 
-// exports a WebSocket connection using the Socket.IO library, loaded via CDN in index.ejs
-export const socket = io('https://ptcg-sim-meta.vercel.app/');
-//export const socket = io('http://localhost:4000/');
+// Exports a WebSocket connection using the Socket.IO library, loaded via CDN in index.ejs
+export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Vercel production URL
+// Uncomment for local development
+// export const socket = io('http://localhost:4000/');
 
-// export references to HTML elements 'selfContainer' and 'oppContainer', and their respective content window documents for ease of access to the iframes
-export const selfContainer = document.getElementById('selfContainer');
-export const selfContainerDocument = selfContainer.contentWindow.document;
-export const oppContainer = document.getElementById('oppContainer');
-export const oppContainerDocument = oppContainer.contentWindow.document;
-// create globally accessible variable systemState, which holds information relevant to the state of the user's game
+// Export references to HTML elements 'selfContainer' and 'oppContainer', ensuring they are defined
+export const selfContainer = document.getElementById('selfContainer') || {};
+export const selfContainerDocument = selfContainer.contentWindow ? selfContainer.contentWindow.document : {};
+export const oppContainer = document.getElementById('oppContainer') || {};
+export const oppContainerDocument = oppContainer.contentWindow ? oppContainer.contentWindow.document : {};
+
+// Create globally accessible variable systemState, which holds information relevant to the state of the user's game
 export const systemState = {
   coachingMode: false,
   isUndoInProgress: false,
@@ -25,12 +28,11 @@ export const systemState = {
   spectatorId: '',
   oppCounter: 0,
   isTwoPlayer: false,
-  isReplay: false, // should be treated as false no matter what if isTwoPlayer is true
+  isReplay: false, // Should be treated as false if isTwoPlayer is true
   replayActionData: [],
   turn: 0,
   get initiator() {
     return selfContainer.classList.contains('self') ? 'self' : 'opp';
-    //refers to the user on the bottom half of the screen, e.g., initiator === 'self' means that the bottom half is the 'self' user
   },
   roomId: '',
   p1Username: (user) => {
@@ -40,20 +42,21 @@ export const systemState = {
   p2OppUsername: '',
   spectatorUsername: '',
   selfDeckData: '',
-  p1OppDeckData: '', // refers to the opponent's data in 1 player mode, i.e., the "alt" deck data
-  p2OppDeckData: '', // refers to the opponent's data in 2 player mode, i.e., the other player's deck data
-  cardBackSrc: 'https://ptcgsim.online/src/assets/cardback.png',
-  p1OppCardBackSrc: 'https://ptcgsim.online/src/assets/cardback.png',
-  p2OppCardBackSrc: 'https://ptcgsim.online/src/assets/cardback.png',
+  p1OppDeckData: '', // Opponent's data in 1-player mode
+  p2OppDeckData: '', // Opponent's data in 2-player mode
+  cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
+  p1OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
+  p2OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
 };
 
-// preload image
-preloadImage('https://ptcgsim.online/src/assets/cardback.png');
+// Preload image
+preloadImage('https://ptcg-sim-meta.vercel.app/src/assets/cardback.png'); // Updated to Vercel URL
 
+// Background styling for the body
 document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://wallpapercave.com/wp/wp10484598.jpg')`;
 document.body.style.backgroundPosition = '-200px 0';
 
-// create global variable that holds the information of a selected card, i.e., the card that has been clicked and highlighted and can trigger keybinds
+// Create global variable that holds the information of a selected card, i.e., the card that has been clicked and highlighted and can trigger keybinds
 export const mouseClick = {
   cardIndex: '',
   zoneId: '',
