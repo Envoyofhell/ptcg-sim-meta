@@ -1,3 +1,6 @@
+// Log the module context type
+console.log('Module type:', typeof exports);
+
 // Import individual functions from the respective modules
 import { initializeCardContextMenu } from './initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js';
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
