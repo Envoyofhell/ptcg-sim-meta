@@ -4,20 +4,12 @@
         {
             "src": "server/server.js",
             "use": "@vercel/node"
-        },
-        {
-            "src": "client/build/**/*",
-            "use": "@vercel/static"
         }
     ],
     "routes": [
         {
-            "src": "/api/(.*)",
-            "dest": "server/server.js"
-        },
-        {
             "src": "/(.*)",
-            "dest": "client/build/$1"
+            "dest": "server/server.js"
         }
     ],
     "installCommand": "npm install"
