@@ -1,5 +1,5 @@
 import { socket } from '../../front-end.js'; // Assuming socket is exported from front-end
-import { systemState } from '../../path/to/globals.js'; // Update the path accordingly
+import { systemState } from '../../initialization/global-variables/global-variables.js'; // Update the path accordingly
 
 export const processAction = (user, emit, action, parameters) => {
   const notSpectator = !(
