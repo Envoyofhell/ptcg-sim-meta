@@ -1,8 +1,7 @@
 import {
   socket,
   systemState,
-} from './initialization/global-variables/global-variables.js';
-//import { socket, systemState } from '../../front-end.js';
+} from '../initialization/global-variables/global-variables.js';
 
 export const appendMessage = (user, message, type, emit = true) => {
   if (!systemState.isUndoInProgress) {
