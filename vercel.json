@@ -12,5 +12,5 @@
             "dest": "server/server.js"
         }
     ],
-    "installCommand": "cd server && npm install",
+    "installCommand": "cd server && npm install"
 }
