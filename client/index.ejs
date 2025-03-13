@@ -23,11 +23,16 @@
           content="PTCG-sim is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
     <meta property="og:site_name" content="PTCG-sim">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/src/css/index.css">
+    
+    <!-- Load Socket.IO Library -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    <script type="module" src="src/front-end.js"></script>
-    <script type="module" src="src/init.js"></script>
+
+    <!-- Load App Scripts -->
+    <script type="module" src="src/front-end.js" defer></script>
+    <script type="module" src="src/init.js" defer></script>
 </head>
 
 <body>
