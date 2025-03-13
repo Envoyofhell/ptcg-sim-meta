@@ -1,5 +1,5 @@
 // init.js
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
   const isMobile =
     /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
@@ -9,4 +9,4 @@ window.onload = () => {
       'PTCG-sim is still in mobile development. Please use a desktop for full functionality.'
     );
   }
-};
+});
