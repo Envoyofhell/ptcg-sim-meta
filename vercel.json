@@ -16,8 +16,18 @@
         "dest": "server/server.js"
       },
       {
+        "src": "/",
+        "dest": "/client/index.html",
+        "headers": { "Content-Type": "text/html" }
+      },
+      {
+        "src": "/index.html",
+        "dest": "/client/index.html",
+        "headers": { "Content-Type": "text/html" }
+      },
+      {
         "src": "/(.*)",
-        "dest": "client/$1"
+        "dest": "/client/$1"
       }
     ]
   }
