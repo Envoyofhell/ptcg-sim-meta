@@ -12,5 +12,15 @@
             "dest": "server/server.js"
         }
     ],
-    "installCommand": "npm install"
+    "headers": [
+        {
+            "source": "/src/(.*)",
+            "headers": [
+                {
+                    "key": "Content-Type",
+                    "value": "application/javascript"
+                }
+            ]
+        }
+    ]
 }
