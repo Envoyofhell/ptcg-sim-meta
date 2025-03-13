@@ -2,7 +2,7 @@ import { reset } from '../../../actions/general/reset.js';
 import {
   socket,
   systemState,
-} from '../../global-variables/global-variables.js';
+} from '../../initialization/global-variables/global-variables.js';
 import { cleanActionData } from '../../../setup/general/clean-action-data.js';
 import { processAction } from '../../../setup/general/process-action.js';
 import { show } from '../../../setup/home-header/header-toggle.js';

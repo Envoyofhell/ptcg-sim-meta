@@ -2,7 +2,7 @@
 import {
   socket,
   systemState,
-} from './initialization/global-variables/global-variables.js';
+} from '../../initialization/global-variables/global-variables.js';
 
 export const resyncActions = () => {
   const data = {

@@ -1,7 +1,7 @@
 import {
   socket,
   systemState,
-} from '../initialization/global-variables/global-variables.js';
+} from '../../initialization/global-variables/global-variables.js';
 import { appendMessage } from '../../setup/chatbox/append-message.js';
 import { determineUsername } from '../../setup/general/determine-username.js';
 import { showPopup } from '../../setup/general/pop-up-message.js';
