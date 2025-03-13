@@ -2,19 +2,30 @@
 <html lang="en">
 
 <head>
+    <!-- Title of the webpage that appears in the browser tab -->
     <title>PTCG-sim | Pokémon TCG Tabletop Simulator</title>
     
-    <!-- Updated Content Security Policy -->
+    <!-- Content Security Policy to control resource loading -->
     <meta http-equiv="Content-Security-Policy" 
-          content="script-src 'self' https://cdn.socket.io; object-src 'none';">
+          content="script-src 'self' https://cdn.socket.io 'unsafe-inline'; object-src 'none';">
 
+    <!-- Meta tags for SEO (Search Engine Optimization) -->
     <meta name="description"
           content="PTCG-sim is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
+    
     <meta name="keywords"
           content="ptcg sim,ptcg,pokemon trading card game simulator,pokemon trading card game sim,pokemon tcg simulator,pokemon tcg sim,pokemon sim,pokemon simulator,pokemon card simulator,pokemon card sim,pokemon tabletop simulator,pokemon tabletop sim,pokemon,pokemon card,pokemonsim,pokemon game sim,ptcg os,pokemon open source" />
+    
+    <!-- Character encoding for the document -->
     <meta charset="UTF-8">
+    
+    <!-- Content type of the document -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <!-- Content language of the document -->
     <meta http-equiv="Content-Language" content="en">
+    
+    <!-- Open Graph meta tags for social media sharing -->
     <meta property="og:title" content="Pokémon TCG Tabletop Simulator | PTCG-sim" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://ptcg-sim-meta.vercel.app/src/assets/blank-logo.png" />
@@ -22,15 +33,20 @@
     <meta property="og:description"
           content="PTCG-sim is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
     <meta property="og:site_name" content="PTCG-sim">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Responsive design viewport settings -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicon for the website -->
     <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
+    
+    <!-- Link to external stylesheet for styling -->
     <link rel="stylesheet" href="/src/css/index.css">
     
-    <!-- Load Socket.IO Library -->
+    <!-- Load the Socket.IO library for real-time communication -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 
-    <!-- Load App Scripts -->
+    <!-- Load application scripts -->
     <script type="module" src="src/init.js" defer></script>
     <script type="module" src="src/front-end.js" defer></script>
 </head>
