@@ -11,16 +11,5 @@
             "src": "/(.*)",
             "dest": "server/server.js"
         }
-    ],
-    "headers": [
-        {
-            "source": "/src/(.*)",
-            "headers": [
-                {
-                    "key": "Content-Type",
-                    "value": "application/javascript"
-                }
-            ]
-        }
     ]
 }
