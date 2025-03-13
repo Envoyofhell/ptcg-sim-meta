@@ -1,9 +1,8 @@
-// Import individual functions from the respective modules
 import { initializeCardContextMenu } from './initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js';
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
-
+// Import individual functions from the respective modules
 console.log('Front-end.js is loading');
 console.log('Imports:', {
   initializeCardContextMenu: typeof initializeCardContextMenu,
