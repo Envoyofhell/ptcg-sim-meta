@@ -13,5 +13,4 @@
         }
     ],
     "installCommand": "cd server && npm install",
-    "buildCommand": "cd server && npm run build"
 }
