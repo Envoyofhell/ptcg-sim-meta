@@ -5,70 +5,71 @@ import { getZone } from '../../setup/zones/get-zone.js';
 // Application version
 export const version = '1.5.1';
 
-// Exports a WebSocket connection using the Socket.IO library, loaded via CDN in index.ejs
-export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Vercel production URL
+// Socket connection
+export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Production URL
 // Uncomment for local development
 // export const socket = io('http://localhost:4000/');
 
-// Export references to HTML elements 'selfContainer' and 'oppContainer', ensuring they are defined
-export const selfContainer = document.getElementById('selfContainer') || {};
-export const selfContainerDocument = selfContainer.contentWindow ? selfContainer.contentWindow.document : {};
-export const oppContainer = document.getElementById('oppContainer') || {};
-export const oppContainerDocument = oppContainer.contentWindow ? oppContainer.contentWindow.document : {};
-
-// Create globally accessible variable systemState, which holds information relevant to the state of the user's game
-export const systemState = {
-  coachingMode: false,
-  isUndoInProgress: false,
-  selfCounter: 0,
-  selfActionData: [],
-  oppActionData: [],
-  spectatorCounter: 0,
-  exportActionData: [],
-  spectatorId: '',
-  oppCounter: 0,
-  isTwoPlayer: false,
-  isReplay: false, // Should be treated as false if isTwoPlayer is true
-  replayActionData: [],
-  turn: 0,
-  get initiator() {
-    return selfContainer.classList.contains('self') ? 'self' : 'opp';
-  },
-  roomId: '',
-  p1Username: (user) => {
-    return user === 'self' ? 'Blue' : 'Red';
-  },
-  p2SelfUsername: '',
-  p2OppUsername: '',
-  spectatorUsername: '',
-  selfDeckData: '',
-  p1OppDeckData: '', // Opponent's data in 1-player mode
-  p2OppDeckData: '', // Opponent's data in 2-player mode
-  cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
-  p1OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
-  p2OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png', // Updated to Vercel URL
+// Function to initialize DOM elements safely
+const getElement = (id) => {
+    const element = document.getElementById(id);
+    if (!element) console.warn(`${id} not found in the DOM.`);
+    return element || {};
 };
 
-// Preload image
-preloadImage('https://ptcg-sim-meta.vercel.app/src/assets/cardback.png'); // Updated to Vercel URL
+export const selfContainer = getElement('selfContainer');
+export const oppContainer = getElement('oppContainer');
+
+export const systemState = {
+    coachingMode: false,
+    isUndoInProgress: false,
+    selfCounter: 0,
+    selfActionData: [],
+    oppActionData: [],
+    spectatorCounter: 0,
+    exportActionData: [],
+    spectatorId: '',
+    oppCounter: 0,
+    isTwoPlayer: false,
+    isReplay: false,
+    replayActionData: [],
+    turn: 0,
+    get initiator() {
+        return selfContainer.classList.contains('self') ? 'self' : 'opp';
+    },
+    roomId: '',
+    cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+    p1OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+    p2OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+};
+
+// Preload images
+const preloadImages = (imageUrls) => {
+    imageUrls.forEach(preloadImage);
+};
+
+preloadImages([
+    'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+    // Add more images as needed
+]);
 
 // Background styling for the body
 document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://wallpapercave.com/wp/wp10484598.jpg')`;
 document.body.style.backgroundPosition = '-200px 0';
 
-// Create global variable that holds the information of a selected card, i.e., the card that has been clicked and highlighted and can trigger keybinds
+// Selected card information
 export const mouseClick = {
-  cardIndex: '',
-  zoneId: '',
-  cardUser: '',
-  playContainer: '',
-  playContainerParent: '',
-  selectingCard: false,
-  isActiveZone: '',
-  get card() {
-    if (this.zoneId) {
-      return getZone(this.cardUser, this.zoneId).array[this.cardIndex];
-    }
-    return null;
-  },
+    cardIndex: '',
+    zoneId: '',
+    cardUser: '',
+    playContainer: '',
+    playContainerParent: '',
+    selectingCard: false,
+    isActiveZone: '',
+    get card() {
+        if (this.zoneId) {
+            return getZone(this.cardUser, this.zoneId).array[this.cardIndex];
+        }
+        return null;
+    },
 };
