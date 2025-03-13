@@ -13,10 +13,14 @@ export const initializeWindow = () => {
     refreshBoard();
   });
 
-  window.addEventListener('beforeunload', function (event) {
-    const confirmationMessage =
-      'Are you sure you want to leave? Any unsaved game data will be lost.';
-    event.returnValue = confirmationMessage;
-    return confirmationMessage;
-  });
+  window.addEventListener('resize', () => {
+    try {
+        const handElement = selfContainerDocument.getElementById('hand');
+        const oppHandElement = oppContainerDocument.getElementById('hand');
+        [handElement, oppHandElement].forEach(adjustAlignment);
+        refreshBoard();
+    } catch (error) {
+        console.error("Error adjusting alignment:", error);
+    }
+});
 };
