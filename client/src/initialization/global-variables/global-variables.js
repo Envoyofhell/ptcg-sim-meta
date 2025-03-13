@@ -17,8 +17,9 @@ const getElement = (id) => {
   return element || {};
 };
 
-export const selfContainer = getElement('selfContainer');
-export const oppContainer = getElement('oppContainer');
+// Create and export DOM container references
+export const selfContainerDocument = getElement('selfContainer'); // Ensure this ID exists in your HTML
+export const oppContainerDocument = getElement('oppContainer'); // Ensure this ID also exists in your HTML
 
 export const systemState = {
   coachingMode: false,
@@ -35,7 +36,7 @@ export const systemState = {
   replayActionData: [],
   turn: 0,
   get initiator() {
-    return selfContainer.classList.contains('self') ? 'self' : 'opp';
+    return selfContainerDocument.classList.contains('self') ? 'self' : 'opp';
   },
   roomId: '',
   cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',

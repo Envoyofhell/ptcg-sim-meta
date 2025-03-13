@@ -2,6 +2,11 @@ import { initializeCardContextMenu } from './initialization/document-event-liste
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
+
+// Example definitions for the containers
+export const selfContainerDocument = document.getElementById('self-container'); // Make sure this ID exists in your HTML
+export const oppContainerDocument = document.getElementById('opp-container'); // Ensure this ID also exists
+
 // Import individual functions from the respective modules
 console.log('Front-end.js is loading');
 console.log('Imports:', {
@@ -10,8 +15,6 @@ console.log('Imports:', {
   initializeTable: typeof initializeTable,
   initializeWindow: typeof initializeWindow,
 });
-// Example definition:
-export const oppContainerDocument = document.getElementById('opp-container');
 
 // Main function to initialize all DOM event listeners
 const initializeDOMEventListeners = () => {
