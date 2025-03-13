@@ -10,6 +10,8 @@ console.log('Imports:', {
   initializeTable: typeof initializeTable,
   initializeWindow: typeof initializeWindow,
 });
+// Example definition:
+export const oppContainerDocument = document.getElementById('opp-container');
 
 // Main function to initialize all DOM event listeners
 const initializeDOMEventListeners = () => {
