@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <!-- Title of the webpage that appears in the browser tab -->
     <title>PTCG-sim | Pokémon TCG Tabletop Simulator</title>
@@ -28,8 +27,8 @@
     <!-- Open Graph meta tags for social media sharing -->
     <meta property="og:title" content="Pokémon TCG Tabletop Simulator | PTCG-sim" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://ptcg-sim-meta.vercel.app/src/assets/blank-logo.png" />
-    <meta property="og:url" content="https://ptcg-sim-meta.vercel.app/" />
+    <meta property="og:image" content="https://ptcgsim-meta.vercel.app/src/assets/blank-logo.png" />
+    <meta property="og:url" content="https://ptcgsim-meta.vercel.app/" />
     <meta property="og:description"
           content="PTCG-sim is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
     <meta property="og:site_name" content="PTCG-sim">
@@ -49,18 +48,37 @@
     <!-- Load application scripts -->
     <script type="module" src="src/init.js" defer></script>
     <script type="module" src="src/front-end.js" defer></script>
+
+    <!-- Alert user if they are on a mobile device -->
+    <script>
+        window.onload = () => {
+            var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                alert("PTCG-sim is still in mobile development. Please use a desktop for full functionality.");
+            }
+        };
+    </script>
 </head>
 
 <body>
+    <!-- Hidden element to store initial data as JSON -->
     <div id="importDataJSON" style="display: none;"><%- JSON.stringify(importDataJSON || {}) %></div>
+
+    <!-- Cover overlay for loading states -->
     <div id="cover"></div>
+
+    <!-- Frames for self and opponent containers -->
     <iframe id="selfContainer" class="self" src="./self-containers.html"></iframe>
     <iframe id="oppContainer" class="opp" src="./opp-containers.html"></iframe>
+
+    <!-- Stadium area outlined for gameplay -->
     <div id="stadium" class="outline"></div>
 
+    <!-- Resizers for self and opponent views -->
     <div id="selfResizer" class="self-color"></div>
     <div id="oppResizer" class="opp-color"></div>
 
+    <!-- Board button container for game actions -->
     <div id="boardButtonContainer">
         <div class="tooltip" id="turnButton">
             <button>+Turn</button>
@@ -68,7 +86,7 @@
         </div>
         <div class="tooltip" id="flipCoinButton">
             <button>Coin</button>
-            <span class="tooltiptext">Flip coin</span>
+             <span class="tooltiptext">Flip coin</span>
         </div>
         <div class="tooltip" id="flipBoardButton">
             <button>⇅</button>
@@ -83,34 +101,32 @@
         </div>
     </div>
 
+    <!-- Container for top buttons (e.g., player actions) -->
     <div id="topButtonContainer">
         <button id="p1Button" class="selected-page">1P</button>
         <button id="p2Button" class="not-selected-page">2P</button>
         <button id="deckImportButton" class="not-selected-page">Import</button>
         <button id="settingsButton" class="not-selected-page">Settings</button>
     </div>
+
     <div id="greyFiller"></div>
 
+    <!-- Player 1's sidebox with chat functionality -->
     <div id="p1Box" class="sidebox">
-        <div id="chatbox"><strong>Welcome to PTCG-sim!</strong>
-            <p><strong id="changelogLink"
-                    style="cursor: pointer; text-decoration: none; color: #ffcc00; border-bottom: 1px solid #ffcc00;">v1.5.1
-                    Ϟ(๑⚈ ․̫ ⚈๑)⋆ </strong></p>
-            <p style="font-size: 90%;">PTCG-sim is an <a href="https://github.com/xxmichaellong/ptcg-sim"
-                    target="_blank">open-source</a> Pokémon Trading Card Game (Pokémon TCG) tabletop simulator. It
-                supports single player and online multiplayer.</p>
-            <p style="font-size: 90%;">Use the <strong>Import</strong> tab above to import your deck, then press
-                <strong>Set Up</strong> to start a game.</p>
-            <p style="font-size: 90%;">Drag or use keybinds (hold <span class="shift-font">shift</span>) to move cards.
-            </p>
-            <p style="font-size: 90%;">See the <strong>Options</strong> button below to import, export, and replay
-                games.</p>
+        <div id="chatbox">
+            <strong>Welcome to PTCG-sim!</strong>
+            <p><strong id="changelogLink" style="cursor: pointer; text-decoration: none; color: #ffcc00; border-bottom: 1px solid #ffcc00;">
+                v1.5.1 Ϟ(๑⚈ ․̫ ⚈๑)⋆ 
+            </strong></p>
+            <p style="font-size: 90%;">PTCG-sim is an <a href="https://github.com/xxmichaellong/ptcg-sim" target="_blank">open-source</a> Pokémon Trading Card Game (Pokémon TCG) tabletop simulator. It supports single player and online multiplayer.</p>
+            <p style="font-size: 90%;">Use the <strong>Import</strong> tab above to import your deck, then press <strong>Set Up</strong> to start a game.</p>
+            <p style="font-size: 90%;">Drag or use keybinds (hold <span class="shift-font">shift</span>) to move cards.</p>
+            <p style="font-size: 90%;">See the <strong>Options</strong> button below to import, export, and replay games.</p>
             <p style="font-size: 90%;">Happy testing!</p>
             <button id="tutorialButton">Watch Tutorial</button>
             <br><br>
             <div id="links">
-                <div id="discordLink"><strong><a href="https://discord.gg/jMfhQa38mh" target="_blank">🎮 Join our
-                            Discord</a></strong></div>
+                <div id="discordLink"><strong><a href="https://discord.gg/jMfhQa38mh" target="_blank">🎮 Join our Discord</a></strong></div>
                 <div id="donationsLink">🎁 Sponsors & Donations</div>
             </div>
             <div id="line"></div>
@@ -130,13 +146,13 @@
             <button id="optionsButton" class="neutral-color">Options</button>
         </div>
     </div>
-    
+
+    <!-- Player 2's sidebox -->
     <div id="p2Box" class="sidebox">
         <div id="p2ExplanationBox">
             <strong>Online Multiplayer Mode</strong>
             <br><br>
-            Enter or generate a unique room ID to share with your friends. Players must enter the same ID
-            (case-sensitive) to join.
+            Enter or generate a unique room ID to share with your friends. Players must enter the same ID (case-sensitive) to join.
         </div>
         <div id="lobby">
             <input id="nameInput" type="text" placeholder="Name">
@@ -149,8 +165,7 @@
             </div>
             <div id="coachingModeLabel">
                 <input type="checkbox" id="coachingModeCheckbox">
-                <label style="cursor: pointer;" for="coachingModeCheckbox">Enable board flip <span
-                        style="font-style: italic; font-size: smaller;">(both players must enable)</span></label>
+                <label style="cursor: pointer;" for="coachingModeCheckbox">Enable board flip <span style="font-style: italic; font-size: smaller;">(both players must enable)</span></label>
             </div>
             <div id="spectatorModeLabel">
                 <input type="checkbox" id="spectatorModeCheckbox">
@@ -164,7 +179,8 @@
                 <button id="roomHeaderCopyButton">
                     <img src="https://www.svgrepo.com/show/309480/copy.svg" alt="Copy">
                 </button>
-            </div><div id="p2Chatbox"></div>
+            </div>
+            <div id="p2Chatbox"></div>
             <div id="p2ChatboxButtonContainer" class="chat-button-container">
                 <button id="p2AttackButton" class="self-color">Attack</button>
                 <button id="p2PassButton" class="self-color">Pass</button>
@@ -180,6 +196,7 @@
         </div>
     </div>
 
+    <!-- Deck Import Section -->
     <div id="deckImport" class="sidebox">
         <div>
             <button id="deckBuilderButton">Deck Builder</button>
@@ -222,9 +239,10 @@
                 </div>
             </div>
         </div>
-        <button id="saveCurrentButton" class="self-color">Save Current Deck</button>
+         <button id="saveCurrentButton" class="self-color">Save Current Deck</button>                
     </div>
 
+    <!-- Settings Section -->
     <div id="settings" class="sidebox">
         <div id="settingsToggles">
             <div>
@@ -249,13 +267,14 @@
             <div>Please reach out if you have any questions, suggestions, bugs etc.!</div>
             <a href="https://twitter.com/xxmichaellong" target="_blank" rel="noopener noreferrer">
                 <div id="twitterHandle">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logoof_Twitter.svg/512px-Logo_of_Twitter.svg.png">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logoof_Twitter.svg/512px-Logo_of_Twitter.svg.png" alt="Twitter Logo">
                     <span id="username">@xxmichaellong</span>
                 </div>
             </a>
         </div>
     </div>
 
+    <!-- Card Context Menu for actions -->
     <div id="cardContextMenu" class="card-context-menu">
         <ul>
             <li id="abilityCounterButton">Toggle ability/effect</li>
@@ -306,13 +325,15 @@
         </ul>
     </div>
 
+    <!-- Options Context Menu -->
     <div id="optionsContextMenu">
         <div id="exitReplay" style="display:none">Exit replay mode</div>
-        <div id="jsonReplayDiv"><label for="jsonReplay" id="importReplay" style="cursor: pointer;">Enter replay
-                mode</label>
+        <div id="jsonReplayDiv">
+            <label for="jsonReplay" id="importReplay" style="cursor: pointer;">Enter replay mode</label>
             <input type="file" id="jsonReplay" accept=".json" style="display:none;" />
         </div>
-        <div id="jsonDiv"><label for="jsonFile" id="importState" style="cursor: pointer;">Import game state</label>
+        <div id="jsonDiv">
+            <label for="jsonFile" id="importState" style="cursor: pointer;">Import game state</label>
             <input type="file" id="jsonFile" accept=".json" style="display:none;" />
         </div>
         <div id="exportState">Export game state</div>
@@ -321,6 +342,7 @@
         <div id="fullscreenButton">Full screen</div>
     </div>
 
+    <!-- Keybind Modal for displaying key actions -->
     <div id="keybindModal">
         <div class="keybind-section-container">
             <div class="keybind-section">
@@ -418,11 +440,11 @@
             </div>
         </div>
         <div style="position: absolute; bottom: 0; left: 20px;">
-            <p style="font-size: 1.5vh;"><strong>For macOS:</strong> Use <code>option</code> instead of <code>alt</code>
-            </p>
+            <p style="font-size: 1.5vh;"><strong>For macOS:</strong> Use <code>option</code> instead of <code>alt</code></p>
         </div>
     </div>
 
+    <!-- Decklist Table -->
     <table id="decklistTable">
         <thead>
             <tr>
@@ -436,12 +458,14 @@
         </tbody>
     </table>
 
+    <!-- Hidden tables for current decklists -->
     <table id="selfCurrentDecklistTable" style="display: none;"></table>
     <table id="oppCurrentDecklistTable" style="display: none;"></table>
 
-    <!-- Home page -->
+    <!-- Container for video functionality -->
     <div id="videoContainer"></div>
+
+    <!-- Include changelog or other content related partials -->
     <%- include('partials/changelog') %>
 </body>
-
 </html>
