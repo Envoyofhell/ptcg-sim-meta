@@ -4,7 +4,7 @@ import { initializeSidebox } from './initialization/document-event-listeners/sid
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
 
-// Initialize DOM event listeners
+// Main function to initialize all DOM event listeners
 const initializeDOMEventListeners = () => {
     try {
         initializeCardContextMenu(); // Initialize card context menu
@@ -35,13 +35,12 @@ const initializeDOMEventListeners = () => {
     }
 };
 
-// Function to initialize with retries
+// Function to initialize event listeners with retries if necessary
 const initializeWithRetry = () => {
     const maxRetries = 3;
 
     for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
         try {
-            // Call the DOM event initialization
             initializeDOMEventListeners();
             console.log('DOM event listeners initialized successfully on attempt', retryCount + 1);
             break; // Exit if successful
