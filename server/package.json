@@ -1,6 +1,6 @@
 {
   "name": "ptcg-sim-server",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "scripts": {
     "start": "nodemon server.js"
   },
@@ -15,7 +15,16 @@
     "socket.io": "^4.7.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "nodemon": "^3.1.9",
+    "path": "^0.12.7",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
   },
   "type": "module"
 }

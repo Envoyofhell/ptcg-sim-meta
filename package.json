@@ -33,14 +33,21 @@
     "yocto-queue": "^0.1.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
     "@eslint/js": "^9.20.0",
+    "babel-loader": "^10.0.0",
     "css-loader": "^7.1.2",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^15.14.0",
     "nodemon": "^3.1.9",
-    "style-loader": "^4.0.0"
+    "path": "^0.12.7",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
   },
   "engines": {
     "node": ">=18"
