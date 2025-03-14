@@ -21,7 +21,10 @@ export const version = '1.5.1';
 
 // Socket connection
 export const socket = io('https://ptcg-sim-meta.onrender.com', {
-  withCredentials: true
+  path: "/socket.io/",
+  withCredentials: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000
 });
 //export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Production URL
 // Uncomment for local development
