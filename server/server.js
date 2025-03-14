@@ -50,15 +50,17 @@ async function main() {
   const server = http.createServer(app);
   const io = new Server(server, {
     connectionStateRecovery: {},
+    path: "/socket.io/",
     cors: {
       origin: [
-        'https://admin.socket.io', // Admin interface for Socket.IO
-        'https://ptcg-sim-meta.vercel.app', // Your new Vercel domain
-        // 'https://ptcgsim.online/', // If still needed; else remove
+        'https://admin.socket.io',
+        'https://ptcg-sim-meta.vercel.app',
       ],
       credentials: true,
+      methods: ["GET", "POST"]
     },
   });
+ 
 
   try {
     await pool.query(
