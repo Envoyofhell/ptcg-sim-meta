@@ -36,7 +36,7 @@ import { initializeSocketEventListeners } from './initialization/socket-event-li
 // Import resizer module
 import {
   createResizer
-} from '../setup/sizing/resizer.js';
+} from '/src/setup/sizing/resizer.js';
 
 // Container references
 const selfContainerDocument = document.getElementById('selfContainer');
