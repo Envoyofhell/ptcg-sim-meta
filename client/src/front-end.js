@@ -11,16 +11,7 @@ import {
     version 
 } from './initialization/global-variables/global-variables.js';
 
-// Rest of the code remains the same, but use export instead of module.exports
-export { 
-    socket, 
-    systemState, 
-    mouseClick, 
-    version,
-    selfContainerDocument,
-    oppContainerDocument
-};
-// Global container references
+// Container references
 const selfContainerDocument = document.getElementById('selfContainer');
 const oppContainerDocument = document.getElementById('oppContainer');
 
@@ -86,24 +77,21 @@ const initializeWithRetry = () => {
 initializeWithRetry();
 
 // Export necessary modules and references
-module.exports = {
-    // Global variables
-    socket,
-    systemState,
-    mouseClick,
-    version,
-
-    // Container documents
-    selfContainerDocument,
-    oppContainerDocument,
-
-    // Event handling functions
-    initializeCardContextMenu,
-    initializeSidebox,
-    initializeTable,
-    initializeWindow,
-
-    // Resizer-related mouse event handlers (if they exist in this file)
-    oppHandleMouseDown: null, // Replace with actual implementation if exists
-    selfHandleMouseDown: null, // Replace with actual implementation if exists
+export { 
+  socket,
+  systemState,
+  mouseClick,
+  version,
+  
+  // Container documents
+  selfContainerDocument,
+  oppContainerDocument,
+  
+  // Rename export
+  oppContainerDocument as oppContainer,
+  
+  initializeCardContextMenu,
+  initializeSidebox,
+  initializeTable,
+  initializeWindow
 };
