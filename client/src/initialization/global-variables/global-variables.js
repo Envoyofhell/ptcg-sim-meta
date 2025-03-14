@@ -2,6 +2,20 @@
 import { preloadImage } from '../../setup/general/preload-image.js';
 import { getZone } from '../../setup/zones/get-zone.js';
 
+// Function to check for path duplication
+const checkImportPath = (path) => {
+  // Convert file URL to a pathname format
+  const pathname = new URL(path).pathname;
+  if (pathname.includes('/initialization/initialization')) {
+    console.warn('Warning: You are trying to import from an invalid path that includes duplication.');
+  }
+};
+
+// Only check in module environments
+if (typeof import.meta !== 'undefined' && import.meta.url) {
+  checkImportPath(import.meta.url);
+}
+
 // Application version
 export const version = '1.5.1';
 
