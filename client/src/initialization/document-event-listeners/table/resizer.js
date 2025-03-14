@@ -1,6 +1,7 @@
 import {
   oppHandleMouseDown,
   selfHandleMouseDown,
+  oppContainerDocument 
 } from '../../../setup/sizing/resizer.js';
 
 export const initializeResizers = () => {
