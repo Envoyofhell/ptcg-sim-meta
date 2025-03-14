@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
 import pg from 'pg'; // Correct pg import
-const { Pool } = pg; //destructure pool
+const { Pool } = pg; // Destructure Pool
 import ejs from 'ejs'; // Correct ejs import
 import { fileURLToPath } from 'url';
 
@@ -19,7 +19,6 @@ const envFilePath = path.join(__dirname, 'socket-admin-password.env');
 dotenv.config({ path: envFilePath });
 
 // PostgreSQL Connection Pool
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -38,20 +37,28 @@ function generateRandomKey(length) {
   return key;
 }
 
+let initialized = false; // Singleton flag
+
 async function main() {
+  if (initialized) {
+    console.warn('Server has already been initialized.');
+    return;
+  }
+  initialized = true;
+
   const app = express();
   const server = http.createServer(app);
   const io = new Server(server, {
-  connectionStateRecovery: {},
-  cors: {
-    origin: [
-      'https://admin.socket.io', // Admin interface for Socket.IO
-      'https://ptcg-sim-meta.vercel.app', // Your new Vercel domain
-     // 'https://ptcgsim.online/', // If still needed; else remove
-    ],
-    credentials: true,
-  },
-});
+    connectionStateRecovery: {},
+    cors: {
+      origin: [
+        'https://admin.socket.io', // Admin interface for Socket.IO
+        'https://ptcg-sim-meta.vercel.app', // Your new Vercel domain
+        // 'https://ptcgsim.online/', // If still needed; else remove
+      ],
+      credentials: true,
+    },
+  });
 
   try {
     await pool.query(
@@ -78,6 +85,7 @@ async function main() {
   app.set('views', clientDir);
   app.use(cors());
   app.use(express.static(clientDir));
+
   app.get('/', (_, res) => {
     res.render('index', { importDataJSON: null });
   });
@@ -132,7 +140,7 @@ async function main() {
         );
       }
     });
-    // Function to handle disconnections (unintended)
+
     const disconnectHandler = (roomId, username) => {
       if (!socket.data.leaveRoom) {
         socket.to(roomId).emit('userDisconnected', username);
@@ -140,7 +148,6 @@ async function main() {
       // Remove the disconnected user from the roomInfo map
       if (roomInfo.has(roomId)) {
         const room = roomInfo.get(roomId);
-
         if (room.players.has(username)) {
           room.players.delete(username);
         } else if (room.spectators.has(username)) {
@@ -153,7 +160,7 @@ async function main() {
         }
       }
     };
-    // Function to handle event emission
+
     const emitToRoom = (eventName, data) => {
       socket.broadcast.to(data.roomId).emit(eventName, data);
       if (eventName === 'leaveRoom') {
@@ -175,7 +182,6 @@ async function main() {
 
       if (room.players.size < 2 || isSpectator) {
         socket.join(roomId);
-        // Check if the user is a spectator or there are fewer than 2 players
         if (isSpectator) {
           room.spectators.add(username);
           socket.emit('spectatorJoin');
@@ -232,11 +238,13 @@ async function main() {
       'lookShortcut',
       'stopLookingShortcut',
     ];
-// Add the error handling middleware here
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Internal Server Error');
-});
+
+    // Add the error handling middleware here
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+      res.status(500).send('Internal Server Error');
+    });
+
     // Register event listeners using the common function
     for (const event of events) {
       socket.on(event, (data) => {
@@ -252,4 +260,5 @@ app.use((err, req, res, next) => {
   });
 }
 
+// Start the server
 main();
