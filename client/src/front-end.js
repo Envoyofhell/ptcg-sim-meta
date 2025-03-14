@@ -10,7 +10,6 @@
 const logger = {
   error: (message, details = {}) => {
     console.error(`[Front-end Error] ${message}`, details);
-    // Optional: Add more advanced error tracking or reporting
   },
   warn: (message, details = {}) => {
     console.warn(`[Front-end Warning] ${message}`, details);
@@ -20,160 +19,82 @@ const logger = {
   }
 };
 
-// Import initialization scripts with error handling
-const safeImport = async (importPath, moduleName) => {
-  try {
-    const module = await import(importPath);
-    logger.info(`Successfully imported ${moduleName}`);
-    return module;
-  } catch (error) {
-    logger.error(`Failed to import ${moduleName}`, { error });
-    throw error;
-  }
+// Import global variables explicitly
+import { 
+  socket, 
+  systemState, 
+  mouseClick, 
+  version 
+} from './initialization/global-variables/global-variables.js';
+
+// Import initialization modules directly
+import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
+import { loadImportData } from './initialization/load-import-data/load-import-data.js';
+import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
+import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
+
+// Import resizer module
+import {
+  createResizer
+} from '../setup/sizing/resizer.js';
+
+// Container references
+const selfContainerDocument = document.getElementById('selfContainer');
+const oppContainerDocument = document.getElementById('oppContainer');
+
+// Log initialization start
+logger.info('Front-end.js is loading');
+
+// Initialize resizer with container references
+const resizerParams = {
+  selfContainer: selfContainerDocument,
+  oppContainer: oppContainerDocument,
+  selfContainerDocument,
+  oppContainerDocument,
+  getInitiator: () => systemState.initiator
 };
 
-// Centralized initialization manager
-const initializationManager = {
-  async importModules() {
-    try {
-      return {
-        initializeDOMEventListeners: (await safeImport('./initialization/document-event-listeners/initialize-document-event-listeners.js', 'DOM Event Listeners')).initializeDOMEventListeners,
-        loadImportData: (await safeImport('./initialization/load-import-data/load-import-data.js', 'Import Data')).loadImportData,
-        initializeMutationObservers: (await safeImport('./initialization/mutation-observers/initialize-mutation-observers.js', 'Mutation Observers')).initializeMutationObservers,
-        initializeSocketEventListeners: (await safeImport('./initialization/socket-event-listeners/socket-event-listeners.js', 'Socket Event Listeners')).initializeSocketEventListeners
-      };
-    } catch (error) {
-      logger.error('Failed to import initialization modules', { error });
-      throw error;
-    }
-  },
+// Create resizer instance
+const resizer = createResizer(resizerParams);
 
-  async initializeApp() {
+// Initialization with retry capability
+const initializeWithRetry = (initFunction, functionName, maxRetries = 3) => {
+  for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
     try {
-      const modules = await this.importModules();
+      initFunction();
+      logger.info(`${functionName} initialized successfully on attempt ${retryCount + 1}`);
+      return true;
+    } catch (error) {
+      logger.error(`${functionName} initialization attempt ${retryCount + 1} failed`, { error });
       
-      // Sequential initialization with error handling
-      await modules.initializeSocketEventListeners();
-      await modules.initializeDOMEventListeners();
-      await modules.initializeMutationObservers();
-      await modules.loadImportData();
-
-      logger.info('Application initialized successfully');
-    } catch (error) {
-      logger.error('Application initialization failed', { error });
+      // If on last attempt, rethrow to be caught by main error handler
+      if (retryCount === maxRetries - 1) {
+        throw error;
+      }
     }
   }
-};
-
-// Import global variables and state with enhanced error handling
-const importGlobalVariables = async () => {
-  try {
-    const globalVariables = await safeImport('./initialization/global-variables/global-variables.js', 'Global Variables');
-    return {
-      socket: globalVariables.socket,
-      systemState: globalVariables.systemState,
-      mouseClick: globalVariables.mouseClick,
-      version: globalVariables.version
-    };
-  } catch (error) {
-    logger.error('Failed to import global variables', { error });
-    return {};
-  }
-};
-
-// Resizer import with fallback
-const importResizer = async () => {
-  try {
-    const resizerModule = await safeImport('../setup/sizing/resizer.js', 'Resizer');
-    return resizerModule.createResizer ? resizerModule : null;
-  } catch (error) {
-    logger.error('Failed to import resizer module', { error });
-    return null;
-  }
-};
-
-// Container reference utility with error handling
-const safeGetContainerReference = (id) => {
-  const element = document.getElementById(id);
-  if (!element) {
-    logger.warn(`Container with ID ${id} not found`);
-    return null;
-  }
-  return element;
+  return false;
 };
 
 // Main initialization function
-const initializeFrontEnd = async () => {
+const initializeFrontEnd = () => {
   try {
-    // Parallel initialization of dependencies
-    const [
-      globalVars, 
-      resizerModule
-    ] = await Promise.all([
-      importGlobalVariables(),
-      importResizer()
-    ]);
+    // Sequential initialization with retries - following original order
+    initializeWithRetry(initializeSocketEventListeners, 'Socket event listeners');
+    initializeWithRetry(initializeDOMEventListeners, 'DOM event listeners');
+    initializeWithRetry(initializeMutationObservers, 'Mutation observers');
+    initializeWithRetry(loadImportData, 'Import data loading');
 
-    // Container references with error handling
-    const selfContainerDocument = safeGetContainerReference('selfContainer');
-    const oppContainerDocument = safeGetContainerReference('oppContainer');
-
-    if (!selfContainerDocument || !oppContainerDocument) {
-      throw new Error('Failed to retrieve container references');
-    }
-
-    // Resizer setup with dependency injection
-    const resizerParams = {
-      selfContainer: selfContainerDocument,
-      oppContainer: oppContainerDocument,
-      selfContainerDocument,
-      oppContainerDocument,
-      getInitiator: () => globalVars.systemState.initiator
-    };
-
-    const resizer = resizerModule ? resizerModule(resizerParams) : null;
-
-    // Initialize application
-    await initializationManager.initializeApp();
-
-    // Export essential modules and references
-    return {
-      // Global variables
-      ...globalVars,
-      
-      // Container documents
-      selfContainerDocument,
-      oppContainerDocument,
-      
-      // Backwards compatibility aliases
-      oppContainer: oppContainerDocument,
-      selfContainer: selfContainerDocument,
-
-      // Resizer functions with fallback
-      selfHandleMouseDown: resizer?.selfHandleMouseDown,
-      oppHandleMouseDown: resizer?.oppHandleMouseDown,
-      flippedSelfHandleMouseDown: resizer?.flippedSelfHandleMouseDown,
-      flippedOppHandleMouseDown: resizer?.flippedOppHandleMouseDown
-    };
+    logger.info('Application initialized successfully');
+    return true;
   } catch (error) {
     logger.error('Front-end initialization failed', { error });
-    return null;
+    return false;
   }
 };
 
 // Execute initialization
-initializeFrontEnd()
-  .then(frontEndModules => {
-    if (frontEndModules) {
-      // Export modules globally or use as needed
-      Object.entries(frontEndModules).forEach(([key, value]) => {
-        window[key] = value;
-      });
-    }
-  })
-  .catch(error => {
-    logger.error('Failed to initialize front-end modules', { error });
-  });
+initializeFrontEnd();
 
 // Optional global error handler
 window.addEventListener('error', (event) => {
@@ -186,4 +107,33 @@ window.addEventListener('error', (event) => {
   });
 });
 
-export default initializeFrontEnd;
+// Extract resizer functions
+const {
+  selfHandleMouseDown,
+  oppHandleMouseDown,
+  flippedSelfHandleMouseDown,
+  flippedOppHandleMouseDown
+} = resizer || {};
+
+// Export all necessary variables and functions
+export { 
+  // Global variables
+  socket,
+  systemState,
+  mouseClick,
+  version,
+  
+  // Container documents
+  selfContainerDocument,
+  oppContainerDocument,
+  
+  // Backwards compatibility aliases
+  oppContainerDocument as oppContainer,
+  selfContainerDocument as selfContainer,
+  
+  // Resizer functions
+  selfHandleMouseDown,
+  oppHandleMouseDown,
+  flippedSelfHandleMouseDown,
+  flippedOppHandleMouseDown
+};
