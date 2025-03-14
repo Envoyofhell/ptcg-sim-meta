@@ -3,7 +3,7 @@ import {
   oppHandleMouseDown, 
   selfHandleMouseDown,
   oppContainerDocument 
-} from '../../front-end.js';
+} from '../../../front-end.js';
 
 export const initializeResizers = () => {
   const selfResizer = document.getElementById('selfResizer');
