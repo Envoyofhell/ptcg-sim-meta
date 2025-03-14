@@ -1,3 +1,4 @@
+// In flip-board.js
 import {
   oppContainer,
   oppContainerDocument,
@@ -6,9 +7,13 @@ import {
   systemState,
 } from '../../front-end.js';
 import { refreshBoard } from '../../setup/sizing/refresh-board.js';
-import createResizer from '../../setup/sizing/resizer.js';
 import { getZone } from '../../setup/zones/get-zone.js';
 import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
+import createResizer from '../../setup/sizing/resizer.js';
+
+// Ensure selfContainer is defined before use
+let localSelfContainer = selfContainer;
+let localOppContainer = oppContainer;
 
 // Pass the required container references
 const { 
@@ -17,8 +22,8 @@ const {
   oppHandleMouseDown,
   selfHandleMouseDown 
 } = createResizer({
-  selfContainer, 
-  oppContainer,
+  selfContainer: localSelfContainer, 
+  oppContainer: localOppContainer,
   selfContainerDocument,
   oppContainerDocument
 });
