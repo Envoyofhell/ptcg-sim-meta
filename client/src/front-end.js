@@ -5,20 +5,6 @@
  * @module FrontEnd
  * @description Handles application bootstrap and core initialization
  */
-
-// Enhanced logging utility
-const logger = {
-  error: (message, details = {}) => {
-    console.error(`[Front-end Error] ${message}`, details);
-  },
-  warn: (message, details = {}) => {
-    console.warn(`[Front-end Warning] ${message}`, details);
-  },
-  info: (message, details = {}) => {
-    console.info(`[Front-end Info] ${message}`, details);
-  }
-};
-
 // Import global variables explicitly
 import { 
   socket, 
@@ -33,20 +19,35 @@ import { loadImportData } from './initialization/load-import-data/load-import-da
 import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
 import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
 
-// Import resizer module - FIXED PATH HERE
+// Import resizer module with a fixed path
 import { createResizer } from './setup/sizing/resizer.js';
 
-// Container references
-const selfContainerDocument = document.getElementById('selfContainer');
-const oppContainerDocument = document.getElementById('oppContainer');
+// Create a logger for better error tracking and debugging
+const logger = {
+  error: (message, details = {}) => {
+    console.error(`[Front-end Error] ${message}`, details);
+  },
+  warn: (message, details = {}) => {
+    console.warn(`[Front-end Warning] ${message}`, details);
+  },
+  info: (message, details = {}) => {
+    console.info(`[Front-end Info] ${message}`, details);
+  }
+};
+
+// Container references - use direct DOM selection
+const selfContainer = document.getElementById('selfContainer');
+const oppContainer = document.getElementById('oppContainer');
+const selfContainerDocument = selfContainer;
+const oppContainerDocument = oppContainer;
 
 // Log initialization start
 logger.info('Front-end.js is loading');
 
 // Initialize resizer with container references
 const resizerParams = {
-  selfContainer: selfContainerDocument,
-  oppContainer: oppContainerDocument,
+  selfContainer,
+  oppContainer,
   selfContainerDocument,
   oppContainerDocument,
   getInitiator: () => systemState.initiator
@@ -121,13 +122,11 @@ export {
   mouseClick,
   version,
   
-  // Container documents
+  // Container references
+  selfContainer,
+  oppContainer,
   selfContainerDocument,
   oppContainerDocument,
-  
-  // Backwards compatibility aliases
-  oppContainerDocument as oppContainer,
-  selfContainerDocument as selfContainer,
   
   // Resizer functions
   selfHandleMouseDown,
