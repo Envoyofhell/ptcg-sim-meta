@@ -33,10 +33,8 @@ import { loadImportData } from './initialization/load-import-data/load-import-da
 import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
 import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
 
-// Import resizer module
-import {
-  createResizer
-} from '/src/setup/sizing/resizer.js';
+// Import resizer module - FIXED PATH HERE
+import { createResizer } from './setup/sizing/resizer.js';
 
 // Container references
 const selfContainerDocument = document.getElementById('selfContainer');
@@ -56,6 +54,14 @@ const resizerParams = {
 
 // Create resizer instance
 const resizer = createResizer(resizerParams);
+
+// Extract resize handlers from the resizer instance
+const {
+  selfHandleMouseDown,
+  oppHandleMouseDown,
+  flippedSelfHandleMouseDown,
+  flippedOppHandleMouseDown
+} = resizer || {};
 
 // Initialization with retry capability
 const initializeWithRetry = (initFunction, functionName, maxRetries = 3) => {
@@ -106,14 +112,6 @@ window.addEventListener('error', (event) => {
     error: event.error
   });
 });
-
-// Extract resizer functions
-const {
-  selfHandleMouseDown,
-  oppHandleMouseDown,
-  flippedSelfHandleMouseDown,
-  flippedOppHandleMouseDown
-} = resizer || {};
 
 // Export all necessary variables and functions
 export { 

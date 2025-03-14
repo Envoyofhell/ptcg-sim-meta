@@ -27,6 +27,52 @@ const logger = {
 };
 
 /**
+ * Adjust card positioning and scaling after resize
+ * Export it directly for use in refresh-board.js
+ * @param {string} user User identifier ('self' or 'opp')
+ * @param {string} zoneId Zone identifier
+ * @param {number} ratio Scaling ratio
+ */
+export const adjustCards = (user, zoneId, ratio) => {
+  try {
+    const zone = getZone(user, zoneId);
+    zone.array.forEach((card) => {
+      if (card.image.attached) {
+        if (card.type === 'Pokémon') {
+          const oldBottom = parseFloat(card.image.style.bottom);
+          const newBottom = oldBottom * ratio;
+          card.image.style.bottom = `${newBottom}px`;
+        } else {
+          const oldLeft = parseFloat(card.image.style.left);
+          const newLeft = oldLeft * ratio;
+          card.image.style.left = `${newLeft}px`;
+        }
+      } else {
+        const baseWidth = parseFloat(card.image.clientWidth);
+        const adjustment = parseFloat(card.image.clientWidth / 6);
+        const newWidth = (baseWidth + card.image.energyLayer * adjustment) * ratio;
+        card.image.parentElement.style.width = `${newWidth}px`;
+      }
+      
+      const index = zone.array.findIndex((loopCard) => loopCard === card);
+      
+      // Update counters if present
+      if (card.image.damageCounter) {
+        addDamageCounter(user, zoneId, index, false, false);
+      }
+      if (card.image.specialCondition) {
+        addSpecialCondition(user, zoneId, index, false);
+      }
+      if (card.image.abilityCounter) {
+        addAbilityCounter(user, zoneId, index);
+      }
+    });
+  } catch (error) {
+    logger.error('Card adjustment failed', { error, user, zoneId });
+  }
+};
+
+/**
  * Creates a resizer object with container references and resize handlers
  * @param {Object} params Configuration parameters
  * @param {HTMLElement} params.selfContainer Reference to self container
@@ -68,51 +114,6 @@ export const createResizer = (params) => {
   const stadiumElement = document.getElementById('stadium');
   const selfResizer = document.getElementById('selfResizer');
   const oppResizer = document.getElementById('oppResizer');
-
-  /**
-   * Adjust card positioning and scaling after resize
-   * @param {string} user User identifier ('self' or 'opp')
-   * @param {string} zoneId Zone identifier
-   * @param {number} ratio Scaling ratio
-   */
-  const adjustCards = (user, zoneId, ratio) => {
-    try {
-      const zone = getZone(user, zoneId);
-      zone.array.forEach((card) => {
-        if (card.image.attached) {
-          if (card.type === 'Pokémon') {
-            const oldBottom = parseFloat(card.image.style.bottom);
-            const newBottom = oldBottom * ratio;
-            card.image.style.bottom = `${newBottom}px`;
-          } else {
-            const oldLeft = parseFloat(card.image.style.left);
-            const newLeft = oldLeft * ratio;
-            card.image.style.left = `${newLeft}px`;
-          }
-        } else {
-          const baseWidth = parseFloat(card.image.clientWidth);
-          const adjustment = parseFloat(card.image.clientWidth / 6);
-          const newWidth = (baseWidth + card.image.energyLayer * adjustment) * ratio;
-          card.image.parentElement.style.width = `${newWidth}px`;
-        }
-        
-        const index = zone.array.findIndex((loopCard) => loopCard === card);
-        
-        // Update counters if present
-        if (card.image.damageCounter) {
-          addDamageCounter(user, zoneId, index, false, false);
-        }
-        if (card.image.specialCondition) {
-          addSpecialCondition(user, zoneId, index, false);
-        }
-        if (card.image.abilityCounter) {
-          addAbilityCounter(user, zoneId, index);
-        }
-      });
-    } catch (error) {
-      logger.error('Card adjustment failed', { error, user, zoneId });
-    }
-  };
 
   /**
    * Handler for self container resizing
@@ -500,8 +501,7 @@ export const createResizer = (params) => {
     stopSelfResize,
     stopOppResize,
     flippedStopSelfResize,
-    flippedStopOppResize,
-    adjustCards
+    flippedStopOppResize
   };
 };
 
