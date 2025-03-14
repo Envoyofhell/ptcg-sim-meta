@@ -11,6 +11,14 @@ import {
     version 
 } from './initialization/global-variables/global-variables.js';
 
+// Resizer function imports
+import {
+    oppHandleMouseDown,
+    selfHandleMouseDown,
+    flippedOppHandleMouseDown,
+    flippedSelfHandleMouseDown
+} from '../setup/sizing/resizer.js';
+
 // Container references
 const selfContainerDocument = document.getElementById('selfContainer');
 const oppContainerDocument = document.getElementById('oppContainer');
@@ -78,21 +86,27 @@ initializeWithRetry();
 
 // Export necessary modules and references
 export { 
-  socket,
-  systemState,
-  mouseClick,
-  version,
-  
-  // Container documents
-  selfContainerDocument,
-  oppContainerDocument,
-  
-  // Rename export
-  oppContainerDocument as oppContainer,
-  selfContainerDocument as selfContainer,
-  
-  initializeCardContextMenu,
-  initializeSidebox,
-  initializeTable,
-  initializeWindow
+    socket,
+    systemState,
+    mouseClick,
+    version,
+    
+    // Container documents
+    selfContainerDocument,
+    oppContainerDocument,
+    
+    // Rename export
+    oppContainerDocument as oppContainer,
+    selfContainerDocument as selfContainer,
+    
+    initializeCardContextMenu,
+    initializeSidebox,
+    initializeTable,
+    initializeWindow,
+
+    // Resizer functions
+    oppHandleMouseDown,
+    selfHandleMouseDown,
+    flippedOppHandleMouseDown,
+    flippedSelfHandleMouseDown
 };
