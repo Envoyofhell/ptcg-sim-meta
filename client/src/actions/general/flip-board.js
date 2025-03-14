@@ -6,12 +6,14 @@ import {
   systemState,
 } from '../../front-end.js';
 import { refreshBoard } from '../../setup/sizing/refresh-board.js';
-import {
+import createResizer from '../../setup/sizing/resizer.js';
+
+const { 
   flippedOppHandleMouseDown,
   flippedSelfHandleMouseDown,
   oppHandleMouseDown,
-  selfHandleMouseDown,
-} from '../../setup/sizing/resizer.js';
+  selfHandleMouseDown 
+} = createResizer();
 import { getZone } from '../../setup/zones/get-zone.js';
 import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
 
