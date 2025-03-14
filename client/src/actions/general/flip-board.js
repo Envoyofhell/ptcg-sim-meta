@@ -6,7 +6,9 @@ import {
   systemState,
 } from '../../front-end.js';
 import { refreshBoard } from '../../setup/sizing/refresh-board.js';
-import createResizer from '../../setup/sizing/resizer.js';
+import createResizer from '../../setup/sizing/resizer.js';  // Move this up
+import { getZone } from '../../setup/zones/get-zone.js';
+import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
 
 const { 
   flippedOppHandleMouseDown,
@@ -14,8 +16,6 @@ const {
   oppHandleMouseDown,
   selfHandleMouseDown 
 } = createResizer();
-import { getZone } from '../../setup/zones/get-zone.js';
-import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
 
 export const flipBoard = () => {
   const selfResizer = document.getElementById('selfResizer');
