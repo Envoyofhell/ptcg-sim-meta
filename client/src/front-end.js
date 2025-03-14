@@ -89,6 +89,7 @@ export {
   
   // Rename export
   oppContainerDocument as oppContainer,
+  selfContainerDocument as selfContainer,
   
   initializeCardContextMenu,
   initializeSidebox,
