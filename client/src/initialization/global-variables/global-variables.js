@@ -20,9 +20,13 @@ if (typeof import.meta !== 'undefined' && import.meta.url) {
 export const version = '1.5.1';
 
 // Socket connection
-export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Production URL
+export const socket = io('https://ptcg-sim-meta.onrender.com', {
+  withCredentials: true
+});
+//export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Production URL
 // Uncomment for local development
 // export const socket = io('http://localhost:4000/');
+
 
 // Function to initialize DOM elements safely
 const getElement = (id) => {

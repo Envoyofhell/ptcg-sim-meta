@@ -274,7 +274,7 @@ export const initializeSocketEventListeners = () => {
   });
 
   socket.on('exportGameStateSuccessful', (key) => {
-    const url = `https://ptcg-sim-meta.vercel.app/import?key=${key}`; // Update to Vercel URL
+    const url = `https://ptcg-sim-meta.vercel.app/import?key=${key}`; // Keep this as your Vercel URL
     appendMessage('self', url, 'announcement', false);
   });
 
