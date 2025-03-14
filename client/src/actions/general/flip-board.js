@@ -1,4 +1,4 @@
-Copy// In flip-board.js
+// In flip-board.js
 import {
   oppContainerDocument,
   selfContainerDocument,
