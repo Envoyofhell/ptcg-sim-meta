@@ -1,8 +1,6 @@
-// In flip-board.js
+Copy// In flip-board.js
 import {
-  oppContainer,
   oppContainerDocument,
-  selfContainer,
   selfContainerDocument,
   systemState,
 } from '../../front-end.js';
@@ -11,9 +9,15 @@ import { getZone } from '../../setup/zones/get-zone.js';
 import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
 import createResizer from '../../setup/sizing/resizer.js';
 
-// Ensure selfContainer is defined before use
-let localSelfContainer = selfContainer;
-let localOppContainer = oppContainer;
+// Safely get container elements
+const selfContainer = document.getElementById('selfContainer');
+const oppContainer = document.getElementById('oppContainer');
+
+// Verify containers exist before proceeding
+if (!selfContainer || !oppContainer) {
+  console.error('Container elements not found');
+  throw new Error('Required container elements are missing');
+}
 
 // Pass the required container references
 const { 
@@ -22,13 +26,13 @@ const {
   oppHandleMouseDown,
   selfHandleMouseDown 
 } = createResizer({
-  selfContainer: localSelfContainer, 
-  oppContainer: localOppContainer,
+  selfContainer, 
+  oppContainer,
   selfContainerDocument,
   oppContainerDocument
 });
 
-export const flipBoard = () => {
+export function flipBoard() {
   const selfResizer = document.getElementById('selfResizer');
   const oppResizer = document.getElementById('oppResizer');
   const attackButton = document.getElementById('attackButton');
@@ -54,11 +58,9 @@ export const flipBoard = () => {
     selfResizer.addEventListener('mousedown', flippedSelfHandleMouseDown);
     oppResizer.addEventListener('mousedown', flippedOppHandleMouseDown);
 
-    if (
-      systemState.isTwoPlayer ||
+    if (systemState.isTwoPlayer ||
       (!systemState.isTwoPlayer &&
-        document.getElementById('hideHandCheckbox').checked)
-    ) {
+        document.getElementById('hideHandCheckbox').checked)) {
       lookAtCards('opp', '', 'hand', false, true);
       stopLookingAtCards('self', '', 'hand', false, true);
     }
@@ -68,11 +70,9 @@ export const flipBoard = () => {
     selfResizer.removeEventListener('mousedown', flippedSelfHandleMouseDown);
     oppResizer.removeEventListener('mousedown', flippedOppHandleMouseDown);
 
-    if (
-      systemState.isTwoPlayer ||
+    if (systemState.isTwoPlayer ||
       (!systemState.isTwoPlayer &&
-        document.getElementById('hideHandCheckbox').checked)
-    ) {
+        document.getElementById('hideHandCheckbox').checked)) {
       lookAtCards('self', '', 'hand', false, true);
       stopLookingAtCards('opp', '', 'hand', false, true);
     }
@@ -125,8 +125,7 @@ export const flipBoard = () => {
   const specialMoveButtonContainers = ['specialMoveButtonContainer'];
 
   for (const user of users) {
-    const document =
-      user === 'self' ? selfContainerDocument : oppContainerDocument;
+    const document = user === 'self' ? selfContainerDocument : oppContainerDocument;
 
     for (const textId of textIds) {
       const text = document.getElementById(textId);
@@ -196,4 +195,4 @@ export const flipBoard = () => {
     }
   }
   refreshBoard();
-};
+}
