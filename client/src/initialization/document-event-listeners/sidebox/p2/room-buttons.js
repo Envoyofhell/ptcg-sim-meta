@@ -1,9 +1,6 @@
 console.log('★★★ FIXED: room-buttons.js loaded with corrected imports ★★★');
 import { reset } from '../../../../actions/general/reset.js';
-import {
-  socket,
-  systemState,
-} from '../../../initialization/global-variables/global-variables.js';
+import { socket, systemState } from '@frontend';
 import { cleanActionData } from '../../../../setup/general/clean-action-data.js';
 import { processAction } from '../../../../setup/general/process-action.js';
 import { handleSpectatorButtons } from '../../../../setup/spectator/handle-spectator-buttons.js';

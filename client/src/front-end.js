@@ -1,11 +1,23 @@
+// In front-end.js
 import { initializeCardContextMenu } from './initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js';
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
 
+// Import global variables to re-export them
+import { 
+  socket, 
+  systemState, 
+  mouseClick, 
+  version 
+} from './initialization/global-variables/global-variables.js';
+
+// Re-export global variables
+export { socket, systemState, mouseClick, version };
+
 // Example definitions for the containers
-export const selfContainerDocument = document.getElementById('self-container'); // Make sure this ID exists in your HTML
-export const oppContainerDocument = document.getElementById('opp-container'); // Ensure this ID also exists
+export const selfContainerDocument = document.getElementById('selfContainer');
+export const oppContainerDocument = document.getElementById('oppContainer');
 
 // Import individual functions from the respective modules
 console.log('Front-end.js is loading');

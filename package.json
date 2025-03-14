@@ -14,7 +14,10 @@
   "license": "ISC",
   "author": "EnvoyOfHell",
   "main": "server/server.js",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
@@ -31,11 +34,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "css-loader": "^7.1.2",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^15.14.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "style-loader": "^4.0.0"
   },
   "engines": {
     "node": ">=18"
