@@ -3,7 +3,7 @@ import { initializeCardContextMenu } from './initialization/document-event-liste
 import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
 import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
 import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
-
+import { initializeResizers } from './initialization/document-event-listeners/table/resizer.js';
 import { 
     socket, 
     systemState, 
@@ -61,6 +61,12 @@ const initializeDOMEventListeners = () => {
     } catch (error) {
         console.error('Failed to initialize window:', error);
     }
+    try {
+      initializeResizers();
+      console.log('Resizers initialized successfully.');
+  } catch (error) {
+      console.error('Failed to initialize resizers:', error);
+  }
 };
 
 // Function to initialize event listeners with retries if necessary
