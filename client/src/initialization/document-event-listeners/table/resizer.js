@@ -1,8 +1,8 @@
-import {
-  oppHandleMouseDown,
+import { 
+  oppHandleMouseDown, 
   selfHandleMouseDown,
   oppContainerDocument 
-} from '../../../setup/sizing/resizer.js';
+} from '../../../front-end.js';
 
 export const initializeResizers = () => {
   const selfResizer = document.getElementById('selfResizer');
