@@ -1,57 +1,80 @@
-// In flip-board.js
+// Import necessary modules and dependencies
 import {
   oppContainerDocument,
   selfContainerDocument,
   systemState,
 } from '../../front-end.js';
+
+// Import utility functions for board refresh and zone management
 import { refreshBoard } from '../../setup/sizing/refresh-board.js';
 import { getZone } from '../../setup/zones/get-zone.js';
+
+// Import card visibility toggle functions
 import { lookAtCards, stopLookingAtCards } from './reveal-and-hide.js';
+
+// Import the resizer utility for managing container interactions
 import createResizer from '../../setup/sizing/resizer.js';
 
-// Safely get container elements
+// Safely select container elements from the DOM
+// These are critical UI containers for the game interface
 const selfContainer = document.getElementById('selfContainer');
 const oppContainer = document.getElementById('oppContainer');
 
-// Verify containers exist before proceeding
+// Perform a critical safety check to ensure containers exist
+// This prevents potential runtime errors if DOM elements are missing
 if (!selfContainer || !oppContainer) {
   console.error('Container elements not found');
   throw new Error('Required container elements are missing');
 }
 
-// Pass the required container references
-const { 
+// Initialize the resizer with container references
+// The resizer manages mouse interactions and container behaviors
+const {
+  // Extract mouse event handlers for different container states
   flippedOppHandleMouseDown,
   flippedSelfHandleMouseDown,
   oppHandleMouseDown,
-  selfHandleMouseDown 
+  selfHandleMouseDown
 } = createResizer({
-  selfContainer, 
+  // Pass container references to the resizer
+  selfContainer,
   oppContainer,
   selfContainerDocument,
   oppContainerDocument
 });
 
+// Primary function to flip the game board
+// Handles UI state changes when switching perspectives
 export function flipBoard() {
+  // Select critical UI elements using direct DOM queries
+  // Each element represents a specific interactive component
   const selfResizer = document.getElementById('selfResizer');
   const oppResizer = document.getElementById('oppResizer');
+  
+  // Game action buttons
   const attackButton = document.getElementById('attackButton');
   const passButton = document.getElementById('passButton');
   const undoButton = document.getElementById('undoButton');
   const FREEBUTTON = document.getElementById('FREEBUTTON');
   const setupButton = document.getElementById('setupButton');
   const resetButton = document.getElementById('resetButton');
+
+  // Player 2 specific buttons (for two-player mode)
   const p2AttackButton = document.getElementById('p2AttackButton');
   const p2PassButton = document.getElementById('p2PassButton');
-  // const p2UndoButton = document.getElementById('p2UndoButton');
+  // Commented out button: const p2UndoButton = document.getElementById('p2UndoButton');
   const p2FREEBUTTON = document.getElementById('p2FREEBUTTON');
   const p2SetupButton = document.getElementById('p2SetupButton');
   const p2ResetButton = document.getElementById('p2ResetButton');
+
+  // Select board and view card elements using container documents
+  // This ensures correct selection within the specific container context
   const boardElement = selfContainerDocument.getElementById('board');
   const oppBoardElement = oppContainerDocument.getElementById('board');
   const viewCardsElement = selfContainerDocument.getElementById('viewCards');
   const oppViewCardsElement = oppContainerDocument.getElementById('viewCards');
 
+}
   if (systemState.initiator === 'self') {
     selfResizer.removeEventListener('mousedown', selfHandleMouseDown);
     oppResizer.removeEventListener('mousedown', oppHandleMouseDown);
