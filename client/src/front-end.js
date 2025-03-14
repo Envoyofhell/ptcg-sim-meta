@@ -1,17 +1,25 @@
 // front-end.js
-const { initializeCardContextMenu } = require('./initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js');
-const { initializeSidebox } = require('./initialization/document-event-listeners/sidebox/initialize-sidebox.js');
-const { initializeTable } = require('./initialization/document-event-listeners/table/initialize-table.js');
-const { initializeWindow } = require('./initialization/document-event-listeners/window/window.js');
+import { initializeCardContextMenu } from './initialization/document-event-listeners/card-context-menu/initialize-card-context-menu.js';
+import { initializeSidebox } from './initialization/document-event-listeners/sidebox/initialize-sidebox.js';
+import { initializeTable } from './initialization/document-event-listeners/table/initialize-table.js';
+import { initializeWindow } from './initialization/document-event-listeners/window/window.js';
 
-// Import global variables
-const { 
+import { 
     socket, 
     systemState, 
     mouseClick, 
     version 
-} = require('./initialization/global-variables/global-variables.js');
+} from './initialization/global-variables/global-variables.js';
 
+// Rest of the code remains the same, but use export instead of module.exports
+export { 
+    socket, 
+    systemState, 
+    mouseClick, 
+    version,
+    selfContainerDocument,
+    oppContainerDocument
+};
 // Global container references
 const selfContainerDocument = document.getElementById('selfContainer');
 const oppContainerDocument = document.getElementById('oppContainer');
