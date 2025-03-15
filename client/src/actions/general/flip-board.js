@@ -1,7 +1,5 @@
 // Import necessary modules and dependencies
 import {
-  oppContainerDocument,
-  selfContainerDocument,
   systemState,
 } from '../../front-end.js';
 
@@ -19,6 +17,10 @@ import createResizer from '../../setup/sizing/resizer.js';
 // These are critical UI containers for the game interface
 const selfContainer = document.getElementById('selfContainer');
 const oppContainer = document.getElementById('oppContainer');
+
+// Create container documents directly from DOM elements
+const selfContainerDocument = selfContainer;
+const oppContainerDocument = oppContainer;
 
 // Perform a critical safety check to ensure containers exist
 // This prevents potential runtime errors if DOM elements are missing
@@ -46,8 +48,13 @@ const {
 // Primary function to flip the game board
 // Handles UI state changes when switching perspectives
 export function flipBoard() {
-  // Select critical UI elements using direct DOM queries
-  // Each element represents a specific interactive component
+  // Ensure containers are available before proceeding
+  if (!selfContainerDocument || !oppContainerDocument) {
+    console.error('Container documents are not initialized');
+    return;
+  }
+
+  // Rest of the function remains the same as in the previous implementation
   const selfResizer = document.getElementById('selfResizer');
   const oppResizer = document.getElementById('oppResizer');
   
