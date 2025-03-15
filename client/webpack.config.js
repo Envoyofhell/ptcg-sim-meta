@@ -7,7 +7,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
-        publicPath: '/'
+        publicPath: '/' // This ensures assets are served from the root
     },
     module: {
         rules: [
@@ -24,6 +24,13 @@ module.exports = {
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
+            },
+            {
+                test: /\.(png|jpe?g|gif|svg|woff|woff2|eot|ttf|otf)$/i,
+                type: 'asset/resource',
+                generator: {
+                    filename: 'assets/[name][ext]'
+                }
             },
             // Add source map loader
             {
@@ -44,6 +51,7 @@ module.exports = {
     devServer: {
         static: {
             directory: path.join(__dirname, 'dist'),
+            publicPath: '/', // Ensure assets are served from root
         },
         hot: true,
         port: 3000,

@@ -91,9 +91,9 @@ export const systemState = {
     return selfContainer.classList.contains('self') ? 'self' : 'opp';
   },
   roomId: '',
-  cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
-  p1OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
-  p2OppCardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+  cardBackSrc: '/src/assets/cardback.png',
+  p1OppCardBackSrc: '/src/assets/cardback.png',
+  p2OppCardBackSrc: '/src/assets/cardback.png',
 };
 
 // Preload images
@@ -102,7 +102,7 @@ const preloadImages = (imageUrls) => {
 };
 
 preloadImages([
-  'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',
+  '/src/assets/cardback.png',
   // Add more images as needed
 ]);
 
