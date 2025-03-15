@@ -2,67 +2,45 @@ import { initializeBoardObserver } from './board-observer.js';
 import { initializeHandObserver } from './hand-observer.js';
 import { initializePrizesObserver } from './prizes-observer.js';
 import { initializeStadiumObserver } from './stadium-observer.js';
+import { onDOMReady, initializeWhenReady } from '../dom-ready-helper.js';
 
 /**
- * Initialize all mutation observers
- * This function ensures observers are only initialized when the DOM is ready
+ * Initialize all mutation observers with proper DOM readiness checks
  */
 export const initializeMutationObservers = () => {
-  // Function to check if the DOM is ready for observer initialization
-  const isDomReady = () => {
-    // Check for key elements that observers will monitor
-    const selfContainer = document.getElementById('selfContainer');
-    const oppContainer = document.getElementById('oppContainer');
-    const stadium = document.getElementById('stadium');
+  console.log('Setting up mutation observers...');
+  
+  // Only initialize observers when DOM is fully loaded
+  onDOMReady(() => {
+    console.log('DOM is ready, starting observer initialization');
     
-    return selfContainer && oppContainer && stadium;
-  };
-
-  // Safely initialize all observers with error handling
-  const safelyInitialize = () => {
-    try {
-      console.log('Initializing mutation observers...');
-      
-      // Initialize each observer with error handling
-      const observers = [
-        { name: 'Board Observer', fn: initializeBoardObserver },
-        { name: 'Hand Observer', fn: initializeHandObserver },
-        { name: 'Prizes Observer', fn: initializePrizesObserver },
-        { name: 'Stadium Observer', fn: initializeStadiumObserver }
-      ];
-      
-      observers.forEach(({ name, fn }) => {
-        try {
-          fn();
-          console.log(`${name} initialized successfully`);
-        } catch (error) {
-          console.error(`Error initializing ${name}:`, error);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to initialize mutation observers:', error);
-    }
-  };
-
-  // If DOM is ready, initialize immediately
-  if (isDomReady()) {
-    safelyInitialize();
-  } else {
-    // If not ready, wait for DOM to be ready
-    console.log('DOM not ready for observers, will initialize when ready');
+    // Define the required elements for each observer
+    const observerConfig = [
+      {
+        name: 'Board Observer',
+        init: initializeBoardObserver,
+        selectors: ['#selfContainer #board', '#oppContainer #board']
+      },
+      {
+        name: 'Hand Observer',
+        init: initializeHandObserver,
+        selectors: ['#selfContainer #hand', '#oppContainer #hand']
+      },
+      {
+        name: 'Prizes Observer',
+        init: initializePrizesObserver,
+        selectors: ['#selfContainer #prizes', '#oppContainer #prizes']
+      },
+      {
+        name: 'Stadium Observer',
+        init: initializeStadiumObserver,
+        selectors: ['#stadium', '#boardButtonContainer']
+      }
+    ];
     
-    // Try again soon, using both the load event and a timeout as fallbacks
-    window.addEventListener('DOMContentLoaded', () => {
-      if (isDomReady()) safelyInitialize();
+    // Initialize each observer with its required elements
+    observerConfig.forEach(config => {
+      initializeWhenReady(config.init, config.selectors, config.name);
     });
-    
-    window.addEventListener('load', () => {
-      if (isDomReady()) safelyInitialize();
-    });
-    
-    // Final fallback with a timeout
-    setTimeout(() => {
-      if (isDomReady()) safelyInitialize();
-    }, 1000);
-  }
+  });
 };

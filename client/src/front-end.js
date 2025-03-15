@@ -1,136 +1,159 @@
 /**
- * Front-end Initialization Module for PTCG Simulator
- * Manages application initialization, event listeners, and core setup
- * 
- * @module FrontEnd
- * @description Handles application bootstrap and core initialization
+ * Front-end.js - Main entry point for the PTCG Simulator application
+ * Handles initialization of all application components and exports global variables
  */
-// Import global variables explicitly
-import { 
-  socket, 
-  systemState, 
-  mouseClick, 
-  version 
-} from './initialization/global-variables/global-variables.js';
 
-// Import initialization modules directly
-import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
-import { loadImportData } from './initialization/load-import-data/load-import-data.js';
-import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
+// Export everything from global-variables for use throughout the application
+export * from './initialization/global-variables/global-variables.js';
+
+// Import the key services and initialization functions
 import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
+import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
+import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
+import { loadImportData } from './initialization/load-import-data/load-import-data.js';
 
-// Import resizer module with a fixed path
-import { createResizer } from './setup/sizing/resizer.js';
+// Import any other modules that need to be accessible globally
+import { getZone } from './setup/zones/get-zone.js';
+import { systemState, selfContainer, oppContainer, socket } from './initialization/global-variables/global-variables.js';
+import createResizer from './setup/sizing/resizer.js';
 
-// Create a logger for better error tracking and debugging
+// Logger for frontend events
 const logger = {
-  error: (message, details = {}) => {
-    console.error(`[Front-end Error] ${message}`, details);
+  info: (message, details = {}) => {
+    console.log('[Front-end Info]', message, details);
   },
   warn: (message, details = {}) => {
-    console.warn(`[Front-end Warning] ${message}`, details);
+    console.warn('[Front-end Warning]', message, details);
   },
-  info: (message, details = {}) => {
-    console.info(`[Front-end Info] ${message}`, details);
+  error: (message, details = {}) => {
+    console.error('[Front-end Error]', message, details);
   }
 };
 
-// Container references - use direct DOM selection
-const selfContainer = document.getElementById('selfContainer');
-const oppContainer = document.getElementById('oppContainer');
-const selfContainerDocument = selfContainer;
-const oppContainerDocument = oppContainer;
-
-// Log initialization start
-logger.info('Front-end.js is loading');
-
-// Initialize resizer with container references
-const resizerParams = {
-  selfContainer,
-  oppContainer,
-  selfContainerDocument,
-  oppContainerDocument,
-  getInitiator: () => systemState.initiator
+/**
+ * Checks if the DOM is fully loaded and ready
+ * @param {Function} callback - Function to call when DOM is ready
+ */
+const onDOMReady = (callback) => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback);
+  } else {
+    callback();
+  }
 };
 
-// Create resizer instance
-const resizer = createResizer(resizerParams);
-
-// Extract resize handlers from the resizer instance
-const {
-  selfHandleMouseDown,
-  oppHandleMouseDown,
-  flippedSelfHandleMouseDown,
-  flippedOppHandleMouseDown
-} = resizer || {};
-
-// Initialization with retry capability
-const initializeWithRetry = (initFunction, functionName, maxRetries = 3) => {
-  for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
+// Initialize components with retry mechanism
+const initializeWithRetry = (initFn, name, maxRetries = 3) => {
+  let attempt = 1;
+  
+  const tryInit = () => {
     try {
-      initFunction();
-      logger.info(`${functionName} initialized successfully on attempt ${retryCount + 1}`);
+      initFn();
+      logger.info(`${name} initialized successfully on attempt ${attempt}`, { attempt });
       return true;
     } catch (error) {
-      logger.error(`${functionName} initialization attempt ${retryCount + 1} failed`, { error });
+      logger.error(`${name} initialization attempt ${attempt} failed`, error);
       
-      // If on last attempt, rethrow to be caught by main error handler
-      if (retryCount === maxRetries - 1) {
-        throw error;
+      if (attempt < maxRetries) {
+        attempt++;
+        setTimeout(tryInit, 500 * attempt); // Increasing delay between retries
+        return false;
+      } else {
+        logger.error(`${name} initialization failed after ${maxRetries} attempts`);
+        return false;
       }
     }
-  }
-  return false;
+  };
+  
+  return tryInit();
 };
 
-// Main initialization function
-const initializeFrontEnd = () => {
-  try {
-    // Sequential initialization with retries - following original order
-    initializeWithRetry(initializeSocketEventListeners, 'Socket event listeners');
-    initializeWithRetry(initializeDOMEventListeners, 'DOM event listeners');
-    initializeWithRetry(initializeMutationObservers, 'Mutation observers');
-    initializeWithRetry(loadImportData, 'Import data loading');
-
-    logger.info('Application initialized successfully');
-    return true;
-  } catch (error) {
-    logger.error('Front-end initialization failed', { error });
-    return false;
-  }
-};
-
-// Execute initialization
-initializeFrontEnd();
-
-// Optional global error handler
-window.addEventListener('error', (event) => {
-  logger.error('Unhandled front-end error', {
-    message: event.message,
-    filename: event.filename,
-    lineno: event.lineno,
-    colno: event.colno,
-    error: event.error
-  });
+// Create resizer instance for the containers
+// Initialize this early to make it available for other modules
+const {
+  selfHandleMouseDown,
+  oppHandleMouseDown
+} = createResizer({
+  selfContainer,
+  oppContainer
 });
 
-// Export all necessary variables and functions
-export { 
-  // Global variables
-  socket,
-  systemState,
-  mouseClick,
-  version,
-  
-  // Container references
-  selfContainer,
-  oppContainer,
-  selfContainerDocument,
-  oppContainerDocument,
-  
-  // Resizer functions
-  selfHandleMouseDown,
-  oppHandleMouseDown,
-  flippedSelfHandleMouseDown,
-  flippedOppHandleMouseDown
+// Export the mouse handlers for other modules
+export { selfHandleMouseDown, oppHandleMouseDown };
+
+// Initialize all application components in correct sequence
+const initializeFrontEnd = () => {
+  try {
+    logger.info('Front-end.js is loading');
+    
+    // Step 1: Initialize socket event listeners
+    initializeWithRetry(initializeSocketEventListeners, 'Socket event listeners');
+    
+    // Step 2: Initialize DOM event listeners
+    initializeWithRetry(initializeDOMEventListeners, 'DOM event listeners');
+    
+    // Step 3: Initialize mutation observers
+    initializeWithRetry(initializeMutationObservers, 'Mutation observers');
+    
+    // Step 4: Load import data if available
+    // This is wrapped in a function to allow retries
+    const tryLoadImportData = () => {
+      try {
+        loadImportData();
+        logger.info('Import data loading completed');
+        return true;
+      } catch (error) {
+        logger.error('Import data loading failed', error);
+        return false;
+      }
+    };
+    
+    // Try loading import data with retries
+    for (let i = 1; i <= 3; i++) {
+      if (tryLoadImportData()) break;
+      logger.error(`Import data loading initialization attempt ${i} failed`);
+      
+      if (i === 3) {
+        logger.warn('Import data initialization failed, but application may still function');
+      }
+    }
+    
+    // Initialize resizers after DOM is fully loaded
+    const selfResizer = document.getElementById('selfResizer');
+    const oppResizer = document.getElementById('oppResizer');
+    
+    if (selfResizer && oppResizer) {
+      selfResizer.addEventListener('mousedown', selfHandleMouseDown);
+      oppResizer.addEventListener('mousedown', oppHandleMouseDown);
+      logger.info('Resizers initialized successfully');
+    } else {
+      logger.warn('Resizer elements not found, resizer functionality disabled');
+    }
+    
+    // Log successful initialization
+    logger.info('Front-end initialization completed successfully');
+    
+  } catch (error) {
+    logger.error('Front-end initialization failed', error);
+  }
 };
+
+// Define global objects for other modules to use
+export const mouseClick = {
+  cardIndex: '',
+  zoneId: '',
+  cardUser: '',
+  playContainer: '',
+  playContainerParent: '',
+  selectingCard: false,
+  isActiveZone: '',
+  get card() {
+    if (this.zoneId) {
+      return getZone(this.cardUser, this.zoneId).array[this.cardIndex];
+    }
+    return null;
+  },
+};
+
+// Start initialization when document is ready
+onDOMReady(initializeFrontEnd);
