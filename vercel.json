@@ -8,6 +8,10 @@
     {
       "src": "client/src/**/*",
       "use": "@vercel/static"
+    },
+    {
+      "src": "client/src/initialization/error-tracking.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -20,8 +24,8 @@
       "dest": "client/src/$1"
     },
     {
-      "src": "/src/initialization/(.*)",
-      "dest": "client/src/initialization/$1"
+      "src": "/src/initialization/error-tracking.js",
+      "dest": "client/src/initialization/error-tracking.js"
     },
     {
       "src": "/(.*)",
