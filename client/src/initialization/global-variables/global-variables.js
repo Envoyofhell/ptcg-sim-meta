@@ -19,17 +19,46 @@ if (typeof import.meta !== 'undefined' && import.meta.url) {
 // Application version
 export const version = '1.5.1';
 
-// Socket connection
+// Socket connection with improved configuration
 export const socket = io('https://ptcg-sim-meta.onrender.com', {
   path: "/socket.io/",
   withCredentials: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000
+  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+  transports: ['websocket', 'polling'],
+  autoConnect: true,
+  forceNew: true,
+  extraHeaders: {
+    "Access-Control-Allow-Origin": "*"
+  }
 });
-//export const socket = io('https://ptcg-sim-meta.vercel.app/'); // Production URL
-// Uncomment for local development
-// export const socket = io('http://localhost:4000/');
 
+// Connection event handlers for better debugging
+socket.on('connect', () => {
+  console.log('Socket connected successfully with ID:', socket.id);
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Socket connection error:', error);
+});
+
+socket.on('disconnect', (reason) => {
+  console.log('Socket disconnected:', reason);
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+  console.log('Socket reconnection attempt:', attemptNumber);
+});
+
+socket.on('reconnect', (attemptNumber) => {
+  console.log('Socket reconnected after attempts:', attemptNumber);
+});
+
+socket.on('error', (error) => {
+  console.error('Socket error:', error);
+});
 
 // Function to initialize DOM elements safely
 const getElement = (id) => {
