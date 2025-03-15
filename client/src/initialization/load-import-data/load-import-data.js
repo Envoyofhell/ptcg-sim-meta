@@ -1,18 +1,31 @@
 import { acceptAction } from '../../setup/general/accept-action.js';
 import { refreshBoardImages } from '../../setup/sizing/refresh-board.js';
 
+/**
+ * Loads imported game state data from the DOM
+ * This function is called during initialization to load saved game states
+ */
 export function loadImportData() {
-  const importDataJSON = document.getElementById('importDataJSON').textContent;
+  // Look for the import data element in the DOM
+  const importDataElement = document.getElementById('importDataJSON');
+  
+  // If element doesn't exist or has no content, just return without error
+  if (!importDataElement || !importDataElement.textContent || importDataElement.textContent.trim() === '') {
+    console.log("No import data found, skipping import");
+    return;
+  }
 
-  if (importDataJSON && importDataJSON.trim() !== '') {
-    let importData;
+  // Get the JSON string from the element
+  const importDataJSON = importDataElement.textContent;
 
-    try {
-      importData = JSON.parse(importDataJSON);
-    } catch (error) {
-      console.error("Failed to parse import data JSON:", error);
-      // Display an error message to users or handle appropriately
-      return; // Exit the function on JSON parse error
+  try {
+    // Parse the JSON data
+    const importData = JSON.parse(importDataJSON);
+    
+    // Check if importData is an array before using filter
+    if (!Array.isArray(importData)) {
+      console.warn("Import data is not an array, skipping import");
+      return;
     }
 
     // Remove any objects containing version property
@@ -25,5 +38,9 @@ export function loadImportData() {
     
     // Refresh board images
     refreshBoardImages();
+    
+    console.log("Import data loaded successfully");
+  } catch (error) {
+    console.error("Failed to parse or process import data:", error);
   }
 }

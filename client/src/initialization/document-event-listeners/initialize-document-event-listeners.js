@@ -1,16 +1,20 @@
+/**
+ * Document Event Listeners Initialization Module
+ * Coordinates initialization of all DOM event handlers
+ */
 import { initializeCardContextMenu } from './card-context-menu/initialize-card-context-menu.js';
 import { initializeSidebox } from './sidebox/initialize-sidebox.js';
 import { initializeTable } from './table/initialize-table.js';
 import { initializeWindow } from './window/window.js';
-import { waitForElement } from '../dom-ready-helper.js';
 
 /**
  * Initialize all DOM event listeners with proper error handling
+ * This is the main entry point for setting up all DOM-related event handlers
  */
 export const initializeDOMEventListeners = async () => {
   console.log('Initializing DOM event listeners...');
   
-  // Create an array of initialization functions and their corresponding log messages
+  // Create an array of initialization functions and their corresponding names
   const initializers = [
     { fn: initializeCardContextMenu, name: 'Card context menu' },
     { fn: initializeSidebox, name: 'Sidebox' },
@@ -19,29 +23,25 @@ export const initializeDOMEventListeners = async () => {
   ];
 
   // Ensure key DOM elements exist before proceeding
-  // These are the most critical elements needed for initialization
+  // Check for critical containers that many components depend on
   const criticalElements = [
-    '#selfContainer', 
-    '#oppContainer', 
-    '#selfResizer', 
-    '#oppResizer'
+    document.getElementById('selfContainer'), 
+    document.getElementById('oppContainer'), 
+    document.getElementById('selfResizer'), 
+    document.getElementById('oppResizer')
   ];
   
-  // Wait for critical elements with a short timeout
-  const elements = await Promise.all(
-    criticalElements.map(selector => waitForElement(selector, 3))
-  );
+  // Log warnings for any missing critical elements
+  const missingElements = [];
+  ['selfContainer', 'oppContainer', 'selfResizer', 'oppResizer'].forEach((id, index) => {
+    if (!criticalElements[index]) {
+      missingElements.push(id);
+    }
+  });
   
-  // Check if all critical elements were found
-  if (!elements.every(el => el !== null)) {
-    console.error('Critical DOM elements not found, initialization may fail');
-    
-    // Log which elements are missing
-    criticalElements.forEach((selector, index) => {
-      if (!elements[index]) {
-        console.error(`Missing critical element: ${selector}`);
-      }
-    });
+  if (missingElements.length > 0) {
+    console.warn('Critical DOM elements not found:', missingElements.join(', '));
+    console.warn('Some initialization may fail due to missing elements');
   }
 
   // Loop through each initializer and execute it with error handling
@@ -53,7 +53,7 @@ export const initializeDOMEventListeners = async () => {
       console.error(`Failed to initialize ${name}:`, error);
       
       // Continue with other initializers despite errors
-      // This allows the app to partially function even if some components fail
+      // This allows partial functionality even when some components fail
     }
   }
   

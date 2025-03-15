@@ -1,3 +1,7 @@
+/**
+ * Zone Buttons Initialization
+ * Sets up event listeners for various zone-related buttons in both player containers
+ */
 import {
   closeDisplay,
   discardAll,
@@ -8,264 +12,202 @@ import {
   shuffleBottom,
   sort,
 } from '../../../actions/zones/general.js';
-import {
-  oppContainerDocument,
-  selfContainerDocument,
-  systemState,
-} from '../../../front-end.js';
+import { systemState } from '../../../front-end.js';
 
+/**
+ * Initialize all zone buttons with event listeners
+ * Uses querySelector instead of getElementById for proper container targeting
+ */
 export const initializeZoneButtons = () => {
-  // Self buttons
-  const selfShuffleDeckButton =
-    selfContainerDocument.getElementById('shuffleDeckButton');
-  selfShuffleDeckButton.addEventListener('click', () =>
-    shuffleAll('self', systemState.initiator, 'deck')
-  );
+  try {
+    // Helper function to safely get an element and add event listener
+    const addListener = (containerSelector, elementId, event, handler) => {
+      const element = document.querySelector(`${containerSelector} #${elementId}`);
+      if (element) {
+        element.addEventListener(event, handler);
+      } else {
+        console.warn(`Element not found: ${containerSelector} #${elementId}`);
+      }
+    };
 
-  const selfShuffleDiscardButton = selfContainerDocument.getElementById(
-    'shuffleDiscardButton'
-  );
-  selfShuffleDiscardButton.addEventListener('click', () => {
-    if (confirm('Are you sure you want to shuffle all cards into the deck?')) {
-      shuffleAll('self', systemState.initiator, 'discard');
-    }
-  });
+    // ==========================================
+    // Self Container Buttons
+    // ==========================================
+    
+    // Deck buttons
+    addListener('#selfContainer', 'shuffleDeckButton', 'click', () =>
+      shuffleAll('self', systemState.initiator, 'deck')
+    );
 
-  const selfDiscardAttachedCardsButton = selfContainerDocument.getElementById(
-    'discardAttachedCardsButton'
-  );
-  selfDiscardAttachedCardsButton.addEventListener('click', () =>
-    discardAll('self', systemState.initiator, 'attachedCards')
-  );
+    // Discard buttons
+    addListener('#selfContainer', 'shuffleDiscardButton', 'click', () => {
+      if (confirm('Are you sure you want to shuffle all cards into the deck?')) {
+        shuffleAll('self', systemState.initiator, 'discard');
+      }
+    });
 
-  const selfShuffleAttachedCardsButton = selfContainerDocument.getElementById(
-    'shuffleAttachedCardsButton'
-  );
-  selfShuffleAttachedCardsButton.addEventListener('click', () =>
-    shuffleAll('self', systemState.initiator, 'attachedCards')
-  );
+    // Attached Cards buttons
+    addListener('#selfContainer', 'discardAttachedCardsButton', 'click', () =>
+      discardAll('self', systemState.initiator, 'attachedCards')
+    );
 
-  const selfLostZoneAttachedCardsButton = selfContainerDocument.getElementById(
-    'lostZoneAttachedCardsButton'
-  );
-  selfLostZoneAttachedCardsButton.addEventListener('click', () =>
-    lostZoneAll('self', systemState.initiator, 'attachedCards')
-  );
+    addListener('#selfContainer', 'shuffleAttachedCardsButton', 'click', () =>
+      shuffleAll('self', systemState.initiator, 'attachedCards')
+    );
 
-  const selfHandAttachedCardsButton = selfContainerDocument.getElementById(
-    'handAttachedCardsButton'
-  );
-  selfHandAttachedCardsButton.addEventListener('click', () =>
-    handAll('self', systemState.initiator, 'attachedCards')
-  );
+    addListener('#selfContainer', 'lostZoneAttachedCardsButton', 'click', () =>
+      lostZoneAll('self', systemState.initiator, 'attachedCards')
+    );
 
-  const selfLeaveAttachedCardsButton = selfContainerDocument.getElementById(
-    'leaveAttachedCardsButton'
-  );
-  selfLeaveAttachedCardsButton.addEventListener('click', () =>
-    leaveAll('self', systemState.initiator, 'attachedCards')
-  );
+    addListener('#selfContainer', 'handAttachedCardsButton', 'click', () =>
+      handAll('self', systemState.initiator, 'attachedCards')
+    );
 
-  const selfDiscardViewCardsButton = selfContainerDocument.getElementById(
-    'discardViewCardsButton'
-  );
-  selfDiscardViewCardsButton.addEventListener('click', () =>
-    discardAll('self', systemState.initiator, 'viewCards')
-  );
+    addListener('#selfContainer', 'leaveAttachedCardsButton', 'click', () =>
+      leaveAll('self', systemState.initiator, 'attachedCards')
+    );
 
-  const selfShuffleViewCardsButton = selfContainerDocument.getElementById(
-    'shuffleViewCardsButton'
-  );
-  selfShuffleViewCardsButton.addEventListener('click', () =>
-    shuffleAll('self', systemState.initiator, 'viewCards')
-  );
+    // View Cards buttons
+    addListener('#selfContainer', 'discardViewCardsButton', 'click', () =>
+      discardAll('self', systemState.initiator, 'viewCards')
+    );
 
-  const selfShuffleBottomViewCardsButton = selfContainerDocument.getElementById(
-    'shuffleBottomViewCardsButton'
-  );
-  selfShuffleBottomViewCardsButton.addEventListener('click', () =>
-    shuffleBottom('self', systemState.initiator, 'viewCards')
-  );
+    addListener('#selfContainer', 'shuffleViewCardsButton', 'click', () =>
+      shuffleAll('self', systemState.initiator, 'viewCards')
+    );
 
-  const selfLostZoneViewCardsButton = selfContainerDocument.getElementById(
-    'lostZoneViewCardsButton'
-  );
-  selfLostZoneViewCardsButton.addEventListener('click', () =>
-    lostZoneAll('self', systemState.initiator, 'viewCards')
-  );
+    addListener('#selfContainer', 'shuffleBottomViewCardsButton', 'click', () =>
+      shuffleBottom('self', systemState.initiator, 'viewCards')
+    );
 
-  const selfHandViewCardsButton = selfContainerDocument.getElementById(
-    'handViewCardsButton'
-  );
-  selfHandViewCardsButton.addEventListener('click', () =>
-    handAll('self', systemState.initiator, 'viewCards')
-  );
+    addListener('#selfContainer', 'lostZoneViewCardsButton', 'click', () =>
+      lostZoneAll('self', systemState.initiator, 'viewCards')
+    );
 
-  const selfCloseDeckButton =
-    selfContainerDocument.getElementById('closeDeckButton');
-  selfCloseDeckButton.addEventListener('click', () =>
-    closeDisplay('self', 'deck')
-  );
+    addListener('#selfContainer', 'handViewCardsButton', 'click', () =>
+      handAll('self', systemState.initiator, 'viewCards')
+    );
 
-  const selfCloseDiscardButton =
-    selfContainerDocument.getElementById('closeDiscardButton');
-  selfCloseDiscardButton.addEventListener('click', () =>
-    closeDisplay('self', 'discard')
-  );
+    // Close buttons
+    addListener('#selfContainer', 'closeDeckButton', 'click', () =>
+      closeDisplay('self', 'deck')
+    );
 
-  const selfCloseLostZoneButton = selfContainerDocument.getElementById(
-    'closeLostZoneButton'
-  );
-  selfCloseLostZoneButton.addEventListener('click', () =>
-    closeDisplay('self', 'lostZone')
-  );
+    addListener('#selfContainer', 'closeDiscardButton', 'click', () =>
+      closeDisplay('self', 'discard')
+    );
 
-  const selfSortHandCheckbox =
-    selfContainerDocument.getElementById('sortHandCheckbox');
-  selfSortHandCheckbox.addEventListener('change', () => sort('self', 'hand'));
+    addListener('#selfContainer', 'closeLostZoneButton', 'click', () =>
+      closeDisplay('self', 'lostZone')
+    );
 
-  const selfSortDeckCheckbox =
-    selfContainerDocument.getElementById('sortDeckCheckbox');
-  selfSortDeckCheckbox.addEventListener('change', () => sort('self', 'deck'));
+    // Sort checkboxes
+    addListener('#selfContainer', 'sortHandCheckbox', 'change', () => 
+      sort('self', 'hand')
+    );
 
-  const selfSortDiscardCheckbox = selfContainerDocument.getElementById(
-    'sortDiscardCheckbox'
-  );
-  selfSortDiscardCheckbox.addEventListener('change', () =>
-    sort('self', 'discard')
-  );
+    addListener('#selfContainer', 'sortDeckCheckbox', 'change', () => 
+      sort('self', 'deck')
+    );
 
-  const selfSortLostZoneCheckbox = selfContainerDocument.getElementById(
-    'sortLostZoneCheckbox'
-  );
-  selfSortLostZoneCheckbox.addEventListener('change', () =>
-    sort('self', 'lostZone')
-  );
+    addListener('#selfContainer', 'sortDiscardCheckbox', 'change', () =>
+      sort('self', 'discard')
+    );
 
-  // Opp buttons
-  const oppShuffleDeckButton =
-    oppContainerDocument.getElementById('shuffleDeckButton');
-  oppShuffleDeckButton.addEventListener('click', () =>
-    shuffleAll('opp', systemState.initiator, 'deck')
-  );
+    addListener('#selfContainer', 'sortLostZoneCheckbox', 'change', () =>
+      sort('self', 'lostZone')
+    );
 
-  const oppShuffleDiscardButton = oppContainerDocument.getElementById(
-    'shuffleDiscardButton'
-  );
-  oppShuffleDiscardButton.addEventListener('click', () => {
-    if (confirm('Are you sure you want to shuffle all cards into the deck?')) {
-      shuffleAll('opp', systemState.initiator, 'discard');
-    }
-  });
+    // ==========================================
+    // Opponent Container Buttons
+    // ==========================================
+    
+    // Deck buttons
+    addListener('#oppContainer', 'shuffleDeckButton', 'click', () =>
+      shuffleAll('opp', systemState.initiator, 'deck')
+    );
 
-  const oppDiscardAttachedCardsButton = oppContainerDocument.getElementById(
-    'discardAttachedCardsButton'
-  );
-  oppDiscardAttachedCardsButton.addEventListener('click', () =>
-    discardAll('opp', systemState.initiator, 'attachedCards')
-  );
+    // Discard buttons
+    addListener('#oppContainer', 'shuffleDiscardButton', 'click', () => {
+      if (confirm('Are you sure you want to shuffle all cards into the deck?')) {
+        shuffleAll('opp', systemState.initiator, 'discard');
+      }
+    });
 
-  const oppShuffleAttachedCardsButton = oppContainerDocument.getElementById(
-    'shuffleAttachedCardsButton'
-  );
-  oppShuffleAttachedCardsButton.addEventListener('click', () =>
-    shuffleAll('opp', systemState.initiator, 'attachedCards')
-  );
+    // Attached Cards buttons
+    addListener('#oppContainer', 'discardAttachedCardsButton', 'click', () =>
+      discardAll('opp', systemState.initiator, 'attachedCards')
+    );
 
-  const oppLostZoneAttachedCardsButton = oppContainerDocument.getElementById(
-    'lostZoneAttachedCardsButton'
-  );
-  oppLostZoneAttachedCardsButton.addEventListener('click', () =>
-    lostZoneAll('opp', systemState.initiator, 'attachedCards')
-  );
+    addListener('#oppContainer', 'shuffleAttachedCardsButton', 'click', () =>
+      shuffleAll('opp', systemState.initiator, 'attachedCards')
+    );
 
-  const oppHandAttachedCardsButton = oppContainerDocument.getElementById(
-    'handAttachedCardsButton'
-  );
-  oppHandAttachedCardsButton.addEventListener('click', () =>
-    handAll('opp', systemState.initiator, 'attachedCards')
-  );
+    addListener('#oppContainer', 'lostZoneAttachedCardsButton', 'click', () =>
+      lostZoneAll('opp', systemState.initiator, 'attachedCards')
+    );
 
-  const oppLeaveAttachedCardsButton = oppContainerDocument.getElementById(
-    'leaveAttachedCardsButton'
-  );
-  oppLeaveAttachedCardsButton.addEventListener('click', () =>
-    leaveAll('opp', systemState.initiator, 'attachedCards')
-  );
+    addListener('#oppContainer', 'handAttachedCardsButton', 'click', () =>
+      handAll('opp', systemState.initiator, 'attachedCards')
+    );
 
-  const oppDiscardViewCardsButton = oppContainerDocument.getElementById(
-    'discardViewCardsButton'
-  );
-  oppDiscardViewCardsButton.addEventListener('click', () =>
-    discardAll('opp', systemState.initiator, 'viewCards')
-  );
+    addListener('#oppContainer', 'leaveAttachedCardsButton', 'click', () =>
+      leaveAll('opp', systemState.initiator, 'attachedCards')
+    );
 
-  const oppShuffleViewCardsButton = oppContainerDocument.getElementById(
-    'shuffleViewCardsButton'
-  );
-  oppShuffleViewCardsButton.addEventListener('click', () =>
-    shuffleAll('opp', systemState.initiator, 'viewCards')
-  );
+    // View Cards buttons
+    addListener('#oppContainer', 'discardViewCardsButton', 'click', () =>
+      discardAll('opp', systemState.initiator, 'viewCards')
+    );
 
-  const oppShuffleBottomViewCardsButton = oppContainerDocument.getElementById(
-    'shuffleBottomViewCardsButton'
-  );
-  oppShuffleBottomViewCardsButton.addEventListener('click', () =>
-    shuffleBottom('opp', systemState.initiator, 'viewCards')
-  );
+    addListener('#oppContainer', 'shuffleViewCardsButton', 'click', () =>
+      shuffleAll('opp', systemState.initiator, 'viewCards')
+    );
 
-  const oppLostZoneViewCardsButton = oppContainerDocument.getElementById(
-    'lostZoneViewCardsButton'
-  );
-  oppLostZoneViewCardsButton.addEventListener('click', () =>
-    lostZoneAll('opp', systemState.initiator, 'viewCards')
-  );
+    addListener('#oppContainer', 'shuffleBottomViewCardsButton', 'click', () =>
+      shuffleBottom('opp', systemState.initiator, 'viewCards')
+    );
 
-  const oppHandViewCardsButton = oppContainerDocument.getElementById(
-    'handViewCardsButton'
-  );
-  oppHandViewCardsButton.addEventListener('click', () =>
-    handAll('opp', systemState.initiator, 'viewCards')
-  );
+    addListener('#oppContainer', 'lostZoneViewCardsButton', 'click', () =>
+      lostZoneAll('opp', systemState.initiator, 'viewCards')
+    );
 
-  const oppCloseDeckButton =
-    oppContainerDocument.getElementById('closeDeckButton');
-  oppCloseDeckButton.addEventListener('click', () =>
-    closeDisplay('opp', 'deck')
-  );
+    addListener('#oppContainer', 'handViewCardsButton', 'click', () =>
+      handAll('opp', systemState.initiator, 'viewCards')
+    );
 
-  const oppCloseDiscardButton =
-    oppContainerDocument.getElementById('closeDiscardButton');
-  oppCloseDiscardButton.addEventListener('click', () =>
-    closeDisplay('opp', 'discard')
-  );
+    // Close buttons
+    addListener('#oppContainer', 'closeDeckButton', 'click', () =>
+      closeDisplay('opp', 'deck')
+    );
 
-  const oppCloseLostZoneButton = oppContainerDocument.getElementById(
-    'closeLostZoneButton'
-  );
-  oppCloseLostZoneButton.addEventListener('click', () =>
-    closeDisplay('opp', 'lostZone')
-  );
+    addListener('#oppContainer', 'closeDiscardButton', 'click', () =>
+      closeDisplay('opp', 'discard')
+    );
 
-  const oppSortHandCheckbox =
-    oppContainerDocument.getElementById('sortHandCheckbox');
-  oppSortHandCheckbox.addEventListener('change', () => sort('opp', 'hand'));
+    addListener('#oppContainer', 'closeLostZoneButton', 'click', () =>
+      closeDisplay('opp', 'lostZone')
+    );
 
-  const oppSortDeckCheckbox =
-    oppContainerDocument.getElementById('sortDeckCheckbox');
-  oppSortDeckCheckbox.addEventListener('change', () => sort('opp', 'deck'));
+    // Sort checkboxes
+    addListener('#oppContainer', 'sortHandCheckbox', 'change', () => 
+      sort('opp', 'hand')
+    );
 
-  const oppSortDiscardCheckbox = oppContainerDocument.getElementById(
-    'sortDiscardCheckbox'
-  );
-  oppSortDiscardCheckbox.addEventListener('change', () =>
-    sort('opp', 'discard')
-  );
+    addListener('#oppContainer', 'sortDeckCheckbox', 'change', () => 
+      sort('opp', 'deck')
+    );
 
-  const oppSortLostZoneCheckbox = oppContainerDocument.getElementById(
-    'sortLostZoneCheckbox'
-  );
-  oppSortLostZoneCheckbox.addEventListener('change', () =>
-    sort('opp', 'lostZone')
-  );
+    addListener('#oppContainer', 'sortDiscardCheckbox', 'change', () =>
+      sort('opp', 'discard')
+    );
+
+    addListener('#oppContainer', 'sortLostZoneCheckbox', 'change', () =>
+      sort('opp', 'lostZone')
+    );
+    
+    console.log('Zone buttons initialized successfully');
+  } catch (error) {
+    console.error('Error initializing zone buttons:', error);
+  }
 };
