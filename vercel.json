@@ -20,6 +20,10 @@
       "dest": "client/src/$1"
     },
     {
+      "src": "/src/initialization/(.*)",
+      "dest": "client/src/initialization/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "server/server.js"
     }
