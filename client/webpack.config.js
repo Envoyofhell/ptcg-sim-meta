@@ -1,5 +1,5 @@
 const path = require('path');
-const webpack = require('webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     mode: process.env.NODE_ENV || 'development',
@@ -32,14 +32,37 @@ module.exports = {
                 generator: {
                     filename: 'assets/[name][hash][ext]'
                 }
-            },
-            {
-                test: /\.js$/,
-                enforce: 'pre',
-                use: ['source-map-loader']
             }
         ]
     },
+    plugins: [
+        new CopyWebpackPlugin({
+            patterns: [
+                // Copy CSS files
+                { 
+                    from: 'src/css', 
+                    to: 'css' 
+                },
+                // Copy JS files
+                { 
+                    from: 'src/*.js', 
+                    to: '[name][ext]' 
+                },
+                // Copy assets
+                { 
+                    from: 'src/assets', 
+                    to: 'assets' 
+                },
+                // Copy HTML files if they exist
+                {
+                    from: '*.html',
+                    context: 'src',
+                    to: '[name][ext]',
+                    noErrorOnMissing: true
+                }
+            ]
+        })
+    ],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
@@ -57,10 +80,5 @@ module.exports = {
         port: 3000,
         open: true,
         historyApiFallback: true
-    },
-    plugins: [
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
-        })
-    ]
+    }
 };
