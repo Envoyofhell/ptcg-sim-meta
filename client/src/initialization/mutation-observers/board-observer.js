@@ -1,10 +1,7 @@
-import {
-  oppContainerDocument,
-  selfContainerDocument,
-} from '../../front-end.js';
-
 const scrollToBottom = (element) => {
-  element.scrollTop = element.scrollHeight;
+  if (element) {
+    element.scrollTop = element.scrollHeight;
+  }
 };
 
 const handleMutations = (element, mutations) => {
@@ -16,8 +13,17 @@ const handleMutations = (element, mutations) => {
 };
 
 export const initializeBoardObserver = () => {
-  const boardElement = selfContainerDocument.getElementById('board');
-  const oppBoardElement = oppContainerDocument.getElementById('board');
+  // Safely get elements
+  const boardElement = document.querySelector('#selfContainer #board');
+  const oppBoardElement = document.querySelector('#oppContainer #board');
+
+  // Check if elements exist
+  if (!boardElement || !oppBoardElement) {
+    console.warn('Board observer: Required elements not found. Will retry later.');
+    setTimeout(initializeBoardObserver, 500);
+    return;
+  }
+
   // Create MutationObserver instances for both elements
   const boardObserver = new MutationObserver((mutations) =>
     handleMutations(boardElement, mutations)
@@ -32,4 +38,6 @@ export const initializeBoardObserver = () => {
   // Start observing the target nodes
   boardObserver.observe(boardElement, observerConfig);
   oppBoardObserver.observe(oppBoardElement, observerConfig);
+  
+  console.log('Board observer initialized successfully');
 };

@@ -1,12 +1,16 @@
-import {
-  oppContainerDocument,
-  selfContainerDocument,
-} from '../../front-end.js';
 import { adjustAlignment } from '../../setup/sizing/adjust-alignment.js';
 
 export const initializeHandObserver = () => {
-  const handElement = selfContainerDocument.getElementById('hand');
-  const oppHandElement = oppContainerDocument.getElementById('hand');
+  // Safely get elements
+  const handElement = document.querySelector('#selfContainer #hand');
+  const oppHandElement = document.querySelector('#oppContainer #hand');
+
+  // Check if elements exist
+  if (!handElement || !oppHandElement) {
+    console.warn('Hand observer: Required elements not found. Will retry later.');
+    setTimeout(initializeHandObserver, 500);
+    return;
+  }
 
   const handObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -23,4 +27,6 @@ export const initializeHandObserver = () => {
   [handElement, oppHandElement].forEach((target) => {
     handObserver.observe(target, handConfig);
   });
+  
+  console.log('Hand observer initialized successfully');
 };

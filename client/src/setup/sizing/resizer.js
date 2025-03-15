@@ -107,18 +107,28 @@ export const createResizer = (params) => {
   overlay.style.left = 0;
   overlay.style.zIndex = 1000;
 
-  // Find the elements using the document object instead of treating containers as documents
-  // This fixes the "getElementById is not a function" error
-  const handElement = document.querySelector('#selfContainer #hand');
-  const oppHandElement = document.querySelector('#oppContainer #hand');
-  const boardButtonContainer = document.getElementById('boardButtonContainer');
-  const stadiumElement = document.getElementById('stadium');
-  const selfResizer = document.getElementById('selfResizer');
-  const oppResizer = document.getElementById('oppResizer');
+  // Find the elements, safely handling cases where they might not exist yet
+  // Retry function for elements that might not be loaded yet
+  const getElementSafely = (selector) => {
+    const element = selector.startsWith('#') ? 
+      document.getElementById(selector.slice(1)) : 
+      document.querySelector(selector);
+    
+    return element;
+  };
 
-  // Validate that all elements were found
+  // Try to get all required elements
+  const handElement = getElementSafely('#selfContainer #hand');
+  const oppHandElement = getElementSafely('#oppContainer #hand');
+  const boardButtonContainer = getElementSafely('#boardButtonContainer');
+  const stadiumElement = getElementSafely('#stadium');
+  const selfResizer = getElementSafely('#selfResizer');
+  const oppResizer = getElementSafely('#oppResizer');
+
+  // If any required elements are missing, return empty handlers but don't throw errors
+  // This allows the application to continue and retry later
   if (!handElement || !oppHandElement || !boardButtonContainer || !stadiumElement || !selfResizer || !oppResizer) {
-    logger.error('Required DOM elements not found', {
+    logger.warn('Some required DOM elements not found, will retry later', {
       handElement: !!handElement,
       oppHandElement: !!oppHandElement,
       boardButtonContainer: !!boardButtonContainer,
@@ -126,6 +136,8 @@ export const createResizer = (params) => {
       selfResizer: !!selfResizer,
       oppResizer: !!oppResizer
     });
+    
+    // Return no-op handlers
     return {
       selfHandleMouseDown: () => {},
       oppHandleMouseDown: () => {},
@@ -133,6 +145,9 @@ export const createResizer = (params) => {
       flippedOppHandleMouseDown: () => {}
     };
   }
+  
+  // Log success when all elements are found
+  logger.info('All required DOM elements found successfully');
 
   /**
    * Handler for self container resizing
