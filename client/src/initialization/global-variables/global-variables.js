@@ -29,10 +29,7 @@ export const socket = io('https://ptcg-sim-meta.onrender.com', {
   timeout: 20000,
   transports: ['websocket', 'polling'],
   autoConnect: true,
-  forceNew: true,
-  extraHeaders: {
-    "Access-Control-Allow-Origin": "*"
-  }
+  forceNew: true
 });
 
 // Connection event handlers for better debugging
@@ -67,9 +64,14 @@ const getElement = (id) => {
   return element || {};
 };
 
-// Create and export DOM container references
-export const selfContainerDocument = getElement('selfContainer'); // Ensure this ID exists in your HTML
-export const oppContainerDocument = getElement('oppContainer'); // Ensure this ID also exists in your HTML
+// Get DOM container references
+// These are direct DOM elements, not documents 
+export const selfContainer = getElement('selfContainer');
+export const oppContainer = getElement('oppContainer');
+
+// Export references for backward compatibility
+export const selfContainerDocument = selfContainer;
+export const oppContainerDocument = oppContainer;
 
 export const systemState = {
   coachingMode: false,
@@ -86,7 +88,7 @@ export const systemState = {
   replayActionData: [],
   turn: 0,
   get initiator() {
-    return selfContainerDocument.classList.contains('self') ? 'self' : 'opp';
+    return selfContainer.classList.contains('self') ? 'self' : 'opp';
   },
   roomId: '',
   cardBackSrc: 'https://ptcg-sim-meta.vercel.app/src/assets/cardback.png',

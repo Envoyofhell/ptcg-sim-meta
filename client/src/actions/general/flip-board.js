@@ -18,10 +18,6 @@ import createResizer from '../../setup/sizing/resizer.js';
 const selfContainer = document.getElementById('selfContainer');
 const oppContainer = document.getElementById('oppContainer');
 
-// Create container documents directly from DOM elements
-const selfContainerDocument = selfContainer;
-const oppContainerDocument = oppContainer;
-
 // Perform a critical safety check to ensure containers exist
 // This prevents potential runtime errors if DOM elements are missing
 if (!selfContainer || !oppContainer) {
@@ -40,16 +36,14 @@ const {
 } = createResizer({
   // Pass container references to the resizer
   selfContainer,
-  oppContainer,
-  selfContainerDocument,
-  oppContainerDocument
+  oppContainer
 });
 
 // Primary function to flip the game board
 // Handles UI state changes when switching perspectives
 export function flipBoard() {
   // Ensure containers are available before proceeding
-  if (!selfContainerDocument || !oppContainerDocument) {
+  if (!selfContainer || !oppContainer) {
     console.error('Container documents are not initialized');
     return;
   }
@@ -73,12 +67,18 @@ export function flipBoard() {
   const p2SetupButton = document.getElementById('p2SetupButton');
   const p2ResetButton = document.getElementById('p2ResetButton');
 
-  // Select board and view card elements using container documents
-  // This ensures correct selection within the specific container context
-  const boardElement = selfContainerDocument.getElementById('board');
-  const oppBoardElement = oppContainerDocument.getElementById('board');
-  const viewCardsElement = selfContainerDocument.getElementById('viewCards');
-  const oppViewCardsElement = oppContainerDocument.getElementById('viewCards');
+  // Select board and view card elements directly from the document
+  // This ensures correct selection from the global document
+  const boardElement = document.querySelector('#selfContainer #board');
+  const oppBoardElement = document.querySelector('#oppContainer #board');
+  const viewCardsElement = document.querySelector('#selfContainer #viewCards');
+  const oppViewCardsElement = document.querySelector('#oppContainer #viewCards');
+
+  // Check that all required elements exist
+  if (!boardElement || !oppBoardElement || !viewCardsElement || !oppViewCardsElement) {
+    console.error('Required board elements not found');
+    return;
+  }
 
   // Determine the current game initiator and adjust event listeners accordingly
   if (systemState.initiator === 'self') {
@@ -164,11 +164,11 @@ export function flipBoard() {
 
   // Iterate through users and toggle their respective UI classes
   users.forEach(user => {
-    const targetDocument = user === 'self' ? selfContainerDocument : oppContainerDocument;
+    const containerSelector = user === 'self' ? '#selfContainer' : '#oppContainer';
 
     // Toggle text classes
     textIds.forEach(textId => {
-      const text = targetDocument.getElementById(textId);
+      const text = document.querySelector(`${containerSelector} #${textId}`);
       if (text) {
         text.classList.toggle('self-text');
         text.classList.toggle('opp-text');
@@ -177,7 +177,7 @@ export function flipBoard() {
 
     // Toggle zone view classes
     zoneIds.forEach(zoneId => {
-      const element = targetDocument.getElementById(zoneId);
+      const element = document.querySelector(`${containerSelector} #${zoneId}`);
       if (element) {
         element.classList.toggle('self-view');
         element.classList.toggle('opp-view');
@@ -186,7 +186,7 @@ export function flipBoard() {
 
     // Toggle button container classes
     buttonContainers.forEach(containerId => {
-      const container = targetDocument.getElementById(containerId);
+      const container = document.querySelector(`${containerSelector} #${containerId}`);
       if (container) {
         container.classList.toggle('self-zone-button-container');
         container.classList.toggle('opp-zone-button-container');
@@ -195,7 +195,7 @@ export function flipBoard() {
 
     // Toggle header classes and swap header text
     headerIds.forEach(headerId => {
-      const header = targetDocument.getElementById(headerId);
+      const header = document.querySelector(`${containerSelector} #${headerId}`);
       if (header) {
         header.classList.toggle('self-header');
         header.classList.toggle('opp-header');
@@ -210,7 +210,7 @@ export function flipBoard() {
 
     // Toggle special move button container classes
     specialMoveButtonContainers.forEach(containerId => {
-      const container = targetDocument.getElementById(containerId);
+      const container = document.querySelector(`${containerSelector} #${containerId}`);
       if (container) {
         container.classList.toggle('self-special-move-button-container');
         container.classList.toggle('opp-special-move-button-container');
@@ -219,16 +219,16 @@ export function flipBoard() {
   });
 
   // Toggle circle element classes
-  const toggleCircleElements = (containerDocument) => {
-    const circleElements = containerDocument.querySelectorAll('.self-circle, .opp-circle');
+  const toggleCircleElements = (containerSelector) => {
+    const circleElements = document.querySelectorAll(`${containerSelector} .self-circle, ${containerSelector} .opp-circle`);
     circleElements.forEach(element => {
       element.classList.toggle('self-circle');
       element.classList.toggle('opp-circle');
     });
   };
 
-  toggleCircleElements(selfContainerDocument);
-  toggleCircleElements(oppContainerDocument);
+  toggleCircleElements('#selfContainer');
+  toggleCircleElements('#oppContainer');
 
   // Swap container heights and bottom positions
   let tempHeight = selfContainer.style.height;

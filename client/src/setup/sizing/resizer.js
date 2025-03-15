@@ -107,13 +107,32 @@ export const createResizer = (params) => {
   overlay.style.left = 0;
   overlay.style.zIndex = 1000;
 
-  // Get DOM element references
-  const handElement = selfContainerDocument.getElementById('hand');
-  const oppHandElement = oppContainerDocument.getElementById('hand');
+  // Find the elements using the document object instead of treating containers as documents
+  // This fixes the "getElementById is not a function" error
+  const handElement = document.querySelector('#selfContainer #hand');
+  const oppHandElement = document.querySelector('#oppContainer #hand');
   const boardButtonContainer = document.getElementById('boardButtonContainer');
   const stadiumElement = document.getElementById('stadium');
   const selfResizer = document.getElementById('selfResizer');
   const oppResizer = document.getElementById('oppResizer');
+
+  // Validate that all elements were found
+  if (!handElement || !oppHandElement || !boardButtonContainer || !stadiumElement || !selfResizer || !oppResizer) {
+    logger.error('Required DOM elements not found', {
+      handElement: !!handElement,
+      oppHandElement: !!oppHandElement,
+      boardButtonContainer: !!boardButtonContainer,
+      stadiumElement: !!stadiumElement,
+      selfResizer: !!selfResizer,
+      oppResizer: !!oppResizer
+    });
+    return {
+      selfHandleMouseDown: () => {},
+      oppHandleMouseDown: () => {},
+      flippedSelfHandleMouseDown: () => {},
+      flippedOppHandleMouseDown: () => {}
+    };
+  }
 
   /**
    * Handler for self container resizing
@@ -461,28 +480,36 @@ export const createResizer = (params) => {
   const stopSelfResize = () => {
     window.removeEventListener('mousemove', selfResize);
     document.removeEventListener('mouseup', stopSelfResize);
-    document.body.removeChild(overlay);
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
     logger.info('Self resize completed');
   };
 
   const stopOppResize = () => {
     window.removeEventListener('mousemove', oppResize);
     document.removeEventListener('mouseup', stopOppResize);
-    document.body.removeChild(overlay);
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
     logger.info('Opponent resize completed');
   };
 
   const flippedStopSelfResize = () => {
     window.removeEventListener('mousemove', flippedSelfResize);
     document.removeEventListener('mouseup', flippedStopSelfResize);
-    document.body.removeChild(overlay);
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
     logger.info('Flipped self resize completed');
   };
 
   const flippedStopOppResize = () => {
     window.removeEventListener('mousemove', flippedOppResize);
     document.removeEventListener('mouseup', flippedStopOppResize);
-    document.body.removeChild(overlay);
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
     logger.info('Flipped opponent resize completed');
   };
 
