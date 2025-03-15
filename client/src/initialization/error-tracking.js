@@ -6,22 +6,12 @@
  * is only logged a limited number of times to prevent console spam.
  */
 
-// CONFIGURATION
-// -------------
-// Set this to false to disable all error and warning logs
-export const ENABLE_ERROR_TRACKING = true;
-
-// Set this to false to disable just the warnings (errors will still show)
-export const ENABLE_WARNINGS = true;
-
-// Maximum number of times to show each unique message
-const MAX_LOGS = 3;
-// -------------
-
 // Track error counts by message
 const errorCounts = new Map();
 // Track warning counts by message
 const warningCounts = new Map();
+// Maximum number of times to show each unique message
+const MAX_LOGS = 3;
 
 /**
  * Logs an error message with rate limiting
@@ -30,11 +20,6 @@ const warningCounts = new Map();
  * @returns {boolean} - True if the message was logged, false if suppressed
  */
 export const logError = (message, details = undefined) => {
-  // Check if error tracking is disabled
-  if (!ENABLE_ERROR_TRACKING) {
-    return false;
-  }
-  
   // Get current count for this message
   const count = errorCounts.get(message) || 0;
   
@@ -66,11 +51,6 @@ export const logError = (message, details = undefined) => {
  * @returns {boolean} - True if the message was logged, false if suppressed
  */
 export const logWarning = (message, details = undefined) => {
-  // Check if error tracking or warnings are disabled
-  if (!ENABLE_ERROR_TRACKING || !ENABLE_WARNINGS) {
-    return false;
-  }
-  
   // Get current count for this message
   const count = warningCounts.get(message) || 0;
   
@@ -96,16 +76,11 @@ export const logWarning = (message, details = undefined) => {
 };
 
 /**
- * Logs an info message (these are not rate-limited but can be disabled)
+ * Logs an info message (these are not rate-limited)
  * @param {string} message - The info message
  * @param {*} [details] - Optional details to include with the message
  */
 export const logInfo = (message, details = undefined) => {
-  // Check if error tracking is disabled
-  if (!ENABLE_ERROR_TRACKING) {
-    return false;
-  }
-  
   if (details) {
     console.log(`[INFO] ${message}`, details);
   } else {
@@ -138,49 +113,11 @@ export const resetAllCounts = () => {
   warningCounts.clear();
 };
 
-/**
- * Enable or disable all error tracking
- * @param {boolean} enable - Whether to enable error tracking
- */
-export const setErrorTrackingEnabled = (enable) => {
-  // This requires modifying the module-level variable
-  // It's generally not good practice, but in this case it's the simplest solution
-  window.PTCG_ERROR_TRACKING_ENABLED = enable;
-  
-  // Update the module variable by reference
-  Object.defineProperty(module.exports, 'ENABLE_ERROR_TRACKING', {
-    get: () => window.PTCG_ERROR_TRACKING_ENABLED
-  });
-};
-
-/**
- * Enable or disable warnings only (errors will still be logged)
- * @param {boolean} enable - Whether to enable warnings
- */
-export const setWarningsEnabled = (enable) => {
-  // This requires modifying the module-level variable
-  window.PTCG_WARNINGS_ENABLED = enable;
-  
-  // Update the module variable by reference
-  Object.defineProperty(module.exports, 'ENABLE_WARNINGS', {
-    get: () => window.PTCG_WARNINGS_ENABLED
-  });
-};
-
-// Set initial values in the window object for persistence
-window.PTCG_ERROR_TRACKING_ENABLED = ENABLE_ERROR_TRACKING;
-window.PTCG_WARNINGS_ENABLED = ENABLE_WARNINGS;
-
 export default {
   logError,
   logWarning,
   logInfo,
   resetErrorCount,
   resetWarningCount,
-  resetAllCounts,
-  setErrorTrackingEnabled,
-  setWarningsEnabled,
-  // Export the config variables too
-  get ENABLE_ERROR_TRACKING() { return window.PTCG_ERROR_TRACKING_ENABLED; },
-  get ENABLE_WARNINGS() { return window.PTCG_WARNINGS_ENABLED; }
+  resetAllCounts
 };
