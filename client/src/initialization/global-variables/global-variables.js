@@ -107,7 +107,7 @@ preloadImages([
 ]);
 
 // Background styling for the body
-document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://wallpapercave.com/wp/wp10484598.jpg')`;
+document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://images3.alphacoders.com/276/276507.jpg')`;
 document.body.style.backgroundPosition = '-200px 0';
 
 // Selected card information

@@ -1,13 +1,14 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     mode: process.env.NODE_ENV || 'development',
     entry: './src/front-end.js',
-    devtool: 'source-map', // Added for better debugging
+    devtool: 'source-map',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
-        publicPath: '/' // This ensures assets are served from the root
+        publicPath: '/'
     },
     module: {
         rules: [
@@ -26,13 +27,12 @@ module.exports = {
                 use: ['style-loader', 'css-loader']
             },
             {
-                test: /\.(png|jpe?g|gif|svg|woff|woff2|eot|ttf|otf)$/i,
+                test: /\.(png|jpe?g|gif|svg|ico|woff|woff2|eot|ttf|otf)$/i,
                 type: 'asset/resource',
                 generator: {
-                    filename: 'assets/[name][ext]'
+                    filename: 'assets/[name][hash][ext]'
                 }
             },
-            // Add source map loader
             {
                 test: /\.js$/,
                 enforce: 'pre',
@@ -51,11 +51,16 @@ module.exports = {
     devServer: {
         static: {
             directory: path.join(__dirname, 'dist'),
-            publicPath: '/', // Ensure assets are served from root
+            publicPath: '/'
         },
         hot: true,
         port: 3000,
         open: true,
         historyApiFallback: true
-    }
+    },
+    plugins: [
+        new webpack.DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+        })
+    ]
 };
