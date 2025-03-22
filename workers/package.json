@@ -1,28 +1,36 @@
 {
-  "name": "ptcg-sim-meta-workers",
-  "version": "1.0.0",
-  "description": "Cloudflare Workers for PTCG-Sim-Meta",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "wrangler dev",
-    "publish": "wrangler publish",
-    "deploy": "wrangler deploy",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "cloudflare",
-    "workers",
-    "ptcg",
-    "pokemon"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@neondatabase/serverless": "^0.8.1",
-    "itty-router": "^4.0.27"
-  },
-  "devDependencies": {
-    "wrangler": "^3.114.2"
+    "name": "ptcg-sim-meta-workers",
+    "version": "1.0.0",
+    "description": "Cloudflare Workers for PTCG-Sim-Meta",
+    "main": "src/index.js",
+    "type": "module",
+    "packageManager": "pnpm@9.10.0",
+    "scripts": {
+      "dev": "wrangler dev",
+      "publish": "wrangler publish",
+      "deploy": "wrangler deploy",
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "lint": "eslint src/**/*.js",
+      "format": "prettier --write src/**/*.js"
+    },
+    "keywords": [
+      "cloudflare",
+      "workers",
+      "ptcg",
+      "pokemon"
+    ],
+    "author": "",
+    "license": "MIT",
+    "engines": {
+      "node": ">=18.0.0"
+    },
+    "dependencies": {
+      "@neondatabase/serverless": "^0.8.1",
+      "itty-router": "^4.0.27"
+    },
+    "devDependencies": {
+      "wrangler": "^3.114.2",
+      "eslint": "^9.23.0",
+      "prettier": "^3.2.5"
+    }
   }
-}
