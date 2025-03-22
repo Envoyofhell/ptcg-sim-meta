@@ -1,17 +1,18 @@
 /**
- * Enhanced Load Import Data Module
+ * PostgreSQL-Compatible Game State Loader
  * 
- * This module handles fetching and loading saved game states from the server.
- * It includes improved error handling, better user feedback, and cross-environment compatibility.
+ * This module handles loading saved game states from the PostgreSQL database
+ * through the server's API endpoint. It includes robust error handling and
+ * cross-environment compatibility.
  */
 import { acceptAction } from '../../setup/general/accept-action.js';
 import { refreshBoardImages } from '../../setup/sizing/refresh-board.js';
 
 /**
- * Configuration options - customizable via environment or build settings
+ * Configuration options
  */
 const CONFIG = {
-  // Maximum time to wait for server response in milliseconds
+  // Request timeout in milliseconds
   requestTimeout: 30000,
   
   // Number of retries for failed requests
@@ -21,37 +22,39 @@ const CONFIG = {
   serverUrls: {
     production: 'https://ptcg-sim-meta.onrender.com',
     development: 'https://ptcg-sim-meta-dev.onrender.com',
-    local: '',
+    local: ''
   }
 };
 
 /**
- * Determines the appropriate API base URL based on environment
+ * Determines the appropriate API base URL based on current environment
  * @returns {string} Base URL for API requests
  */
 function determineApiBaseUrl() {
-  // Detect environment based on hostname
+  // Production environment (Cloudflare Pages)
   if (window.location.hostname.includes('ptcg-sim-meta.pages.dev')) {
-    // Production Cloudflare Pages
-    console.log('Environment detected: Production (Cloudflare Pages)');
+    console.log('Environment detected: Production Cloudflare Pages');
     return CONFIG.serverUrls.production;
-  } else if (window.location.hostname.includes('ptcg-sim-meta-dev.pages.dev')) {
-    // Development Cloudflare Pages
-    console.log('Environment detected: Development (Cloudflare Pages)');
+  } 
+  // Development environment (Cloudflare Pages Dev)
+  else if (window.location.hostname.includes('ptcg-sim-meta-dev.pages.dev')) {
+    console.log('Environment detected: Development Cloudflare Pages');
     return CONFIG.serverUrls.development;
-  } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // Local development - use relative path
+  }
+  // Local development environment
+  else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     console.log('Environment detected: Local development');
     return CONFIG.serverUrls.local;
-  } else {
-    // Fallback for other environments
+  }
+  // Fallback for unknown environments
+  else {
     console.log('Environment detected: Unknown, using production URL');
     return CONFIG.serverUrls.production;
   }
 }
 
 /**
- * Display message in the chatbox with colored formatting
+ * Display message in the chatbox
  * @param {string} message - Message to display
  * @param {string} type - Message type (success, error, info, warning)
  */
@@ -89,52 +92,52 @@ function displayMessage(message, type = 'info') {
 }
 
 /**
- * Fetch with timeout and retry
+ * Fetch with timeout and retry capability
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
- * @param {number} timeout - Timeout in milliseconds
- * @param {number} retries - Number of retries
- * @returns {Promise<Response>} Fetch response
+ * @returns {Promise<Response>} - Fetch response
  */
-async function fetchWithRetry(url, options = {}, timeout = CONFIG.requestTimeout, retries = CONFIG.maxRetries) {
-  // Create abort controller for timeout
+async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  // Add abort signal to options
-  const fetchOptions = {
-    ...options,
-    signal: controller.signal
-  };
+  const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
   
   try {
-    const response = await fetch(url, fetchOptions);
-    clearTimeout(timeoutId);
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
     return response;
   } catch (error) {
-    clearTimeout(timeoutId);
-    
-    if (error.name === 'AbortError') {
-      console.error(`Request to ${url} timed out after ${timeout}ms`);
-      if (retries > 0) {
-        console.log(`Retrying... (${retries} attempts left)`);
-        return fetchWithRetry(url, options, timeout, retries - 1);
-      }
-      throw new Error(`Request timed out after ${timeout}ms`);
-    }
-    
-    if (retries > 0) {
-      console.log(`Request failed, retrying... (${retries} attempts left)`);
-      return fetchWithRetry(url, options, timeout, retries - 1);
-    }
-    
+    clearTimeout(timeout);
     throw error;
   }
 }
 
 /**
+ * Fetch with retry capability
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Response>} - Fetch response
+ */
+async function fetchWithRetry(url, options = {}) {
+  let retries = CONFIG.maxRetries;
+  
+  while (retries >= 0) {
+    try {
+      return await fetchWithTimeout(url, options);
+    } catch (error) {
+      if (retries === 0) throw error;
+      console.warn(`Request failed, retrying... (${retries} attempts left)`);
+      retries--;
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+}
+
+/**
  * Load game state from server using key in URL parameters
- * Enhanced with better error handling, retry logic, and user feedback
  */
 export function loadImportData() {
   console.log('Initializing loadImportData function');
@@ -157,14 +160,23 @@ export function loadImportData() {
   // Show loading message
   displayMessage('Loading game state...', 'info');
   
-  // Build the full URL
+  // Fetch the saved game state from the server
   const url = `${baseUrl}/api/importData?key=${key}`;
   console.log(`Fetching game state from: ${url}`);
   
-  // Fetch the saved game state from the server with retry logic
   fetchWithRetry(url)
     .then(response => {
       console.log(`Received response with status: ${response.status}`);
+      
+      // Check content type header to detect HTML error pages
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        // This is an HTML response, not JSON - likely an error page
+        return response.text().then(html => {
+          console.error('Received HTML instead of JSON:', html.substring(0, 150) + '...');
+          throw new Error('Server returned HTML instead of JSON. The API endpoint may be misconfigured.');
+        });
+      }
       
       if (!response.ok) {
         // Handle different error codes
@@ -178,8 +190,9 @@ export function loadImportData() {
         }
       }
       
-      // Try to parse the response as JSON
+      // Parse the JSON response
       return response.json().catch(error => {
+        console.error('Error parsing response:', error);
         throw new Error('Invalid response format. Expected JSON.');
       });
     })
@@ -204,24 +217,14 @@ export function loadImportData() {
             appliedCount++;
           } catch (actionError) {
             console.error(`Error applying action #${index}:`, actionError, data);
-            displayMessage(`Warning: Error applying action #${index}`, 'warning');
           }
         });
         
         // Refresh the board after all actions are applied
         refreshBoardImages();
         
-        // Display success message with action count
+        // Display success message
         displayMessage(`Game state loaded successfully! Applied ${appliedCount}/${actions.length} actions.`, 'success');
-        
-        // If not all actions were applied, show a warning
-        if (appliedCount < actions.length) {
-          displayMessage(`Warning: ${actions.length - appliedCount} actions could not be applied.`, 'warning');
-        }
-        
-        // Add timestamp
-        const timestamp = new Date().toLocaleTimeString();
-        displayMessage(`Import completed at ${timestamp}`, 'info');
       } catch (processingError) {
         console.error('Error processing game state:', processingError);
         displayMessage(`Error processing game state: ${processingError.message}`, 'error');
@@ -230,23 +233,15 @@ export function loadImportData() {
     .catch(error => {
       console.error('Error loading game state:', error);
       
-      // Display user-friendly error message
-      let errorMessage;
+      // Format a user-friendly error message
+      let errorMessage = `Failed to load game state: ${error.message}`;
       
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (error.name === 'AbortError' || error.message.includes('timed out')) {
+      if (error.name === 'AbortError') {
         errorMessage = 'Request timed out. The server may be busy or unavailable.';
-      } else {
-        errorMessage = `Failed to load game state: ${error.message}`;
+      } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
       }
       
       displayMessage(errorMessage, 'error');
-      
-      // Suggest fixes
-      displayMessage('Suggestions:', 'info');
-      displayMessage('1. Check that the URL is correct', 'info');
-      displayMessage('2. Try refreshing the page', 'info');
-      displayMessage('3. Try again later', 'info');
     });
 }
