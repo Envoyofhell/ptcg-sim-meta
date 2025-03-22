@@ -5,10 +5,10 @@
  * and provides CORS middleware for cross-origin requests.
  */
 import { Router } from 'itty-router';
-import { corsHeaders, handleOptions } from './utils/cors';
-import { log } from './utils/logging';
-import * as gameStateApi from './api/game-state';
-import * as healthApi from './api/health';
+import { corsHeaders, handleOptions } from './src/utils/cors';
+import { log } from './src/utils/logging';
+import * as gameStateApi from './src/api/game-state';
+import * as healthApi from './src/api/health';
 
 // Create a new router
 const router = Router();
