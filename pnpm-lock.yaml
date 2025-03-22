@@ -81,6 +81,9 @@ importers:
       socket.io:
         specifier: ^4.7.4
         version: 4.8.1
+      workers:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       nodemon:
         specifier: ^3.0.2
@@ -740,6 +743,9 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
+  node-logr@0.5.2:
+    resolution: {integrity: sha512-roPNxvG+OsefMyfVa5HeO24kRtxA7UB8CtvsR8CfSxaESw+1FTsMf8gkDluG5vppzXrXVCI146PQR2KMaszWig==}
+
   nodemon@3.1.9:
     resolution: {integrity: sha512-hdr1oIb2p6ZSxu3PB2JWWYS7ZQ0qvaZsc3hK8DR8f02kRzc8rjYmxAIvdz+aYC+8F2IjNaB7HMcSDg8nQpJxyg==}
     engines: {node: '>=10'}
@@ -1031,6 +1037,9 @@ packages:
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
+
+  workers@0.0.1:
+    resolution: {integrity: sha512-cp2HU5tdKyxOiHg7l8p67R2F07vLT1Hd/h3Xi3dXtoO5NlXml4nkJ48O0EmEkOMtWqEZMWAoNLZfctT3qiP3IA==}
 
   ws@8.17.1:
     resolution: {integrity: sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==}
@@ -1776,6 +1785,8 @@ snapshots:
 
   negotiator@0.6.3: {}
 
+  node-logr@0.5.2: {}
+
   nodemon@3.1.9:
     dependencies:
       chokidar: 3.6.0
@@ -2082,6 +2093,10 @@ snapshots:
       isexe: 2.0.0
 
   word-wrap@1.2.5: {}
+
+  workers@0.0.1:
+    dependencies:
+      node-logr: 0.5.2
 
   ws@8.17.1: {}
 

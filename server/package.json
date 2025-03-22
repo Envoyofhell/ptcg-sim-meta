@@ -5,6 +5,7 @@
     "start:prod": "node server.js"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.8.1",
     "@socket.io/admin-ui": "^0.5.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -12,8 +13,8 @@
     "ejs": "^3.1.10",
     "express": "^4.18.2",
     "pg": "^8.14.1",
-    "@neondatabase/serverless": "^0.8.1",
-    "socket.io": "^4.7.4"
+    "socket.io": "^4.7.4",
+    "workers": "^0.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
