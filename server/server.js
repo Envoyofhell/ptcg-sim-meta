@@ -475,33 +475,35 @@ async function main() {
   });
   
   // Comprehensive CORS Configuration for Express
- // For Express middleware
-app.use(cors({
-  origin: [
-    "https://ptcg-sim-meta.pages.dev",
-    "https://ptcg-sim-meta-dev.pages.dev",
-    "http://localhost:3000",
-    "http://localhost:4000"
-  ],
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-// For Socket.IO
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "https://ptcg-sim-meta.pages.dev",
-      "https://ptcg-sim-meta-dev.pages.dev", 
-      "http://localhost:3000",
-      "http://localhost:4000"
-    ],
-    methods: ["GET", "POST", "OPTIONS"],
+  // This should match Socket.IO CORS configuration
+  const allowedOrigins = [
+    'https://ptcg-sim-meta.pages.dev',
+    'https://ptcg-sim-meta-dev.pages.dev',
+    'https://ptcg-sim-meta.onrender.com',
+    'https://ptcg-sim-meta-dev.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:4000'
+  ];
+  
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        log(`CORS blocked request from origin: ${origin}`, 'warn');
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
-  }
-});
+    maxAge: 86400, // Cache preflight requests for 24 hours
+  }));
   
   // Serve static files from client directory
   app.use(express.static(clientDir));
