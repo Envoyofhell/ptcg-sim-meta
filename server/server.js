@@ -135,9 +135,9 @@ async function initializePostgres() {
     
     // Create connection pool with optimal settings
     pgPool = new pg.Pool({
-      connectionString: postgresUrl,
+      connectionString: process.env.DATABASE_POSTGRES_URL,
       ssl: {
-        rejectUnauthorized: CONFIG.POSTGRES_SSL_REJECT_UNAUTHORIZED
+        rejectUnauthorized: false  // This is important for Neon connections
       },
       max: CONFIG.POSTGRES_POOL_SIZE,
       idleTimeoutMillis: CONFIG.POSTGRES_IDLE_TIMEOUT,
@@ -449,7 +449,47 @@ async function main() {
       uptime: process.uptime()
     });
   });
+  // Add this endpoint to test database connection
+app.get('/api/db-test', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   
+  try {
+    if (!pgPool) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database pool not initialized'
+      });
+    }
+    
+    // Try to connect and run a simple query
+    const client = await pgPool.connect();
+    try {
+      const result = await client.query('SELECT NOW() as time');
+      
+      // Also test our table
+      const tableTest = await client.query(
+        'SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)',
+        ['key_value_pairs']
+      );
+      
+      return res.json({
+        success: true,
+        message: 'Database connection successful',
+        time: result.rows[0].time,
+        tableExists: tableTest.rows[0].exists
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+  }
+});
   // Database stats endpoint
   app.get('/api/stats', async (req, res) => {
     if (!dbInitialized) {
