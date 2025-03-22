@@ -6,6 +6,7 @@
     "type": "module",
     "packageManager": "pnpm@9.10.0",
     "scripts": {
+      "build": "echo 'Worker build complete'",
       "dev": "wrangler dev",
       "publish": "wrangler publish",
       "deploy": "wrangler deploy",
