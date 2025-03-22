@@ -19,7 +19,7 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
     region: virginia
-    buildCommand: npm install && mkdir -p database
+    buildCommand: pnpm install && mkdir -p database
     startCommand: node server.js
     rootDir: ./server
 version: '1'
