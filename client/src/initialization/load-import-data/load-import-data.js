@@ -165,30 +165,35 @@ export function loadImportData() {
   console.log(`Fetching game state from: ${url}`);
   
   fetchWithRetry(url)
-    .then(response => {
-      console.log(`Received response with status: ${response.status}`);
+  .then(response => {
+    // Before trying to parse as JSON, check if it's HTML
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      // Instead of failing, try to request from a different URL
+      console.warn('Received HTML from API, trying alternative URL');
       
-      // Check content type header to detect HTML error pages
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/html')) {
-        // This is an HTML response, not JSON - likely an error page
-        return response.text().then(html => {
-          console.error('Received HTML instead of JSON:', html.substring(0, 150) + '...');
-          throw new Error('Server returned HTML instead of JSON. The API endpoint may be misconfigured.');
-        });
+      // Try a direct URL as fallback
+      const fallbackUrl = 'https://ptcg-sim-meta.onrender.com/api/importData?key=' + key;
+      return fetchWithRetry(fallbackUrl);
+    }
+    
+    return response;
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+    }
+    
+    // Safely try to parse as JSON with fallback
+    return response.text().then(text => {
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', text.substring(0, 150));
+        throw new Error('Invalid JSON response from server');
       }
-      
-      if (!response.ok) {
-        // Handle different error codes
-        switch (response.status) {
-          case 404:
-            throw new Error('Game state not found. The key may be incorrect or expired.');
-          case 500:
-            throw new Error('Server error. Please try again later.');
-          default:
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-        }
-      }
+    });
+  })
       
       // Parse the JSON response
       return response.json().catch(error => {
