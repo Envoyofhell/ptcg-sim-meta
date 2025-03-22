@@ -7,7 +7,7 @@
   "packageManager": "pnpm@9.10.0",
   "scripts": {
     "prebuild": "rm -rf dist && mkdir dist",
-    "build": "esbuild src/index.js --bundle --platform=browser --target=es2020 --outfile=dist/worker.js",
+    "build": "esbuild index.js --bundle --platform=browser --target=es2020 --outfile=dist/worker.js",
     "dev": "wrangler dev --env dev",
     "dev:debug": "wrangler dev --env dev --inspect",
     "predeploy": "pnpm run lint && pnpm run build",
