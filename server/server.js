@@ -211,14 +211,29 @@ async function main() {
   const server = http.createServer(app);
   
   // Socket.IO Server Setup
-  const io = new Server(server, {
-    connectionStateRecovery: {},
-    cors: {
-      origin: ['https://admin.socket.io', 'https://ptcg-sim-meta.pages.dev', 'http://localhost:3000'],
-      credentials: true,
-    },
-  });
   
+const io = new Server(server, {
+  connectionStateRecovery: {},
+  cors: {
+    // Include all production and development domains
+    origin: [
+      // Cloudflare Pages domains
+      "https://ptcg-sim-meta.pages.dev",
+      "https://ptcg-sim-meta-dev.pages.dev",
+      
+      // Render domains
+      "https://ptcg-sim-meta.onrender.com",
+      "https://ptcg-sim-meta-dev.onrender.com",
+      
+      // Local development
+      "http://localhost:3000",
+      "http://localhost:4000"
+    ],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  },
+});
   // Bcrypt Configuration
   const saltRounds = 10;
   const plainPassword = process.env.ADMIN_PASSWORD || 'defaultPassword';
