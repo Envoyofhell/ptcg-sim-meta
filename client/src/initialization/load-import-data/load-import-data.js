@@ -194,13 +194,6 @@ export function loadImportData() {
       }
     });
   })
-      
-      // Parse the JSON response
-      return response.json().catch(error => {
-        console.error('Error parsing response:', error);
-        throw new Error('Invalid response format. Expected JSON.');
-      });
-    })
     .then(importData => {
       // Validate the imported data
       if (!importData || !Array.isArray(importData) || importData.length === 0) {
