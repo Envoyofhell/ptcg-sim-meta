@@ -1,38 +1,45 @@
+/**
+ * PTCG-Sim-Meta Main Server
+ * 
+ * This is the main entry point for the server.
+ * It uses the modular structure to handle database, CORS, and API routes.
+ */
 import express from 'express';
-import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import dotenv from 'dotenv';
-import sqlite3 from 'sqlite3';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// Handle __dirname in ES modules and adjust for client folder
+// Import modular components
+import { initializeDatabase } from './config/database.js';
+import { applyCors } from './middleware/cors-middleware.js';
+import { generateRandomKey } from './utils/key-generator.js';
+import { storeGameState, getGameState } from './services/game-state.js';
+import apiRoutes from './routes/api-routes.js';
+
+// Handle __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDir = path.join(__dirname, '../client');
 
-const envFilePath = path.join(__dirname, 'socket-admin-password.env');
-dotenv.config({ path: envFilePath });
-
-function generateRandomKey(length) {
-  const characters =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let key = '';
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    key += characters.charAt(randomIndex);
-  }
-  return key;
-}
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 async function main() {
+  // Initialize Express app
   const app = express();
-  // HTTP Server Setup
   const server = http.createServer(app);
+
+  // Initialize database
+  await initializeDatabase();
+  
+  // Apply CORS middleware
+  applyCors(app, [
+    // Add any additional domains that need access here
+  ]);
 
   // Socket.IO Server Setup
   const io = new Server(server, {
@@ -42,39 +49,8 @@ async function main() {
       credentials: true,
     },
   });
-  // Create a new SQLite database
-  const dbFilePath = 'database/db.sqlite';
-  const maxSizeGB = 15;
-  const db = new sqlite3.Database(dbFilePath);
-  let isDatabaseCapacityReached = false;
 
-  // Check database size
-  const checkDatabaseSizeGB = () => {
-    const stats = fs.statSync(dbFilePath);
-    const fileSizeInBytes = stats.size;
-    const fileSizeInGB = fileSizeInBytes / (1024 * 1024 * 1024); // Convert bytes to gigabytes
-    return fileSizeInGB;
-  };
-
-  // Perform size check periodically
-  setInterval(
-    () => {
-      const currentSize = checkDatabaseSizeGB();
-      if (currentSize > maxSizeGB) {
-        isDatabaseCapacityReached = true;
-      }
-    },
-    1000 * 60 * 60
-  );
-
-  // Create a table to store key-value pairs
-  db.serialize(() => {
-    db.run(
-      'CREATE TABLE IF NOT EXISTS KeyValuePairs (key TEXT PRIMARY KEY, value TEXT)'
-    );
-  });
-
-  // Bcrypt Configuration
+  // Bcrypt Configuration for admin UI
   const saltRounds = 10;
   const plainPassword = process.env.ADMIN_PASSWORD || 'defaultPassword';
   const hashedPassword = bcrypt.hashSync(plainPassword, saltRounds);
@@ -89,47 +65,29 @@ async function main() {
     mode: 'development',
   });
 
-  app.use(cors());
-app.use(express.static(clientDir));
+  // Serve static files from client directory
+  app.use(express.static(clientDir));
+  
+  // API routes
+  app.use('/api', apiRoutes);
 
-app.get('/', (req, res) => {
+  // Main application route
+  app.get('/', (req, res) => {
     res.sendFile(path.join(clientDir, 'index.html'));
-});
+  });
 
-app.get('/import', (req, res) => {
+  // Import page route
+  app.get('/import', (req, res) => {
     const key = req.query.key;
     if (!key) {
-        return res.status(400).json({ error: 'Key parameter is missing' });
+      return res.status(400).json({ error: 'Key parameter is missing' });
     }
-    res.sendFile(path.join(clientDir, 'import.html'));
-});
+    res.sendFile(path.join(clientDir, 'index.html'));
+  });
 
-app.get('/api/importData', (req, res) => {
-    const key = req.query.key;
-    if (!key) {
-        return res.status(400).json({ error: 'Key parameter is missing' });
-    }
-
-    db.get('SELECT value FROM KeyValuePairs WHERE key = ?', [key], (err, row) => {
-        if (err) {
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (row) {
-            try {
-                const jsonData = JSON.parse(row.value);
-                res.json(jsonData);
-            } catch (parseError) {
-                return res.status(500).json({ error: 'Error parsing JSON data' });
-            }
-
-        } else {
-            res.status(404).json({ error: 'Key not found' });
-        }
-    });
-});
-
-
+  // Room management
   const roomInfo = new Map();
+  
   // Function to periodically clean up empty rooms
   const cleanUpEmptyRooms = () => {
     roomInfo.forEach((room, roomId) => {
@@ -138,9 +96,11 @@ app.get('/api/importData', (req, res) => {
       }
     });
   };
-  // Set up a timer to clean up empty rooms every 5 minutes (adjust as needed)
+  
+  // Set up a timer to clean up empty rooms every 5 minutes
   setInterval(cleanUpEmptyRooms, 5 * 60 * 1000);
-  //Socket.IO Connection Handling
+  
+  // Socket.IO Connection Handling
   io.on('connection', async (socket) => {
     // Function to handle disconnections (unintended)
     const disconnectHandler = (roomId, username) => {
@@ -163,6 +123,7 @@ app.get('/api/importData', (req, res) => {
         }
       }
     };
+    
     // Function to handle event emission
     const emitToRoom = (eventName, data) => {
       socket.broadcast.to(data.roomId).emit(eventName, data);
@@ -176,30 +137,35 @@ app.get('/api/importData', (req, res) => {
         }
       }
     };
-    socket.on('storeGameState', (exportData) => {
-      if (isDatabaseCapacityReached) {
+    
+    // Handle game state storage - using the service now
+    socket.on('storeGameState', async (exportData) => {
+      try {
+        // Generate a unique key
+        const key = generateRandomKey(4);
+        
+        // Store the game state using the service
+        const result = await storeGameState(exportData, key);
+        
+        if (result.success) {
+          socket.emit('exportGameStateSuccessful', key);
+          console.log(`Game state with key ${key} successfully stored`);
+        } else {
+          socket.emit(
+            'exportGameStateFailed',
+            result.error || 'Error exporting game! Please try again or save as a file.'
+          );
+        }
+      } catch (error) {
+        console.error('Error in storeGameState handler:', error);
         socket.emit(
           'exportGameStateFailed',
-          'No more storage for game states! You should probably tell Michael/Xiao Xiao.'
-        );
-      } else {
-        const key = generateRandomKey(4);
-        db.run(
-          'INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)',
-          [key, exportData],
-          (err) => {
-            if (err) {
-              socket.emit(
-                'exportGameStateFailed',
-                'Error exporting game! Please try again or save as a file.'
-              );
-            } else {
-              socket.emit('exportGameStateSuccessful', key);
-            }
-          }
+          'Error exporting game! Please try again or save as a file.'
         );
       }
     });
+
+    // Room join handling
     socket.on('joinGame', (roomId, username, isSpectator) => {
       if (!roomInfo.has(roomId)) {
         roomInfo.set(roomId, { players: new Set(), spectators: new Set() });
@@ -224,6 +190,7 @@ app.get('/api/importData', (req, res) => {
       }
     });
 
+    // User reconnection handling
     socket.on('userReconnected', (data) => {
       if (!roomInfo.has(data.roomId)) {
         roomInfo.set(data.roomId, {
@@ -256,38 +223,6 @@ app.get('/api/importData', (req, res) => {
       'spectatorActionData',
       'initiateImport',
       'endImport',
-      // 'exchangeData',
-      // 'loadDeckData',
-      // 'reset',
-      // 'setup',
-      // 'takeTurn',
-      // 'draw',
-      // 'moveCardBundle',
-      // 'shuffleIntoDeck',
-      // 'moveToDeckTop',
-      // 'switchWithDeckTop',
-      // 'viewDeck',
-      // 'shuffleAll',
-      // 'discardAll',
-      // 'lostZoneAll',
-      // 'handAll',
-      // 'leaveAll',
-      // 'discardAndDraw',
-      // 'shuffleAndDraw',
-      // 'shuffleBottomAndDraw',
-      // 'shuffleZone',
-      // 'useAbility',
-      // 'removeAbilityCounter',
-      // 'addDamageCounter',
-      // 'updateDamageCounter',
-      // 'removeDamageCounter',
-      // 'addSpecialCondition',
-      // 'updateSpecialCondition',
-      // 'removeSpecialCondition',
-      // 'discardBoard',
-      // 'handBoard',
-      // 'shuffleBoard',
-      // 'lostZoneBoard',
       'lookAtCards',
       'stopLookingAtCards',
       'revealCards',
@@ -296,12 +231,6 @@ app.get('/api/importData', (req, res) => {
       'hideShortcut',
       'lookShortcut',
       'stopLookingShortcut',
-      // 'playRandomCardFaceDown',
-      // 'rotateCard',
-      // 'changeType',
-      // 'attack',
-      // 'pass',
-      // 'VSTARGXFunction',
     ];
 
     // Register event listeners using the common function
@@ -312,10 +241,18 @@ app.get('/api/importData', (req, res) => {
     }
   });
 
-  const port = 4000;
+  // Get port from environment variable or use default
+  const port = process.env.PORT || 4000;
+  
   server.listen(port, () => {
-    // eslint-disable-next-line no-console
     console.log(`Server is running at http://localhost:${port}`);
   });
+
+  return server;
 }
-main();
+
+// Start the server
+main().catch(error => {
+  console.error('Fatal error starting server:', error);
+  process.exit(1);
+});
