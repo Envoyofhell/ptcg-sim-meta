@@ -7,7 +7,7 @@
     "packageManager": "pnpm@9.10.0",
     "scripts": {
       "prebuild": "mkdir -p dist",
-      "build": "npx esbuild index.js --bundle --platform=node --target=es2020 --outfile=dist/worker.js --external:@neondatabase/serverless --external:itty-router",
+      "build": "npx esbuild --config=esbuild.config.js",
       "dev": "wrangler dev --env dev",
       "dev:debug": "wrangler dev --env dev --inspect",
       "predeploy": "pnpm run build",

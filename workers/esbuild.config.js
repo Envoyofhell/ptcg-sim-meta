@@ -4,5 +4,9 @@ module.exports = {
     platform: 'node',
     target: ['es2020'],
     outfile: 'dist/worker.js',
-    external: ['@neondatabase/serverless', 'itty-router']
+    external: [
+      '@neondatabase/serverless', 
+      'itty-router'
+    ],
+    format: 'esm'  // Explicitly set ES module format
   };
