@@ -2,8 +2,12 @@
  * PostgreSQL-Compatible Game State Loader
  * 
  * This module handles loading saved game states from the PostgreSQL database
- * through the server's API endpoint. It includes robust error handling and
- * cross-environment compatibility.
+ * through the server's API endpoint. Features include:
+ * - Cross-environment detection (production, dev, local)
+ * - Enhanced error handling and user feedback
+ * - Retries for failed network requests
+ * - Timeout handling
+ * - Detailed logging
  */
 import { acceptAction } from '../../setup/general/accept-action.js';
 import { refreshBoardImages } from '../../setup/sizing/refresh-board.js';
@@ -18,37 +22,80 @@ const CONFIG = {
   // Number of retries for failed requests
   maxRetries: 2,
   
+  // Retry delay in milliseconds
+  retryDelay: 1000,
+  
   // Server URLs for different environments
   serverUrls: {
     production: 'https://ptcg-sim-meta.onrender.com',
     development: 'https://ptcg-sim-meta-dev.onrender.com',
     local: ''
-  }
+  },
+  
+  // Debug mode for detailed logging
+  debug: true
 };
+
+/**
+ * Enhanced console logging with timestamps
+ * @param {string} message - Log message
+ * @param {string} level - Log level (info, warn, error, debug)
+ */
+function log(message, level = 'info') {
+  const timestamp = new Date().toISOString();
+  let method = console.log;
+  let prefix = '';
+  
+  switch (level) {
+    case 'error':
+      method = console.error;
+      prefix = '🔴 ERROR';
+      break;
+    case 'warn':
+      method = console.warn;
+      prefix = '🟠 WARNING';
+      break;
+    case 'debug':
+      if (!CONFIG.debug) return;
+      prefix = '🔍 DEBUG';
+      break;
+    case 'success':
+      prefix = '🟢 SUCCESS';
+      break;
+    default:
+      prefix = '🔵 INFO';
+  }
+  
+  method(`[${timestamp}] ${prefix}: ${message}`);
+}
 
 /**
  * Determines the appropriate API base URL based on current environment
  * @returns {string} Base URL for API requests
  */
 function determineApiBaseUrl() {
+  const hostname = window.location.hostname;
+  log(`Current hostname: ${hostname}`, 'debug');
+  
   // Production environment (Cloudflare Pages)
-  if (window.location.hostname.includes('ptcg-sim-meta.pages.dev')) {
-    console.log('Environment detected: Production Cloudflare Pages');
+  if (hostname.includes('ptcg-sim-meta.pages.dev')) {
+    log('Environment detected: Production Cloudflare Pages', 'info');
     return CONFIG.serverUrls.production;
   } 
   // Development environment (Cloudflare Pages Dev)
-  else if (window.location.hostname.includes('ptcg-sim-meta-dev.pages.dev')) {
-    console.log('Environment detected: Development Cloudflare Pages');
+  else if (hostname.includes('ptcg-sim-meta-dev.pages.dev')) {
+    log('Environment detected: Development Cloudflare Pages', 'info');
     return CONFIG.serverUrls.development;
   }
   // Local development environment
-  else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('Environment detected: Local development');
+  else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    log('Environment detected: Local development', 'info');
+    // For local development, we use a relative URL which doesn't need a base
     return CONFIG.serverUrls.local;
   }
   // Fallback for unknown environments
   else {
-    console.log('Environment detected: Unknown, using production URL');
+    log('Environment detected: Unknown, using production URL', 'warn');
     return CONFIG.serverUrls.production;
   }
 }
@@ -61,7 +108,7 @@ function determineApiBaseUrl() {
 function displayMessage(message, type = 'info') {
   const chatbox = document.getElementById('chatbox');
   if (!chatbox) {
-    console.warn('Chatbox element not found, cannot display message');
+    log('Chatbox element not found, cannot display message', 'warn');
     return;
   }
   
@@ -92,19 +139,26 @@ function displayMessage(message, type = 'info') {
 }
 
 /**
- * Fetch with timeout and retry capability
+ * Fetch with timeout to prevent hanging requests
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - Fetch response
  */
 async function fetchWithTimeout(url, options = {}) {
+  // Create abort controller for timeout
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+  const signal = controller.signal;
+  
+  // Set timeout to abort request if it takes too long
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, CONFIG.requestTimeout);
   
   try {
+    // Make request with abort signal
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal
+      signal
     });
     clearTimeout(timeout);
     return response;
@@ -115,131 +169,219 @@ async function fetchWithTimeout(url, options = {}) {
 }
 
 /**
- * Fetch with retry capability
+ * Fetch with retry capability for resilience
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @returns {Promise<Response>} - Fetch response
  */
 async function fetchWithRetry(url, options = {}) {
-  let retries = CONFIG.maxRetries;
+  let lastError;
   
-  while (retries >= 0) {
+  // Try the request multiple times
+  for (let attempt = 0; attempt <= CONFIG.maxRetries; attempt++) {
     try {
+      // If not the first attempt, wait before retrying
+      if (attempt > 0) {
+        log(`Retry attempt ${attempt}/${CONFIG.maxRetries}...`, 'info');
+        await new Promise(resolve => setTimeout(resolve, CONFIG.retryDelay));
+      }
+      
+      // Make the request with timeout
       return await fetchWithTimeout(url, options);
     } catch (error) {
-      if (retries === 0) throw error;
-      console.warn(`Request failed, retrying... (${retries} attempts left)`);
-      retries--;
-      // Wait a bit before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      lastError = error;
+      log(`Request failed (attempt ${attempt + 1}/${CONFIG.maxRetries + 1}): ${error.message}`, 'warn');
+      
+      // If this was the last attempt, throw the error
+      if (attempt === CONFIG.maxRetries) {
+        throw error;
+      }
+    }
+  }
+  
+  // This should never happen, but just in case
+  throw lastError || new Error('Failed to fetch after retries');
+}
+
+/**
+ * Process error response and extract useful information
+ * @param {Response} response - Fetch response object
+ * @returns {Promise<Object>} - Error details
+ */
+async function processErrorResponse(response) {
+  // Try to parse as JSON first
+  try {
+    const errorData = await response.json();
+    return {
+      status: response.status,
+      message: errorData.error || response.statusText,
+      details: errorData.details || null
+    };
+  } catch (e) {
+    // If not JSON, try to get text
+    try {
+      const errorText = await response.text();
+      
+      // Check if it's HTML (likely an error page)
+      if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
+        return {
+          status: response.status,
+          message: 'Received HTML error page instead of JSON',
+          isHtml: true,
+          preview: errorText.substring(0, 100) + '...'
+        };
+      } else {
+        return {
+          status: response.status,
+          message: response.statusText,
+          text: errorText.substring(0, 100) + (errorText.length > 100 ? '...' : '')
+        };
+      }
+    } catch (textError) {
+      // If we can't even get text, just return the status
+      return {
+        status: response.status,
+        message: response.statusText
+      };
     }
   }
 }
 
 /**
  * Load game state from server using key in URL parameters
+ * Enhanced with better error handling, retry logic, and user feedback
  */
 export function loadImportData() {
-  console.log('Initializing loadImportData function');
+  log('Initializing loadImportData function', 'info');
   
   // Get the import key from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const key = urlParams.get('key');
   
   if (!key) {
-    console.warn('No import key provided in URL parameters');
+    log('No import key provided in URL parameters', 'warn');
     return;
   }
   
-  console.log(`Found import key in URL: ${key}`);
+  log(`Found import key in URL: ${key}`, 'info');
   
   // Determine the base URL based on environment
   const baseUrl = determineApiBaseUrl();
-  console.log(`Using API base URL: ${baseUrl || 'relative path'}`);
+  log(`Using API base URL: ${baseUrl || 'relative path'}`, 'debug');
+  
+  // Build the full URL
+  const url = `${baseUrl}/api/importData?key=${key}`;
+  log(`Fetching game state from: ${url}`, 'info');
   
   // Show loading message
   displayMessage('Loading game state...', 'info');
   
-  // Fetch the saved game state from the server
-  const url = `${baseUrl}/api/importData?key=${key}`;
-  console.log(`Fetching game state from: ${url}`);
-  
+  // Fetch the saved game state from the server with retry logic
   fetchWithRetry(url)
-  .then(response => {
-    // Before trying to parse as JSON, check if it's HTML
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('text/html')) {
-      // Instead of failing, try to request from a different URL
-      console.warn('Received HTML from API, trying alternative URL');
+    .then(response => {
+      log(`Received response with status: ${response.status}`, 'debug');
       
-      // Try a direct URL as fallback
-      const fallbackUrl = 'https://ptcg-sim-meta.onrender.com/api/importData?key=' + key;
-      return fetchWithRetry(fallbackUrl);
-    }
-    
-    return response;
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-    }
-    
-    // Safely try to parse as JSON with fallback
-    return response.text().then(text => {
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.error('Failed to parse response as JSON:', text.substring(0, 150));
-        throw new Error('Invalid JSON response from server');
+      // Check content type to detect HTML error pages
+      const contentType = response.headers.get('content-type');
+      log(`Response content type: ${contentType}`, 'debug');
+      
+      if (contentType && contentType.includes('text/html')) {
+        // This is an HTML response, not JSON - likely an error page
+        return response.text().then(html => {
+          log('Received HTML instead of JSON', 'error');
+          log(`HTML preview: ${html.substring(0, 100)}...`, 'debug');
+          throw new Error('Server returned HTML instead of JSON. The API endpoint may be misconfigured.');
+        });
       }
-    });
-  })
+      
+      // If response is not OK, process the error
+      if (!response.ok) {
+        return processErrorResponse(response).then(errorDetails => {
+          throw new Error(`Server error (${errorDetails.status}): ${errorDetails.message}`);
+        });
+      }
+      
+      // Try to parse JSON response
+      return response.json().catch(jsonError => {
+        log(`JSON parsing error: ${jsonError.message}`, 'error');
+        throw new Error('Invalid JSON response from server');
+      });
+    })
     .then(importData => {
       // Validate the imported data
-      if (!importData || !Array.isArray(importData) || importData.length === 0) {
-        throw new Error('Invalid game state data format');
+      if (!importData) {
+        throw new Error('Received empty response from server');
       }
       
-      console.log(`Successfully loaded game state with ${importData.length} actions`);
+      if (!Array.isArray(importData)) {
+        log(`Unexpected data format: ${typeof importData}`, 'error');
+        log(`Data preview: ${JSON.stringify(importData).substring(0, 100)}...`, 'debug');
+        throw new Error('Invalid game state data format (not an array)');
+      }
+      
+      if (importData.length === 0) {
+        throw new Error('Game state contains no actions');
+      }
+      
+      log(`Successfully loaded game state with ${importData.length} actions`, 'success');
       
       try {
         // Filter out any non-action objects (like version metadata)
         let actions = importData.filter((obj) => !('version' in obj));
-        console.log(`Applying ${actions.length} game actions`);
+        log(`Applying ${actions.length} game actions`, 'info');
         
         // Apply each action to restore the game state
         let appliedCount = 0;
+        let errors = 0;
+        
         actions.forEach((data, index) => {
           try {
+            // Apply the action to restore state
             acceptAction(data.user, data.action, data.parameters, true);
             appliedCount++;
           } catch (actionError) {
-            console.error(`Error applying action #${index}:`, actionError, data);
+            errors++;
+            log(`Error applying action #${index}: ${actionError.message}`, 'error');
           }
         });
         
         // Refresh the board after all actions are applied
         refreshBoardImages();
         
-        // Display success message
+        // Display success message with action count
         displayMessage(`Game state loaded successfully! Applied ${appliedCount}/${actions.length} actions.`, 'success');
+        
+        // If there were errors, show a warning
+        if (errors > 0) {
+          displayMessage(`Warning: ${errors} action(s) failed to apply.`, 'warning');
+        }
       } catch (processingError) {
-        console.error('Error processing game state:', processingError);
+        log(`Error processing game state: ${processingError.message}`, 'error');
         displayMessage(`Error processing game state: ${processingError.message}`, 'error');
       }
     })
     .catch(error => {
-      console.error('Error loading game state:', error);
+      log(`Error loading game state: ${error.message}`, 'error');
       
-      // Format a user-friendly error message
-      let errorMessage = `Failed to load game state: ${error.message}`;
+      // Display user-friendly error message
+      let errorMessage;
       
       if (error.name === 'AbortError') {
         errorMessage = 'Request timed out. The server may be busy or unavailable.';
       } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message.includes('HTML')) {
+        errorMessage = 'The server returned an HTML page instead of game data. This may indicate a server configuration issue.';
+      } else {
+        errorMessage = `Failed to load game state: ${error.message}`;
       }
       
       displayMessage(errorMessage, 'error');
+      
+      // Show troubleshooting tips
+      displayMessage('Troubleshooting tips:', 'info');
+      displayMessage('1. Check that the URL and key are correct', 'info');
+      displayMessage('2. Make sure the server is running', 'info');
+      displayMessage('3. Try refreshing the page', 'info');
     });
 }
