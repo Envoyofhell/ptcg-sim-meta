@@ -1,0 +1,34 @@
+name = "ptcg-sim-meta-dev"
+main = "src/index.js"
+compatibility_date = "2023-10-30"
+compatibility_flags = ["nodejs_compat"]
+
+# Development environment
+[env.dev]
+name = "ptcg-sim-meta-dev"
+# Add your dev environment variables here
+# This can be set with wrangler secret put DATABASE_URL
+# Example: wrangler secret put DATABASE_URL "postgresql://username:password@your-db.neon.tech/dbname"
+vars = { ENVIRONMENT = "development" }
+
+# Production environment
+[env.production]
+name = "ptcg-sim-meta"
+# Add your production environment variables here
+vars = { ENVIRONMENT = "production" }
+
+# Configure limits and the route
+[triggers]
+crons = ["0 0 * * *"] # Run cleanup once per day at midnight UTC
+
+# Configure KV, Durable Objects if needed
+# [kv_namespaces]
+# [[kv_namespaces]]
+# binding = "PTCG_DATA"
+# id = "your-kv-id-here"
+
+# D1 Database configuration if needed
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "ptcg-sim-meta"
+# database_id = "your-d1-id-here"
