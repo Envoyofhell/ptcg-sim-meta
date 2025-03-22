@@ -1,45 +1,35 @@
 {
-  "name": "ptcg-sim-meta-workers",
-  "version": "1.0.0",
-  "description": "Cloudflare Workers for PTCG-Sim-Meta",
-  "main": "dist/worker.js",
-  "type": "module",
-  "packageManager": "pnpm@9.10.0",
-  "scripts": {
-    "prebuild": "rm -rf dist && mkdir dist",
-    "build": "esbuild index.js --bundle --platform=browser --target=es2020 --outfile=dist/worker.js",
-    "dev": "wrangler dev --env dev",
-    "dev:debug": "wrangler dev --env dev --inspect",
-    "predeploy": "pnpm run lint && pnpm run build",
-    "deploy": "wrangler deploy --env production",
-    "deploy:dev": "wrangler deploy --env dev",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .js --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext .js --fix",
-    "format": "prettier --write 'src/**/*.{js,json}' --cache",
-    "format:check": "prettier --check 'src/**/*.{js,json}'"
-  },
-  "keywords": [
-    "cloudflare",
-    "workers",
-    "ptcg",
-    "pokemon"
-  ],
-  "author": "",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@neondatabase/serverless": "^0.8.1",
-    "itty-router": "^4.0.27"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.1",
-    "eslint": "^9.23.0",
-    "prettier": "^3.2.5",
-    "wrangler": "^3.114.2"
+    "name": "ptcg-sim-meta-workers",
+    "version": "1.0.0",
+    "description": "Cloudflare Workers for PTCG-Sim-Meta",
+    "main": "dist/worker.js",
+    "type": "module",
+    "packageManager": "pnpm@9.10.0",
+    "scripts": {
+      "prebuild": "mkdir -p dist",
+      "build": "esbuild index.js --bundle --platform=node --target=es2020 --outfile=dist/worker.js --external:@neondatabase/serverless --external:itty-router",
+      "dev": "wrangler dev --env dev",
+      "dev:debug": "wrangler dev --env dev --inspect",
+      "predeploy": "pnpm run build",
+      "deploy": "wrangler deploy --env production",
+      "deploy:dev": "wrangler deploy --env dev"
+    },
+    "keywords": [
+      "cloudflare",
+      "workers",
+      "ptcg",
+      "pokemon"
+    ],
+    "license": "MIT",
+    "engines": {
+      "node": ">=18.0.0"
+    },
+    "dependencies": {
+      "@neondatabase/serverless": "^0.8.1",
+      "itty-router": "^4.0.27"
+    },
+    "devDependencies": {
+      "esbuild": "^0.25.1",
+      "wrangler": "^3.114.2"
+    }
   }
-}
