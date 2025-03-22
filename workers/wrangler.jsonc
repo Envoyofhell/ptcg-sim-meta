@@ -1,0 +1,8 @@
+{
+    "name": "ptcg-sim-meta-dev",
+    "compatibility_date": "2024-03-22",
+    "main": "index.js",
+    "vars": {
+      "ENVIRONMENT": "development"
+    }
+  }
