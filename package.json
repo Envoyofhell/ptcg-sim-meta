@@ -3,17 +3,12 @@
   "version": "1.5.1.1",
   "private": true,
   "packageManager": "pnpm@9.10.0",
-  "workspaces": [
-    "client",
-    "server",
-    "workers"  
-  ],
   "scripts": {
     "start": "pnpm -C server start",
     "start:workers": "pnpm -C workers dev", 
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,json,md}\"",
-    "deploy:workers": "pnpm -C workers deploy"  
+    "deploy:workers": "pnpm -C workers deploy"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
