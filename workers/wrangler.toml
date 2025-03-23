@@ -10,20 +10,41 @@ compatibility_flags = ["nodejs_compat"]  # Enable Node.js compatibility mode
 # Worker routes configuration
 # This tells Cloudflare which requests should be handled by your worker
 [routes]
-pattern = "*ptcg-sim-meta.pages.dev/*"
+pattern = "*ptcg-sim-meta.pages.dev/api/*"  # Only handle API routes
 zone_name = "ptcg-sim-meta.pages.dev"
 
-# Content type headers for proper MIME types
+# Enhanced Content type headers for proper MIME types
 # This fixes the "Failed to load module script" error
 [headers]
+  # JavaScript files
   [headers."*.js"]
-    Content-Type = "application/javascript"
+    Content-Type = "application/javascript; charset=utf-8"
+  
+  # JavaScript module files
   [headers."*.mjs"]
-    Content-Type = "application/javascript"
+    Content-Type = "application/javascript; charset=utf-8"
+  
+  # JavaScript source maps
+  [headers."*.js.map"]
+    Content-Type = "application/json; charset=utf-8"
+  
+  # CSS files
   [headers."*.css"]
-    Content-Type = "text/css"
+    Content-Type = "text/css; charset=utf-8"
+  
+  # JSON files
   [headers."*.json"]
-    Content-Type = "application/json"
+    Content-Type = "application/json; charset=utf-8"
+  
+  # Specific paths that might cause issues
+  [headers."/workers/src/utils/logging.js"]
+    Content-Type = "application/javascript; charset=utf-8"
+  
+  [headers."/workers/src/utils/cors.js"]
+    Content-Type = "application/javascript; charset=utf-8"
+  
+  [headers."/workers/src/db/client.js"]
+    Content-Type = "application/javascript; charset=utf-8"
 
 # CORS configuration for proper API access
 [cors]
@@ -32,12 +53,13 @@ zone_name = "ptcg-sim-meta.pages.dev"
   allowed_headers = ["Content-Type", "Authorization", "X-Requested-With", "Upgrade", "Connection"]
   max_age = 86400
 
-# Enhanced environment variables for dev environment
+# Development environment configuration
 [env.dev]
 name = "ptcg-sim-meta-dev"
 ENVIRONMENT = "development"
 LOG_LEVEL = "debug"
 SOCKET_ENABLED = "true"
+workers_dev = true  # Deploy to workers.dev subdomain
 
 # Production environment configuration
 [env.production]
@@ -45,13 +67,32 @@ name = "ptcg-sim-meta"
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
 SOCKET_ENABLED = "true"
+workers_dev = false  # Use custom domain
 
-# Build configuration (for worker only)
+# Build configuration
 [build]
-command = "pnpm run build"  # Use this for the Worker build
-cwd = "workers"             # Build in the workers directory
-dest = "dist"               # Output to the dist directory
+command = "node esbuild.config.js"  # Use this for the Worker build
+cwd = "workers"                      # Build in the workers directory
+watch_dir = "workers"                # Watch this directory for changes
 
 # Scheduled tasks for maintenance operations
 [triggers]
 crons = ["0 0 * * *"]      # Run maintenance daily at midnight UTC
+
+# Advanced logging configuration
+[log]
+level = "info"            # Default log level
+
+# Service bindings - ensure Workers can communicate with each other
+[service_bindings]
+  # Define any service bindings here if needed
+
+# Advanced cache configuration
+[cache]
+  browser_ttl = 3600    # 1 hour browser cache
+  serve_stale = true    # Serve stale content while revalidating
+
+# Variable bindings
+[vars]
+  DEBUG_MODE = "false"
+  WORKER_VERSION = "1.5.1"

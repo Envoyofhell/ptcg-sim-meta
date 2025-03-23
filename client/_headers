@@ -1,98 +1,46 @@
-# Global headers for all files
-/*
-  X-Frame-Options: SAMEORIGIN
-  X-XSS-Protection: 1; mode=block
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
+# Handle exact path matches for worker resources first to prevent SPA fallback
+/workers/src/utils/logging.js    /workers/src/utils/logging.js    200
+/workers/src/utils/cors.js       /workers/src/utils/cors.js       200
+/workers/src/utils/key-generator.js /workers/src/utils/key-generator.js 200
+/workers/src/utils/error-handling.js /workers/src/utils/error-handling.js 200
+/workers/src/db/client.js        /workers/src/db/client.js        200
+/workers/src/db/game-state.js    /workers/src/db/game-state.js    200
+/workers/src/api/game-state.js   /workers/src/api/game-state.js   200
+/workers/src/api/health.js       /workers/src/api/health.js       200
+/workers/dist/worker.js          /workers/dist/worker.js          200
+/workers/dist/worker.js.map      /workers/dist/worker.js.map      200
 
-# JavaScript files
-/*.js
-  Content-Type: application/javascript; charset=utf-8
+# Handle module path redirects
+/src/config/*                 /src/config/:splat                 200
+/src/services/*               /src/services/:splat               200
+/js/metadata/*                /js/metadata/:splat                200
+/src/initialization/*         /src/initialization/:splat         200
+/src/initialization/socket-event-listeners/*  /src/initialization/socket-event-listeners/:splat  200
+/src/initialization/global-variables/*        /src/initialization/global-variables/:splat        200
+/src/initialization/config/*                 /src/initialization/config/:splat                  200
+/src/initialization/document-event-listeners/* /src/initialization/document-event-listeners/:splat 200
+/src/initialization/load-import-data/*       /src/initialization/load-import-data/:splat       200
+/src/initialization/mutation-observers/*     /src/initialization/mutation-observers/:splat     200
+/src/setup/*                  /src/setup/:splat                  200
+/src/setup/general/*          /src/setup/general/:splat          200
+/src/utils/*                  /src/utils/:splat                  200
+/src/actions/*                /src/actions/:splat                200
+/src/actions/general/*        /src/actions/general/:splat        200
+/src/actions/keybinds/*       /src/actions/keybinds/:splat       200
 
-# JavaScript module files
-/*.mjs
-  Content-Type: application/javascript; charset=utf-8
+# API endpoints
+/api/*                        /api/:splat                        200
+/health                       /health                            200
 
-# JavaScript source maps
-/*.js.map
-  Content-Type: application/json; charset=utf-8
+# Static assets
+/src/assets/*                 /src/assets/:splat                 200
+/src/css/*                    /src/css/:splat                    200
 
-# JavaScript modules
-/*.module.js
-  Content-Type: application/javascript; charset=utf-8
+# Handle workers paths correctly
+/workers/src/utils/*          /workers/src/utils/:splat          200
+/workers/src/api/*            /workers/src/api/:splat            200
+/workers/src/db/*             /workers/src/db/:splat             200
+/workers/dist/*               /workers/dist/:splat               200
 
-# ES Modules in subdirectories
-/src/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/config/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/services/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/config/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/socket-event-listeners/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/global-variables/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/document-event-listeners/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/initialization/load-import-data/*.js
-  Content-Type: application/javascript; charset=utf-8
-  
-/src/initialization/mutation-observers/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/setup/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/setup/general/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/utils/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/js/metadata/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/actions/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/actions/general/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-/src/actions/keybinds/*.js
-  Content-Type: application/javascript; charset=utf-8
-
-# JSON files
-/*.json
-  Content-Type: application/json; charset=utf-8
-
-# CSS files
-/*.css
-  Content-Type: text/css; charset=utf-8
-
-# Ensure manifest is served with correct MIME type
-/src/assets/site.webmanifest
-  Content-Type: application/manifest+json
-
-# WebAssembly files if you have any
-/*.wasm
-  Content-Type: application/wasm
-
-# Fonts
-/*.woff2
-  Content-Type: font/woff2
-/*.woff
-  Content-Type: font/woff
-/*.ttf
-  Content-Type: font/ttf
+# SPA fallback - direct all other routes to index.html
+/*                            /index.html                        200
