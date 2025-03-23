@@ -7,7 +7,7 @@
     "packageManager": "pnpm@9.10.0",
     "scripts": {
       "prebuild": "mkdir -p dist",
-      "build": "npx esbuild --config=esbuild.config.js",
+      "build": "esbuild --config=esbuild.config.js",
       "dev": "wrangler dev --env dev",
       "dev:debug": "wrangler dev --env dev --inspect",
       "predeploy": "pnpm run build",

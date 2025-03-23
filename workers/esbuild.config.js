@@ -1,3 +1,4 @@
+/** @type {import('esbuild').BuildOptions} */
 module.exports = {
     entryPoints: ['index.js'],
     bundle: true,
@@ -8,5 +9,5 @@ module.exports = {
       '@neondatabase/serverless', 
       'itty-router'
     ],
-    format: 'esm'  // Explicitly set ES module format
+    format: 'esm'
   };
