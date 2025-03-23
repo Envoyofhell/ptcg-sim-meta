@@ -7,11 +7,14 @@ export const version = '1.5.1';
 // Define server URL based on environment or hostname
 let socketUrl;
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  // Local development
   socketUrl = 'http://localhost:4000';
+} else if (window.location.hostname === 'ptcg-sim-meta-dev.pages.dev') {
+  socketUrl = 'https://ptcg-sim-meta-dev.jasonh1993.workers.dev';
+} else if (window.location.hostname === 'ptcg-sim-meta.pages.dev') {
+  socketUrl = 'https://ptcg-sim-meta.jasonh1993.workers.dev';
 } else {
-  // Production - use the deployed server URL
-  socketUrl = 'https://ptcg-sim-meta.onrender.com'; 
+  // Fallback to production
+  socketUrl = 'https://ptcg-sim-meta.jasonh1993.workers.dev';
 }
 
 // Create the socket connection

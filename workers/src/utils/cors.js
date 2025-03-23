@@ -6,12 +6,16 @@
  */
 
 // Define allowed origins
-const allowedOrigins = [
-    'https://ptcg-sim-meta.pages.dev',
-    'https://ptcg-sim-meta-dev.pages.dev',
-    'http://localhost:3000',
-    'http://localhost:4000'
-  ];
+import { ENV } from '../config/env-config.js';
+
+export const DEFAULT_ALLOWED_ORIGINS = [
+  ENV.DEVELOPMENT.CLIENT_URL,
+  ENV.PRODUCTION.CLIENT_URL,
+  ENV.DEVELOPMENT.WORKER_URL,
+  ENV.PRODUCTION.WORKER_URL,
+  'http://localhost:3000',
+  'http://localhost:4000'
+];
   
   /**
    * CORS headers to be applied to all responses

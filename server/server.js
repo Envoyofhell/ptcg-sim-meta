@@ -1,17 +1,18 @@
 /**
- * PTCG-Sim-Meta Server - PostgreSQL Optimized Version
+ * PTCG-Sim-Meta Server Implementation
  * 
- * This server implementation provides a robust foundation for the PTCG-Sim-Meta
- * application with exclusive PostgreSQL support. It includes advanced features for
- * performance optimization, error handling, and cross-origin communication.
+ * Comprehensive backend for Pokémon Trading Card Game Simulator
  * 
- * Features:
- * - Dedicated PostgreSQL integration with connection pooling
- * - Comprehensive CORS configuration for all environments
- * - Optimized Socket.IO setup for real-time communication
- * - Enhanced error handling and logging
- * - Advanced game state management
+ * Key Features:
+ * - PostgreSQL database integration
+ * - Real-time Socket.IO communication
+ * - Game state management
+ * - Advanced room and user tracking
+ * - Secure key generation and storage
+ * 
+ * @module ServerApplication
  */
+
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
@@ -23,7 +24,10 @@ import dotenv from 'dotenv';
 import pg from 'pg'; // PostgreSQL client
 import { fileURLToPath } from 'url';
 
-// Handle __dirname in ES modules and adjust for client folder
+// Import environment configuration (ensure this path is correct)
+import { ENV, currentEnv } from './config/env-config.js';
+
+// Handle ES Module __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDir = path.join(__dirname, '../client');
@@ -32,8 +36,8 @@ const clientDir = path.join(__dirname, '../client');
 dotenv.config();
 
 /**
- * SERVER CONFIGURATION
- * These settings can be adjusted via environment variables
+ * Comprehensive Server Configuration
+ * Dynamically adapts to different deployment environments
  */
 const CONFIG = {
   // Server settings
@@ -45,7 +49,6 @@ const CONFIG = {
   POSTGRES_POOL_SIZE: parseInt(process.env.POSTGRES_POOL_SIZE || '20', 10),
   POSTGRES_IDLE_TIMEOUT: parseInt(process.env.POSTGRES_IDLE_TIMEOUT || '30000', 10),
   POSTGRES_CONNECTION_TIMEOUT: parseInt(process.env.POSTGRES_CONNECTION_TIMEOUT || '5000', 10),
-  POSTGRES_SSL_REJECT_UNAUTHORIZED: process.env.POSTGRES_REJECT_UNAUTHORIZED !== 'false',
   
   // Game state settings
   GAME_STATE_KEY_LENGTH: parseInt(process.env.GAME_STATE_KEY_LENGTH || '4', 10),
@@ -54,67 +57,55 @@ const CONFIG = {
   
   // Allowed origins for CORS
   ALLOWED_ORIGINS: [
+    ...currentEnv.ALLOWED_ORIGINS || [],
     'https://ptcg-sim-meta.pages.dev',
     'https://ptcg-sim-meta-dev.pages.dev',
-    'https://ptcg-sim-meta.onrender.com',
-    'https://ptcg-sim-meta-dev.onrender.com',
+    'https://ptcg-sim-meta.jasonh1993.workers.dev',
+    'https://ptcg-sim-meta-dev.jasonh1993.workers.dev',
     'http://localhost:3000',
     'http://localhost:4000'
   ],
 };
 
-// Set up console colors for logging
+// Console color definitions for enhanced logging
 const COLORS = {
   reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
   gray: '\x1b[90m',
 };
 
-// PostgreSQL connection pool
+// Global database connection variables
 let pgPool = null;
 let dbInitialized = false;
 let databaseError = null;
 
 /**
- * Enhanced logging function with timestamp and color coding
+ * Enhanced Logging Utility
+ * Provides context-aware logging with color and timestamp
+ * 
  * @param {string} message - Log message
- * @param {string} level - Log level (info, warn, error, debug)
+ * @param {string} [level='info'] - Log level
  */
 function log(message, level = 'info') {
   const timestamp = new Date().toISOString();
-  let color, prefix;
+  const envPrefix = CONFIG.NODE_ENV === 'development' ? '🔧 DEV' : '🚀 PROD';
   
-  switch (level) {
-    case 'error':
-      color = COLORS.red;
-      prefix = 'ERROR';
-      break;
-    case 'warn':
-      color = COLORS.yellow;
-      prefix = 'WARNING';
-      break;
-    case 'debug':
-      if (!CONFIG.DEBUG_MODE) return;
-      color = COLORS.gray;
-      prefix = 'DEBUG';
-      break;
-    case 'success':
-      color = COLORS.green;
-      prefix = 'SUCCESS';
-      break;
-    default:
-      color = COLORS.blue;
-      prefix = 'INFO';
-  }
-  
-  console.log(`${color}[${timestamp}] ${prefix}:${COLORS.reset} ${message}`);
+  const logLevels = {
+    error: () => console.error(`${COLORS.red}[${timestamp}] ${envPrefix} ERROR:${COLORS.reset} ${message}`),
+    warn: () => console.warn(`${COLORS.yellow}[${timestamp}] ${envPrefix} WARNING:${COLORS.reset} ${message}`),
+    debug: () => {
+      if (CONFIG.DEBUG_MODE) {
+        console.log(`${COLORS.gray}[${timestamp}] ${envPrefix} DEBUG:${COLORS.reset} ${message}`);
+      }
+    },
+    success: () => console.log(`${COLORS.green}[${timestamp}] ${envPrefix} SUCCESS:${COLORS.reset} ${message}`),
+    info: () => console.log(`${COLORS.blue}[${timestamp}] ${envPrefix} INFO:${COLORS.reset} ${message}`)
+  };
+
+  (logLevels[level] || logLevels.info)();
 }
 
 /**
@@ -135,9 +126,9 @@ async function initializePostgres() {
     
     // Create connection pool with optimal settings
     pgPool = new pg.Pool({
-      connectionString: process.env.DATABASE_POSTGRES_URL,
+      connectionString: postgresUrl,
       ssl: {
-        rejectUnauthorized: false  // This is important for Neon connections
+        rejectUnauthorized: false  // Important for Neon connections
       },
       max: CONFIG.POSTGRES_POOL_SIZE,
       idleTimeoutMillis: CONFIG.POSTGRES_IDLE_TIMEOUT,
@@ -1198,6 +1189,7 @@ process.on('unhandledRejection', (reason, promise) => {
   // Don't exit the process as it could be a non-fatal error
 });
 
+export default main;
 // Start the application with improved error handling
 main().catch(error => {
   log(`Fatal error starting server: ${error.message}`, 'error');

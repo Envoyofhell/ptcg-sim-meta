@@ -7,9 +7,12 @@
 
 // Define default allowed origins
 export const DEFAULT_ALLOWED_ORIGINS = [
-    'https://ptcg-sim-meta.pages.dev',  // Cloudflare Pages production
-    'http://localhost:3000',            // Local development frontend
-    'http://localhost:4000',            // Local development backend
+    'https://ptcg-sim-meta.pages.dev',
+    'https://ptcg-sim-meta-dev.pages.dev',
+    'https://ptcg-sim-meta.jasonh1993.workers.dev',
+    'https://ptcg-sim-meta-dev.jasonh1993.workers.dev',
+    'http://localhost:3000',
+    'http://localhost:4000'
   ];
   
   /**

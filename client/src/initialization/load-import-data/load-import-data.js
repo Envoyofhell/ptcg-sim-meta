@@ -27,8 +27,8 @@ const CONFIG = {
   
   // Server URLs for different environments
   serverUrls: {
-    production: 'https://ptcg-sim-meta.onrender.com',
-    development: 'https://ptcg-sim-meta-dev.onrender.com',
+    production: 'https://ptcg-sim-meta.jasonh1993.workers.dev',
+    development: 'https://ptcg-sim-meta-dev.jasonh1993.workers.dev',
     local: ''
   },
   
