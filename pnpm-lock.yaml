@@ -75,6 +75,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.21.2
+      itty-router:
+        specifier: ^4.0.27
+        version: 4.2.2
       pg:
         specifier: ^8.14.1
         version: 8.14.1
