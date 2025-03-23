@@ -1,8 +1,7 @@
 /**
  * PTCG-Sim-Meta Cloudflare Worker
  * 
- * Main entry point that routes requests to the appropriate handlers
- * and provides CORS middleware for cross-origin requests.
+ * Enhanced routing with explicit root path handling
  */
 import { Router } from 'itty-router';
 import { corsHeaders, handleOptions } from './src/utils/cors';
@@ -12,6 +11,20 @@ import * as healthApi from './src/api/health';
 
 // Create a new router
 const router = Router();
+
+// Root path handler - provides basic Worker health information
+router.get('/', () => {
+  return new Response(JSON.stringify({
+    status: 'ok',
+    message: 'PTCG-Sim-Meta Worker is running',
+    timestamp: new Date().toISOString()
+  }), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders
+    }
+  });
+});
 
 // CORS preflight handler
 router.options('*', handleOptions);
@@ -27,7 +40,13 @@ router.delete('/api/gameState/:key', gameStateApi.deleteGameState);
 router.get('/api/stats', gameStateApi.getStats);
 
 // Catch-all 404 handler
-router.all('*', () => new Response('Not Found', { status: 404 }));
+router.all('*', () => new Response('Not Found', { 
+  status: 404,
+  headers: {
+    'Content-Type': 'text/plain',
+    ...corsHeaders
+  }
+}));
 
 // Main fetch handler
 export default {
@@ -53,7 +72,7 @@ export default {
       log(`Error handling request: ${error.message}`, 'error');
       log(`Stack trace: ${error.stack}`, 'debug');
       
-      const errorResponse = new Response(
+      return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Internal Server Error',
@@ -67,8 +86,6 @@ export default {
           }
         }
       );
-      
-      return errorResponse;
     }
   },
 };
