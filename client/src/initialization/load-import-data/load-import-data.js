@@ -257,11 +257,14 @@ export function loadImportData() {
   // Get the import key from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const key = urlParams.get('key');
-  
-  if (!key) {
-    log('No import key provided in URL parameters', 'warn');
-    return;
-  }
+
+if (!key) {
+  log('No import key provided. Loading default state or showing welcome screen.', 'info');
+  // Optional: Load a default game state or show a welcome screen
+  // For example:
+  displayMessage('Welcome! No saved game state found.', 'info');
+  return;
+}
   
   log(`Found import key in URL: ${key}`, 'info');
   

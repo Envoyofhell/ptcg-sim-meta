@@ -338,15 +338,14 @@ async function main() {
       skipMiddlewares: true,
     },
     cors: {
-      origin: CONFIG.ALLOWED_ORIGINS,
-      methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      origin: ["https://ptcg-sim-meta.pages.dev", "https://ptcg-sim-meta-dev.pages.dev"],
+      methods: ["GET", "POST"],
       credentials: true
     },
     // Additional Socket.IO options for better performance
     pingTimeout: 60000,
     pingInterval: 25000,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
     allowEIO3: true,
   });
   

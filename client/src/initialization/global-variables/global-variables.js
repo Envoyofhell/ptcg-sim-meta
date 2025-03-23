@@ -84,18 +84,13 @@ export const socket = (() => {
     const socketUrl = detectSocketUrl();
     
     const socketOptions = {
-      // Connection Resilience
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      
-      // Timeout Handling
-      timeout: 5000,
-      
-      // Transport Prioritization
-      transports: ['websocket', 'polling'],
-      
-      // Debug mode only in development
+      timeout: 10000, // Increased timeout
+      transports: ['polling', 'websocket'],
+      path: '/socket.io/', // Ensure this matches server config
+      autoConnect: true,
       debug: currentEnvironment === 'development'
     };
 
