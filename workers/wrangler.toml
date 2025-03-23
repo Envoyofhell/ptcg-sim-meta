@@ -1,23 +1,25 @@
-name = "ptcg-sim-meta-dev"
-main = "index.js"
-compatibility_date = "2025-03-22"
-compatibility_flags = ["nodejs_compat"]
+# TOML Configuration for Cloudflare Worker
+# This file defines the deployment settings and environment-specific variables
 
-# Development environment
+# Basic Worker metadata
+name = "ptcg-sim-meta-dev"  # Unique name for your Cloudflare Worker
+main = "index.js"  # Entry point of your Worker
+
+# Compatibility settings ensure consistent runtime behavior
+compatibility_date = "2025-03-22"  # Locks in specific runtime features
+compatibility_flags = ["nodejs_compat"]  # Enable Node.js compatibility mode
+
+# Optional: Deployment environments
+# Allows different configurations for development and production
 [env.dev]
-name = "ptcg-sim-meta-dev"
-vars = { 
-    ENVIRONMENT = "development",
-    LOG_LEVEL = "debug"
-}
+name = "ptcg-sim-meta-dev"  # Development Worker name
+# Environment-specific variables can be added here if needed
 
-# Production environment
 [env.production]
-name = "ptcg-sim-meta"
-vars = { 
-    ENVIRONMENT = "production", 
-    LOG_LEVEL = "info"
-}
+name = "ptcg-sim-meta"  # Production Worker name
 
+# Optional: Scheduled tasks
+# Triggers background jobs at specified intervals
 [triggers]
-crons = ["0 0 * * *"] # Run cleanup once per day at midnight UTC
+# Example: Run a cleanup function every day at midnight UTC
+crons = ["0 0 * * *"]
