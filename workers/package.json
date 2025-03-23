@@ -9,11 +9,11 @@
       "prebuild": "node -e \"const fs = require('fs'); fs.mkdirSync('dist', { recursive: true })\"",
       "build": "node esbuild.config.js",
       "build:debug": "node esbuild.config.js",
-      "dev": "wrangler dev --env dev",
       "dev:debug": "wrangler dev --env dev --inspect",
       "predeploy": "pnpm run build",
-      "deploy": "wrangler deploy --env production",
-      "deploy:dev": "wrangler deploy --env dev"
+      "deploy:dev": "wrangler deploy --env dev",
+      "deploy:prod": "wrangler deploy --env production",
+      "dev": "wrangler dev --env dev"
     },
     "keywords": [
       "cloudflare",
