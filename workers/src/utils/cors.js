@@ -1,10 +1,12 @@
+// File: workers/src/utils/cors.js
 /**
  * Enhanced CORS utility functions for PTCG-Sim-Meta
  * 
- * Provides robust CORS headers and handlers with specific WebSocket support
+ * Provides robust CORS headers and handlers for cross-origin requests
+ * with specific support for Socket.IO connections
  */
 
-// Define allowed origins with expanded domains
+// Define allowed origins
 export const allowedOrigins = [
     'https://ptcg-sim-meta.pages.dev',
     'https://ptcg-sim-meta-dev.pages.dev',
@@ -21,15 +23,14 @@ export const allowedOrigins = [
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Max-Age': '86400', // 24 hours
+    'Access-Control-Max-Age': '86400' // 24 hours
   };
   
   /**
-   * Get expanded CORS headers for a specific request
-   * Allows origin-specific headers and WebSocket support
+   * Get expanded CORS headers for Socket.IO requests
    * 
    * @param {Request} request - HTTP request
-   * @returns {Object} - CORS headers
+   * @returns {Object} - CORS headers tailored to the request
    */
   export function getExpandedCorsHeaders(request) {
     const origin = request.headers.get('Origin');
@@ -54,36 +55,10 @@ export const allowedOrigins = [
    * @returns {Response} HTTP response with CORS headers
    */
   export function handleOptions(request) {
-    // Get expanded headers for this specific request
     const headers = getExpandedCorsHeaders(request);
     
-    // Return empty response with CORS headers
     return new Response(null, {
       status: 204,
-      headers
-    });
-  }
-  
-  /**
-   * Apply CORS headers to a response
-   * 
-   * @param {Response} response - HTTP response
-   * @param {Request} request - HTTP request
-   * @returns {Response} Response with CORS headers
-   */
-  export function applyCorsHeaders(response, request) {
-    const headers = new Headers(response.headers);
-    const expandedHeaders = getExpandedCorsHeaders(request);
-    
-    // Add all expanded headers
-    Object.entries(expandedHeaders).forEach(([key, value]) => {
-      headers.set(key, value);
-    });
-    
-    // Create a new response with the same body but updated headers
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
       headers
     });
   }

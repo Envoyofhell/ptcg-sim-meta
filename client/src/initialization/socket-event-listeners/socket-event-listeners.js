@@ -1,3 +1,4 @@
+// File: client/src/initialization/socket-event-listeners/socket-event-listeners.js
 import { flipBoard } from '../../actions/general/flip-board.js';
 import { reset } from '../../actions/general/reset.js';
 import {
@@ -27,7 +28,39 @@ export const removeSyncIntervals = () => {
   clearInterval(syncCheckInterval);
   clearInterval(spectatorActionInterval);
 };
+
+/**
+ * Initialize Socket.IO event listeners with error handling
+ * Enhanced with fallback mechanisms for offline mode
+ */
 export const initializeSocketEventListeners = () => {
+  // Check if socket exists - if not, provide offline functionality
+  if (!socket) {
+    console.warn('[Socket] No socket instance available, using offline mode');
+    createOfflineEventHandlers();
+    return;
+  }
+
+  // Handle connection status
+  socket.on('connect', () => {
+    console.log('[Socket] Connected successfully');
+    document.getElementById('chatbox').innerHTML += '<div style="color: green; font-weight: bold">Connected to server</div>';
+  });
+
+  socket.on('disconnect', () => {
+    console.warn('[Socket] Disconnected from server');
+    document.getElementById('chatbox').innerHTML += '<div style="color: red; font-weight: bold">Disconnected from server</div>';
+    
+    // Continue in offline mode
+    createOfflineEventHandlers();
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error(`[Socket] Connection error: ${error.message}`);
+    document.getElementById('chatbox').innerHTML += '<div style="color: red; font-weight: bold">Failed to connect to server. Some multiplayer features may be limited.</div>';
+  });
+
+  // Main game events
   socket.on('joinGame', () => {
     const connectedRoom = document.getElementById('connectedRoom');
     const lobby = document.getElementById('lobby');
@@ -63,7 +96,7 @@ export const initializeSocketEventListeners = () => {
           roomId: systemState.roomId,
           counter: systemState.selfCounter,
         };
-        socket.emit('syncCheck', data);
+        safeSocketEmit('syncCheck', data);
       }
     }, 3000);
 
@@ -78,13 +111,16 @@ export const initializeSocketEventListeners = () => {
           spectatorActionData: systemState.exportActionData,
           socketId: socket.id,
         };
-        socket.emit('spectatorActionData', data);
+        safeSocketEmit('spectatorActionData', data);
       }
     }, 1000);
   });
+
+  // Additional event handlers (kept from original)
   socket.on('spectatorJoin', () => {
     spectatorJoin();
   });
+  
   socket.on('roomReject', () => {
     let overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -115,6 +151,8 @@ export const initializeSocketEventListeners = () => {
       document.body.removeChild(overlay);
     });
   });
+  
+  // Reconnection logic
   socket.on('connect', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -137,12 +175,15 @@ export const initializeSocketEventListeners = () => {
       }
     }
   });
+  
   socket.on('userReconnected', (data) => {
     appendMessage('', data.username + ' reconnected!', 'announcement', false);
   });
+  
   socket.on('userDisconnected', (username) => {
     appendMessage('', username + ' disconnected', 'announcement', false);
   });
+  
   socket.on('disconnect', () => {
     if (systemState.isTwoPlayer) {
       const isSpectator =
@@ -154,18 +195,21 @@ export const initializeSocketEventListeners = () => {
       appendMessage('', username + ' disconnected', 'announcement', false);
     }
   });
+  
   socket.on('leaveRoom', (data) => {
     if (!data.isSpectator) {
       cleanActionData('opp');
     }
     appendMessage('', data.username + ' left the room', 'announcement', false);
   });
+  
   socket.on('appendMessage', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
     }
     appendMessage(data.user, data.message, data.type, data.emit);
   });
+  
   socket.on('requestAction', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -179,6 +223,7 @@ export const initializeSocketEventListeners = () => {
       acceptAction('self', data.action, data.parameters);
     }
   });
+  
   // reset counter when importing game state
   socket.on('initiateImport', () => {
     systemState.spectatorCounter = 0; //reset spectator counter to make sure it catches all of the actions
@@ -186,9 +231,11 @@ export const initializeSocketEventListeners = () => {
     cleanActionData('self');
     cleanActionData('opp');
   });
+  
   socket.on('endImport', () => {
     isImporting = false;
   });
+  
   socket.on('pushAction', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -220,6 +267,7 @@ export const initializeSocketEventListeners = () => {
       }
     }
   });
+  
   socket.on('resyncActions', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -229,6 +277,7 @@ export const initializeSocketEventListeners = () => {
       resyncActions();
     }
   });
+  
   socket.on('catchUpActions', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -238,6 +287,7 @@ export const initializeSocketEventListeners = () => {
       catchUpActions(data.actionData);
     }
   });
+  
   socket.on('syncCheck', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -251,102 +301,8 @@ export const initializeSocketEventListeners = () => {
       socket.emit('resyncActions', data);
     }
   });
-  // socket.on('exchangeData', (data) => {
-  //     exchangeData(data.user, data.username, data.deckData, data.emit);
-  // });
-  // socket.on('loadDeckData', (data) => {
-  //     loadDeckData(data.user, data.deckData, data.emit);
-  // });
-  // socket.on('reset', (data) => {
-  //     reset(data.user, data.clean, data.build, data.invalidMessage, data.emit);
-  // });
-  // socket.on('setup', (data) => {
-  //     setup(data.user, data.indices, data.emit);
-  // });
-  // socket.on('takeTurn', (data) => {
-  //     takeTurn(data.user, data.initiator, data.emit);
-  // });
-  // socket.on('draw', (data) => {
-  //     draw(data.user, data.initiator, data.drawAmount, data.emit);
-  // });
-  // socket.on('moveCardBundle', (data) => {
-  //     moveCardBundle(data.user, data.initiator, data.oZoneId, data.dZoneId, data.index, data.targetIndex, data.action, data.emit)
-  // });
-  // socket.on('shuffleIntoDeck', (data) => {
-  //     shuffleIntoDeck(data.user, data.initiator, data.zoneId, data.index, data.indices, data.emit);
-  // });
-  // socket.on('moveToDeckTop', (data) => {
-  //     moveToDeckTop(data.user, data.initiator, data.oZoneId, data.index, data.emit);
-  // });
-  // socket.on('switchWithDeckTop', (data) => {
-  //     switchWithDeckTop(data.user, data.initiator, data.oZoneId, data.index, data.emit);
-  // });
-  // socket.on('viewDeck', (data) => {
-  //     viewDeck(data.user, data.initiator, data.viewAmount, data.top, data.selectedDeckCount, data.targetIsOpp, data.emit);
-  // });
-  // socket.on('shuffleAll', (data) => {
-  //     shuffleAll(data.user, data.initiator, data.zoneId, data.indices, data.emit);
-  // });
-  // socket.on('discardAll', (data) => {
-  //     discardAll(data.user, data.initiator, data.zoneId, data.emit);
-  // });
-  // socket.on('lostZoneAll', (data) => {
-  //     lostZoneAll(data.user, data.initiator, data.zoneId, data.emit);
-  // });
-  // socket.on('handAll', (data) => {
-  //     handAll(data.user, data.initiator, data.zoneId, data.emit);
-  // });
-  // socket.on('leaveAll', (data) => {
-  //     leaveAll(data.user, data.initiator, data.oZoneId, data.emit);
-  // });
-  // socket.on('discardAndDraw', (data) => {
-  //     discardAndDraw(data.user, data.initiator, data.drawAmount, data.emit);
-  // });
-  // socket.on('shuffleAndDraw', (data) => {
-  //     shuffleAndDraw(data.user, data.initiator, data.drawAmount, data.indices, data.emit);
-  // });
-  // socket.on('shuffleBottomAndDraw', (data) => {
-  //     shuffleBottomAndDraw(data.user, data.initiator, data.drawAmount, data.indices, data.emit);
-  // });
-  // socket.on('shuffleZone', (data) => {
-  //     shuffleZone(data.user, data.initiator, data.zoneId, data.indices, data.message, data.emit);
-  // });
-  // socket.on('useAbility', (data) => {
-  //     useAbility(data.user, data.initiator, data.zoneId, data.index, data.emit);
-  // });
-  // socket.on('removeAbilityCounter', (data) => {
-  //     removeAbilityCounter(data.user, data.zoneId, data.index, data.emit);
-  // });
-  // socket.on('addDamageCounter', (data) => {
-  //     addDamageCounter(data.user, data.zoneId, data.index, data.damageAmount, data.emit);
-  // });
-  // socket.on('updateDamageCounter', (data) => {
-  //     updateDamageCounter(data.user, data.zoneId, data.index, data.damageAmount, data.emit);
-  // });
-  // socket.on('removeDamageCounter', (data) => {
-  //     removeDamageCounter(data.user, data.zoneId, data.index, data.emit);
-  // });
-  // socket.on('addSpecialCondition', (data) => {
-  //     addSpecialCondition(data.user, data.zoneId, data.index, data.emit);
-  // });
-  // socket.on('updateSpecialCondition', (data) => {
-  //     updateSpecialCondition(data.user, data.zoneId, data.index, data.textContent, data.emit);
-  // });
-  // socket.on('removeSpecialCondition', (data) => {
-  //     removeSpecialCondition(data.user, data.zoneId, data.index, data.emit);
-  // });
-  // socket.on('discardBoard', (data) => {
-  //     discardBoard(data.user, data.initiator, data.message, data.emit);
-  // });
-  // socket.on('handBoard', (data) => {
-  //     handBoard(data.user, data.initiator, data.message, data.emit);
-  // });
-  // socket.on('shuffleBoard', (data) => {
-  //     shuffleBoard(data.user, data.initiator, data.message, data.indices, data.emit);
-  // });
-  // socket.on('lostZoneBoard', (data) => {
-  //     lostZoneBoard(data.user, data.initiator, data.message, data.emit);
-  // });
+  
+  // Direct action handlers
   socket.on('lookAtCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -360,6 +316,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
+  
   socket.on('stopLookingAtCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -373,6 +330,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
+  
   socket.on('revealCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -380,6 +338,7 @@ export const initializeSocketEventListeners = () => {
     }
     revealCards(data.user, data.initiator, data.zoneId, data.emit);
   });
+  
   socket.on('hideCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -387,6 +346,7 @@ export const initializeSocketEventListeners = () => {
     }
     hideCards(data.user, data.initiator, data.zoneId, data.emit);
   });
+  
   socket.on('revealShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -401,6 +361,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
+  
   socket.on('hideShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -415,6 +376,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
+  
   socket.on('lookShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -422,6 +384,7 @@ export const initializeSocketEventListeners = () => {
     }
     lookShortcut(data.user, data.initiator, data.zoneId, data.index, data.emit);
   });
+  
   socket.on('stopLookingShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -435,29 +398,68 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  // socket.on('playRandomCardFaceDown', (data) => {
-  //     playRandomCardFaceDown(data.user, data.initiator, data.randomIndex, data.emit);
-  // });
-  // socket.on('rotateCard', (data) => {
-  //     rotateCard(data.user, data.zoneId, data.index, data.single, data.emit);
-  // });
-  // socket.on('changeType', (data) => {
-  //     changeType(data.user, data.initiator, data.zoneId, data.index, data.type, data.emit);
-  // });
-  // socket.on('attack', (data) => {
-  //     attack(data.user, data.emit);
-  // });
-  // socket.on('pass', (data) => {
-  //     pass(data.user, data.emit);
-  // });
-  // socket.on('VSTARGXFunction', (data) => {
-  //     VSTARGXFunction(data.user, data.type, data.emit)
-  // });
+  
   socket.on('exportGameStateSuccessful', (key) => {
     const url = `https://ptcg-sim-meta.pages.dev/import?key=${key}`;
     appendMessage('self', url, 'announcement', false);
   });
+  
   socket.on('exportGameStateFailed', (message) => {
     appendMessage('self', message, 'announcement', false);
   });
+
+  // Add a heartbeat mechanism for better connection reliability
+  setInterval(() => {
+    if (socket && socket.connected) {
+      safeSocketEmit('heartbeat');
+    }
+  }, 25000);
 };
+
+/**
+ * Creates offline event handlers for local play
+ * Allows the game to function without a socket server connection
+ */
+function createOfflineEventHandlers() {
+  console.log('[Socket] Setting up offline event handlers');
+  
+  // Replace safeSocketEmit to handle events locally
+  window.safeSocketEmit = function(eventName, ...args) {
+    console.log(`[Socket-Offline] Local event: ${eventName}`, args);
+    
+    // Handle specific events locally
+    if (eventName === 'storeGameState') {
+      const exportData = args[0];
+      
+      // Use the REST API instead of Socket.IO
+      fetch('/api/storeGameState', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameState: exportData })
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success && result.key) {
+          const url = `https://ptcg-sim-meta.pages.dev/import?key=${result.key}`;
+          appendMessage('self', url, 'announcement', false);
+        } else {
+          appendMessage('self', 'Error exporting game. Please try again or save as a file.', 'announcement', false);
+        }
+      })
+      .catch(error => {
+        appendMessage('self', 'Error exporting game. Please try again or save as a file.', 'announcement', false);
+      });
+    }
+  };
+}
+
+// Safely emit socket events with fallback
+export function safeSocketEmit(eventName, ...args) {
+  if (socket && socket.connected) {
+    socket.emit(eventName, ...args);
+  } else if (window.safeSocketEmit) {
+    window.safeSocketEmit(eventName, ...args);
+  } else {
+    console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
+  }
+}

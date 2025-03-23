@@ -1,3 +1,4 @@
+// File: client/src/initialization/global-variables/global-variables.js
 /* eslint-disable no-undef */
 import { preloadImage } from '../../setup/general/preload-image.js';
 import { getZone } from '../../setup/zones/get-zone.js';
@@ -70,52 +71,127 @@ function detectSocketUrl() {
 const currentEnvironment = detectEnvironment();
 
 /**
+ * Create a mock socket for offline mode
+ * Provides a fallback when Socket.IO server is unavailable
+ */
+function createOfflineSocket() {
+  console.log('[Socket] Creating offline mode socket');
+  
+  // Event handlers storage
+  const eventHandlers = {};
+  
+  return {
+    connected: true,
+    id: 'offline-' + Math.random().toString(36).substring(2, 10),
+    
+    // Event registration
+    on: function(event, callback) {
+      if (!eventHandlers[event]) {
+        eventHandlers[event] = [];
+      }
+      eventHandlers[event].push(callback);
+      return this;
+    },
+    
+    // Event emission - offline handling
+    emit: function(event, ...args) {
+      console.log(`[Socket-Offline] Emitting event: ${event}`, args);
+      
+      // Handle specific events
+      if (event === 'joinGame') {
+        // Simulate successful connection
+        setTimeout(() => {
+          const handlers = eventHandlers['connect'] || [];
+          handlers.forEach(handler => handler());
+          
+          const joinHandlers = eventHandlers['joinGame'] || [];
+          joinHandlers.forEach(handler => handler());
+        }, 100);
+      }
+      
+      // Store game state via REST API instead of socket
+      if (event === 'storeGameState') {
+        const data = args[0];
+        fetch('/api/storeGameState', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameState: data })
+        })
+        .then(response => response.json())
+        .then(result => {
+          const handlers = eventHandlers['exportGameStateSuccessful'] || [];
+          handlers.forEach(handler => handler(result.key));
+        })
+        .catch(error => {
+          const handlers = eventHandlers['exportGameStateFailed'] || [];
+          handlers.forEach(handler => handler('Error storing game state'));
+        });
+      }
+      
+      return this;
+    },
+    
+    // Socket.IO methods that do nothing in offline mode
+    connect: function() { return this; },
+    disconnect: function() { return this; }
+  };
+}
+
+/**
  * Robust Socket Connection Initialization
- * Provides advanced error handling and connection management
+ * With offline mode fallback for reliability
  */
 export const socket = (() => {
   try {
     // Validate Socket.IO global is available
     if (typeof io === 'undefined') {
       console.error('[Socket] Socket.IO library not loaded');
-      return null;
+      return createOfflineSocket();
     }
 
     const socketUrl = detectSocketUrl();
     
     const socketOptions = {
+      // Connection Resilience
       reconnection: true,
-      reconnectionAttempts: 8,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      
+      // Timeout Handling
       timeout: 10000,
-      transports: ['polling', 'websocket'], // Prioritize polling first
-      path: '/socket.io/',
-      query: { 
-        version: version,
-        client: 'web'
-      },
+      
+      // Transport Prioritization - use polling first for compatibility
+      transports: ['polling', 'websocket'],
+      
+      // Debug mode only in development
       debug: currentEnvironment === 'development'
     };
 
-    const socketInstance = io(socketUrl, socketOptions);
-    
-    // Connection Event Handlers
-    socketInstance.on('connect', () => {
-      console.log(`[Socket] Connected to ${socketUrl}`);
-    });
-    
-    socketInstance.on('disconnect', (reason) => {
-      console.warn(`[Socket] Disconnected: ${reason}`);
-    });
-    
-    socketInstance.on('connect_error', (error) => {
-      console.error(`[Socket] Connection Error: ${error.message}`);
-    });
-    
-    return socketInstance;
+    // First try to connect
+    try {
+      const socketInstance = io(socketUrl, socketOptions);
+      
+      // Connection Event Handlers
+      socketInstance.on('connect', () => {
+        console.log(`[Socket] Connected to ${socketUrl}`);
+      });
+      
+      socketInstance.on('disconnect', (reason) => {
+        console.warn(`[Socket] Disconnected: ${reason}`);
+      });
+      
+      socketInstance.on('connect_error', (error) => {
+        console.error(`[Socket] Connection Error: ${error.message}`);
+      });
+      
+      return socketInstance;
+    } catch (socketError) {
+      console.error('Socket.IO connection failed, falling back to offline mode:', socketError);
+      return createOfflineSocket();
+    }
   } catch (error) {
     console.error('Failed to initialize socket connection:', error);
-    return null;
+    return createOfflineSocket();
   }
 })();
 
@@ -168,7 +244,7 @@ export const systemState = {
   
   // Enhanced username handling
   usernames: {
-    p1: (user) => user === 'self' ? 'Blue' : 'Red',
+    p1: function(user) { return user === 'self' ? 'Blue' : 'Red'; },
     p2Self: '',
     p2Opp: '',
     spectator: ''
