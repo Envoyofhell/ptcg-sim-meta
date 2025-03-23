@@ -6,7 +6,7 @@
  * with specific support for Socket.IO connections
  */
 
-// Define allowed origins
+// Define allowed origins with expanded domains for better compatibility
 export const allowedOrigins = [
     'https://ptcg-sim-meta.pages.dev',
     'https://ptcg-sim-meta-dev.pages.dev',
@@ -27,7 +27,7 @@ export const allowedOrigins = [
   };
   
   /**
-   * Get expanded CORS headers for Socket.IO requests
+   * Get expanded CORS headers with origin-specific settings
    * 
    * @param {Request} request - HTTP request
    * @returns {Object} - CORS headers tailored to the request
@@ -42,7 +42,7 @@ export const allowedOrigins = [
       headers['Access-Control-Allow-Credentials'] = 'true';
     }
     
-    // Add WebSocket support
+    // Add WebSocket and Socket.IO specific headers
     headers['Access-Control-Allow-Headers'] += ', Upgrade, Connection';
     
     return headers;

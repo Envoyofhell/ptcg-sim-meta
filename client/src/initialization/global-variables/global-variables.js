@@ -1,5 +1,10 @@
 // File: client/src/initialization/global-variables/global-variables.js
-/* eslint-disable no-undef */
+/**
+ * Global Variables and State Management
+ * 
+ * Centralizes all global state variables and socket functionality
+ * with enhanced error handling and offline mode support.
+ */
 import { preloadImage } from '../../setup/general/preload-image.js';
 import { getZone } from '../../setup/zones/get-zone.js';
 
@@ -81,6 +86,7 @@ function createOfflineSocket() {
   const eventHandlers = {};
   
   return {
+    // Always report as connected to prevent errors
     connected: true,
     id: 'offline-' + Math.random().toString(36).substring(2, 10),
     
@@ -119,8 +125,13 @@ function createOfflineSocket() {
         })
         .then(response => response.json())
         .then(result => {
-          const handlers = eventHandlers['exportGameStateSuccessful'] || [];
-          handlers.forEach(handler => handler(result.key));
+          if (result.success && result.key) {
+            const handlers = eventHandlers['exportGameStateSuccessful'] || [];
+            handlers.forEach(handler => handler(result.key));
+          } else {
+            const handlers = eventHandlers['exportGameStateFailed'] || [];
+            handlers.forEach(handler => handler('Error storing game state'));
+          }
         })
         .catch(error => {
           const handlers = eventHandlers['exportGameStateFailed'] || [];
@@ -195,12 +206,55 @@ export const socket = (() => {
   }
 })();
 
+/**
+ * Handle offline events
+ * Provides fallback functionality for critical game operations when socket is unavailable
+ * 
+ * @param {string} eventName - Socket.IO event name
+ * @param {*} args - Event arguments
+ */
+function handleOfflineEvent(eventName, ...args) {
+  console.log(`[Socket-Offline] Handling offline event: ${eventName}`);
+  
+  // Make sure arrays are initialized
+  if (!Array.isArray(systemState.exportActionData)) {
+    systemState.exportActionData = [];
+  }
+  
+  // Handle specific events
+  if (eventName === 'storeGameState') {
+    const data = args[0];
+    // Use fetch API instead of socket
+    fetch('/api/storeGameState', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameState: data })
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('[Socket-Offline] Game state stored successfully', result);
+    })
+    .catch(error => {
+      console.error('[Socket-Offline] Error storing game state:', error);
+    });
+  }
+}
+
 // Preemptive error handling for socket usage
 export function safeSocketEmit(eventName, ...args) {
-  if (socket && socket.connected) {
-    socket.emit(eventName, ...args);
+  // Check if socket exists and is connected
+  if (socket) {
+    if (socket.connected) {
+      socket.emit(eventName, ...args);
+    } else {
+      console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
+      // Handle offline fallback for critical events
+      handleOfflineEvent(eventName, ...args);
+    }
   } else {
-    console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
+    console.warn(`[Socket] Cannot emit ${eventName}. Socket not available.`);
+    // Handle offline fallback for critical events
+    handleOfflineEvent(eventName, ...args);
   }
 }
 
@@ -218,6 +272,10 @@ export const systemState = {
   // Existing properties with added type hints and validation
   coachingMode: false,
   isUndoInProgress: false,
+  
+  // Initialize important array structures to prevent errors
+  exportActionData: [],
+  replayActionData: [],
   
   // Counter tracking with safeguards
   _selfCounter: 0,

@@ -1,67 +1,99 @@
+// File: client/src/setup/general/process-action.js
+/**
+ * Action Processing
+ * 
+ * Handles all game actions and their propagation through
+ * the system with enhanced error handling and offline support.
+ */
 import { socket, systemState } from '../../front-end.js';
 
+/**
+ * Process a game action and store it in the appropriate places
+ * 
+ * @param {string} user - 'self' or 'opp'
+ * @param {boolean} emit - Whether to emit the action via socket
+ * @param {string} action - Action type
+ * @param {Array} parameters - Action parameters
+ */
 export const processAction = (user, emit, action, parameters) => {
-  const notSpectator = !(
-    document.getElementById('spectatorModeCheckbox').checked &&
-    systemState.isTwoPlayer
-  );
-  if (!systemState.isUndoInProgress && emit && notSpectator) {
-    if (!systemState.isTwoPlayer || user === 'self') {
-      const data = {
-        user: user,
-        emit: emit,
-        action: action,
-        parameters: parameters,
-      };
-      if (user === 'self') {
-        systemState.selfCounter++;
-        systemState.selfActionData.push(data);
-      } else {
-        // in 1p, we want to log oppAction data and counter so undo button works. in 2p, we do not need to do this because we directly request the undo action, and then
-        // their action data takes care of it (and they push the action back to us if our request is successful)
-        systemState.oppCounter++;
-        systemState.oppActionData.push(data);
-      }
-    }
-    if (user === 'self' && systemState.isTwoPlayer) {
-      //log the move if it's 1 player, or if it's yourself
-      const data = {
-        action: action,
-        counter: systemState.selfCounter,
-        roomId: systemState.roomId,
-        parameters: parameters,
-      };
-      socket.emit('pushAction', data);
-    } else if (systemState.isTwoPlayer) {
-      //if it's two player and you're moving an opponent's card, request the action before implementing
-      const data = {
-        action: action,
-        counter: systemState.oppCounter,
-        roomId: systemState.roomId,
-        parameters: parameters,
-      };
-      socket.emit('requestAction', data);
-    }
+  // Initialize arrays if they don't exist to prevent errors
+  if (!systemState.actionData) {
+    systemState.actionData = {
+      self: [],
+      opponent: [],
+      spectator: []
+    };
+  }
+  
+  if (!Array.isArray(systemState.actionData.self)) {
+    systemState.actionData.self = [];
+  }
+  
+  if (!Array.isArray(systemState.actionData.opponent)) {
+    systemState.actionData.opponent = [];
+  }
+  
+  if (!Array.isArray(systemState.exportActionData)) {
+    systemState.exportActionData = [];
+  }
 
-    if (!systemState.isTwoPlayer || user === 'self') {
-      //for storing spectator data (note we edited the parameter metric here to reverse the initatior change)
-      if (parameters[0]) {
-        if (parameters[0] === 'self') {
-          parameters[0] = 'opp';
-        } else if (parameters[0] === 'opp') {
-          parameters[0] = 'self';
-        }
-      }
-      const data = {
+  // Store the action in the proper place based on user
+  if (user === 'self') {
+    systemState.actionData.self.push({
+      emit: emit,
+      action: action,
+      parameters: parameters,
+    });
+    
+    if (emit && action !== 'loadDeckData' && action !== 'exchangeData') {
+      systemState.exportActionData.push({
         user: user,
         emit: emit,
         action: action,
         parameters: parameters,
-      };
-      // systemState.spectatorActionData.push(data);
-      if (action !== 'exchangeData' && action !== 'loadDeckData') {
-        systemState.exportActionData.push(data);
+      });
+    }
+  } else {
+    systemState.actionData.opponent.push({
+      emit: emit,
+      action: action,
+      parameters: parameters,
+    });
+    
+    if (
+      emit &&
+      action !== 'loadDeckData' &&
+      action !== 'exchangeData' &&
+      !systemState.isUndoInProgress
+    ) {
+      systemState.exportActionData.push({
+        user: user,
+        emit: emit,
+        action: action,
+        parameters: parameters,
+      });
+    }
+  }
+
+  // Only emit if socket exists and is connected 
+  if (emit && socket) {
+    try {
+      // Check if we are in two-player mode and the socket is connected
+      if (socket.connected && systemState.isTwoPlayer) {
+        const data = {
+          roomId: systemState.roomId,
+          counter: systemState.selfCounter,
+          action: action,
+          parameters: parameters,
+        };
+        socket.emit('requestAction', data);
+        systemState.selfCounter++;
+      } else {
+        // We're in offline mode - log action but don't try to send it
+        console.log(`[Socket-Offline] Action processed locally: ${action}`);
       }
+    } catch (error) {
+      console.error(`[Socket] Error emitting action: ${error.message}`);
     }
   }
 };

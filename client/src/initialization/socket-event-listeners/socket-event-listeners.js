@@ -1,4 +1,10 @@
 // File: client/src/initialization/socket-event-listeners/socket-event-listeners.js
+/**
+ * Socket.IO Event Listeners
+ * 
+ * Initializes all event listeners for Socket.IO events with
+ * enhanced error handling and offline mode support.
+ */
 import { flipBoard } from '../../actions/general/flip-board.js';
 import { reset } from '../../actions/general/reset.js';
 import {
@@ -21,27 +27,74 @@ import { resyncActions } from '../../setup/general/resync-actions.js';
 import { spectatorJoin } from '../../setup/spectator/spectator-join.js';
 import { startKeybindsSleep } from '../../actions/keybinds/keybindSleep.js';
 
+// Setup interval tracking
 let isImporting = false;
 let syncCheckInterval;
 let spectatorActionInterval;
+
+/**
+ * Remove sync intervals when closing a session
+ */
 export const removeSyncIntervals = () => {
   clearInterval(syncCheckInterval);
   clearInterval(spectatorActionInterval);
 };
 
 /**
- * Initialize Socket.IO event listeners with error handling
- * Enhanced with fallback mechanisms for offline mode
+ * Ensure all necessary data structures are initialized
+ * This prevents errors when running in offline mode
+ */
+function ensureDataStructuresInitialized() {
+  // Initialize action data arrays if they don't exist
+  if (!Array.isArray(systemState.exportActionData)) {
+    systemState.exportActionData = [];
+    console.log('[Socket] Initialized exportActionData array');
+  }
+  
+  if (!Array.isArray(systemState.replayActionData)) {
+    systemState.replayActionData = [];
+    console.log('[Socket] Initialized replayActionData array');
+  }
+  
+  if (!systemState.actionData) {
+    systemState.actionData = {
+      self: [],
+      opponent: [],
+      spectator: []
+    };
+    console.log('[Socket] Initialized actionData object');
+  }
+  
+  // Ensure all nested arrays exist
+  if (!Array.isArray(systemState.actionData.self)) {
+    systemState.actionData.self = [];
+  }
+  
+  if (!Array.isArray(systemState.actionData.opponent)) {
+    systemState.actionData.opponent = [];
+  }
+  
+  if (!Array.isArray(systemState.actionData.spectator)) {
+    systemState.actionData.spectator = [];
+  }
+}
+
+/**
+ * Initialize Socket.IO event listeners
+ * With enhanced error handling and offline mode support
  */
 export const initializeSocketEventListeners = () => {
-  // Check if socket exists - if not, provide offline functionality
+  // Ensure data structures are initialized
+  ensureDataStructuresInitialized();
+  
+  // Check if socket exists
   if (!socket) {
     console.warn('[Socket] No socket instance available, using offline mode');
     createOfflineEventHandlers();
     return;
   }
 
-  // Handle connection status
+  // Connection state handling
   socket.on('connect', () => {
     console.log('[Socket] Connected successfully');
     document.getElementById('chatbox').innerHTML += '<div style="color: green; font-weight: bold">Connected to server</div>';
@@ -60,7 +113,7 @@ export const initializeSocketEventListeners = () => {
     document.getElementById('chatbox').innerHTML += '<div style="color: red; font-weight: bold">Failed to connect to server. Some multiplayer features may be limited.</div>';
   });
 
-  // Main game events
+  // Game event handlers
   socket.on('joinGame', () => {
     const connectedRoom = document.getElementById('connectedRoom');
     const lobby = document.getElementById('lobby');
@@ -89,7 +142,7 @@ export const initializeSocketEventListeners = () => {
       document.getElementById('coachingModeCheckbox').checked
     );
 
-    //initialize sync checker, which will routinely make sure game are synced
+    // Initialize sync checker
     syncCheckInterval = setInterval(() => {
       if (systemState.isTwoPlayer) {
         const data = {
@@ -100,6 +153,7 @@ export const initializeSocketEventListeners = () => {
       }
     }, 3000);
 
+    // Initialize spectator action interval
     spectatorActionInterval = setInterval(() => {
       if (systemState.isTwoPlayer) {
         const data = {
@@ -116,7 +170,6 @@ export const initializeSocketEventListeners = () => {
     }, 1000);
   });
 
-  // Additional event handlers (kept from original)
   socket.on('spectatorJoin', () => {
     spectatorJoin();
   });
@@ -152,7 +205,7 @@ export const initializeSocketEventListeners = () => {
     });
   });
   
-  // Reconnection logic
+  // Reconnection handling
   socket.on('connect', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -224,7 +277,7 @@ export const initializeSocketEventListeners = () => {
     }
   });
   
-  // reset counter when importing game state
+  // Game state import/export handling
   socket.on('initiateImport', () => {
     systemState.spectatorCounter = 0; //reset spectator counter to make sure it catches all of the actions
     isImporting = true;
@@ -268,6 +321,7 @@ export const initializeSocketEventListeners = () => {
     }
   });
   
+  // Sync and game state handlers
   socket.on('resyncActions', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -302,7 +356,7 @@ export const initializeSocketEventListeners = () => {
     }
   });
   
-  // Direct action handlers
+  // Card action handlers
   socket.on('lookAtCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -399,6 +453,7 @@ export const initializeSocketEventListeners = () => {
     );
   });
   
+  // Game state export handlers
   socket.on('exportGameStateSuccessful', (key) => {
     const url = `https://ptcg-sim-meta.pages.dev/import?key=${key}`;
     appendMessage('self', url, 'announcement', false);
@@ -408,26 +463,40 @@ export const initializeSocketEventListeners = () => {
     appendMessage('self', message, 'announcement', false);
   });
 
-  // Add a heartbeat mechanism for better connection reliability
+  // Add a heartbeat mechanism
   setInterval(() => {
     if (socket && socket.connected) {
-      safeSocketEmit('heartbeat');
+      socket.emit('heartbeat');
     }
   }, 25000);
 };
 
 /**
  * Creates offline event handlers for local play
- * Allows the game to function without a socket server connection
+ * Provides fallback functionality when Socket.IO is unavailable
  */
 function createOfflineEventHandlers() {
   console.log('[Socket] Setting up offline event handlers');
   
-  // Replace safeSocketEmit to handle events locally
+  // Shows offline mode notice in the chatbox
+  const chatbox = document.getElementById('chatbox');
+  if (chatbox) {
+    chatbox.innerHTML += `
+      <div style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin: 10px 0;">
+        <strong>Running in offline mode</strong><br>
+        Multiplayer features are limited. Game data will be stored locally.
+      </div>
+    `;
+  }
+  
+  // Make sure systemState arrays are initialized
+  ensureDataStructuresInitialized();
+  
+  // Safely emit socket events even in offline mode
   window.safeSocketEmit = function(eventName, ...args) {
     console.log(`[Socket-Offline] Local event: ${eventName}`, args);
     
-    // Handle specific events locally
+    // Handle specific events
     if (eventName === 'storeGameState') {
       const exportData = args[0];
       
@@ -453,13 +522,18 @@ function createOfflineEventHandlers() {
   };
 }
 
-// Safely emit socket events with fallback
+/**
+ * Safe Socket.IO event emission with offline fallback
+ * 
+ * @param {string} eventName - Socket.IO event name
+ * @param {*} args - Event arguments
+ */
 export function safeSocketEmit(eventName, ...args) {
   if (socket && socket.connected) {
     socket.emit(eventName, ...args);
   } else if (window.safeSocketEmit) {
     window.safeSocketEmit(eventName, ...args);
   } else {
-    console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
+    console.warn(`[Socket] Cannot emit ${eventName}. Socket not available.`);
   }
 }
