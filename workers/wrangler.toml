@@ -7,25 +7,17 @@ compatibility_flags = ["nodejs_compat"]
 [env.dev]
 name = "ptcg-sim-meta-dev"
 vars = { 
-  ENVIRONMENT = "development",
-  LOG_LEVEL = "debug",
-  CORS_ALLOWED_ORIGIN = "http://localhost:3000"
+    ENVIRONMENT = "development",
+    LOG_LEVEL = "debug"
 }
 
 # Production environment
 [env.production]
 name = "ptcg-sim-meta"
 vars = { 
-  ENVIRONMENT = "production",
-  LOG_LEVEL = "info",
-  CORS_ALLOWED_ORIGIN = "https://your-production-domain.com"
+    ENVIRONMENT = "production", 
+    LOG_LEVEL = "info"
 }
 
-# Secrets are typically managed through Cloudflare dashboard
-# DATABASE_URL should be set as a secret in the Cloudflare dashboard
-
 [triggers]
-crons = ["0 0 * * *"] # Daily cleanup at midnight UTC
-
-# Specify node version compatibility
-node_compat = true
+crons = ["0 0 * * *"] # Run cleanup once per day at midnight UTC
