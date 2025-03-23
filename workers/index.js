@@ -1,32 +1,54 @@
-// workers/index.js
+/**
+ * PTCG-Sim-Meta Worker Entry Point
+ * 
+ * This is the main entry file for the Cloudflare Worker that handles
+ * API requests and ensures proper MIME types for static files.
+ */
+
 import { Router } from 'itty-router';
 import { corsHeaders, handleOptions } from './src/utils/cors.js';
 
-// Import your worker functionality
+// Import API handlers
 import * as gameStateApi from './src/api/game-state.js';
 import * as healthApi from './src/api/health.js';
 
-// Create a new router
+/**
+ * Create a new router instance for handling API routes
+ */
 const router = Router();
+
+/**
+ * Register API routes with the router
+ */
 
 // Handle CORS preflight requests
 router.options('*', handleOptions);
 
-// Health check endpoint
+// Health check endpoints
 router.get('/health', healthApi.getHealth);
 router.get('/api/health', healthApi.getHealth);
 
-// Game state API endpoints
+// Game state management endpoints
 router.get('/api/importData', gameStateApi.getGameState);
 router.post('/api/storeGameState', gameStateApi.storeGameState);
 router.delete('/api/gameState/:key', gameStateApi.deleteGameState);
 router.get('/api/stats', gameStateApi.getStats);
 
-// Catch-all route for any other API requests
+// Catch-all for any unrecognized API routes
 router.all('/api/*', () => new Response('API endpoint not found', { status: 404 }));
 
-// Default export for Cloudflare Workers
+/**
+ * Main Worker export - this is the entry point Cloudflare calls
+ */
 export default {
+  /**
+   * Main fetch handler for all incoming requests
+   * 
+   * @param {Request} request - The incoming HTTP request
+   * @param {Object} env - Environment variables and bindings
+   * @param {Object} ctx - Execution context
+   * @returns {Response} HTTP response
+   */
   async fetch(request, env, ctx) {
     try {
       // Add environment to request for handlers to access
@@ -40,6 +62,10 @@ export default {
         console.log(`${request.method} ${url.pathname}`);
       }
       
+      // -------------------------------------------------------------------------
+      // PART 1: API REQUEST HANDLING
+      // -------------------------------------------------------------------------
+      
       // For API requests, use the router
       if (url.pathname.startsWith('/api/') || url.pathname === '/health') {
         const response = await router.handle(request);
@@ -52,7 +78,11 @@ export default {
         return response;
       }
       
-      // For requests to JavaScript files, ensure correct MIME type
+      // -------------------------------------------------------------------------
+      // PART 2: STATIC FILE HANDLING WITH MIME TYPE CORRECTION
+      // -------------------------------------------------------------------------
+      
+      // For JavaScript files, ensure correct MIME type
       if (
         url.pathname.endsWith('.js') || 
         url.pathname.endsWith('.mjs') ||
@@ -64,7 +94,7 @@ export default {
           
           // Check if the response was successful
           if (!originalResponse.ok) {
-            return originalResponse;
+            return originalResponse; // Pass through error responses
           }
           
           // Create a new response with the correct MIME type
@@ -105,7 +135,7 @@ export default {
         }
       }
       
-      // For JSON files, ensure correct MIME type
+      // For JSON and map files, ensure correct MIME type
       if (url.pathname.endsWith('.json') || url.pathname.endsWith('.map')) {
         try {
           const originalResponse = await fetch(request);
@@ -128,13 +158,24 @@ export default {
         }
       }
       
+      // -------------------------------------------------------------------------
+      // PART 3: PASS-THROUGH FOR OTHER REQUESTS
+      // -------------------------------------------------------------------------
+      
       // For all other requests, pass through to the origin
       return fetch(request);
     } catch (error) {
-      console.error(`Error handling request: ${error.message}`);
-      console.error(`Stack trace: ${error.stack}`);
+      // -------------------------------------------------------------------------
+      // PART 4: ERROR HANDLING
+      // -------------------------------------------------------------------------
       
-      // Return a JSON error response
+      // Log detailed error information
+      console.error(`Error handling request: ${error.message}`);
+      if (error.stack) {
+        console.error(`Stack trace: ${error.stack}`);
+      }
+      
+      // Return a structured JSON error response
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -145,7 +186,9 @@ export default {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
           }
         }
       );
