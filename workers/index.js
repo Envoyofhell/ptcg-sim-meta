@@ -1,76 +1,78 @@
-// Updated workers/index.js
+// workers/index.js (Simplified Socket.IO support)
+
 import { Router } from 'itty-router';
 import { corsHeaders, handleOptions } from './src/utils/cors';
-import { log, setDebugMode } from './src/utils/logging';
 import * as gameStateApi from './src/api/game-state';
 import * as healthApi from './src/api/health';
-import { handleSocketHandshake, handleSocketPolling, cleanupInactiveConnections } from './src/socket/socket-handler';
 
-// Enable debug mode in development environment
-setDebugMode(true);
-
-// Create router
 const router = Router();
 
-// Root path handler
-router.get('/', () => {
-  return new Response(JSON.stringify({
-    status: 'ok',
-    name: 'PTCG-Sim-Meta Worker',
-    version: '1.5.1',
-    timestamp: new Date().toISOString()
-  }), {
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders
+// Basic Socket.IO handshake handler
+async function handleSocketIO(request) {
+  const url = new URL(request.url);
+  const headers = {
+    'Content-Type': 'text/plain; charset=UTF-8',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  };
+  
+  // For handshake
+  if (!url.searchParams.has('sid')) {
+    const sid = Math.random().toString(36).substring(2, 15);
+    const handshakeData = {
+      sid,
+      upgrades: ['websocket'],
+      pingInterval: 25000,
+      pingTimeout: 20000
+    };
+    
+    return new Response(`0${JSON.stringify(handshakeData)}`, { headers });
+  }
+  
+  // For polling GET (client receiving data)
+  if (request.method === 'GET') {
+    return new Response('', { headers });
+  }
+  
+  // For polling POST (client sending data)
+  if (request.method === 'POST') {
+    try {
+      const body = await request.text();
+      console.log(`Received Socket.IO message: ${body}`);
+      
+      // Acknowledge message
+      return new Response('3', { headers });
+    } catch (error) {
+      console.error(`Error processing Socket.IO message: ${error}`);
+      return new Response('4{"message":"Error processing message"}', { headers });
     }
-  });
-});
+  }
+  
+  return new Response('Method not allowed', { status: 405, headers });
+}
 
-// CORS preflight handler
+// Setup routes
 router.options('*', handleOptions);
-
-// Health check routes
 router.get('/health', healthApi.getHealth);
 router.get('/api/health', healthApi.getHealth);
-
-// Game state API routes
 router.get('/api/importData', gameStateApi.getGameState);
 router.post('/api/storeGameState', gameStateApi.storeGameState);
 router.delete('/api/gameState/:key', gameStateApi.deleteGameState);
 router.get('/api/stats', gameStateApi.getStats);
 
 // Socket.IO compatibility routes
-router.get('/socket.io/', handleSocketHandshake);
-router.get('/socket.io/*', handleSocketPolling);
-router.post('/socket.io/*', handleSocketPolling);
+router.get('/socket.io/', handleSocketIO);
+router.post('/socket.io/', handleSocketIO);
 
 // Catch-all 404 handler
-router.all('*', (request) => {
-  const url = new URL(request.url);
-  log(`404 Not Found: ${url.pathname}${url.search}`, 'warn');
-  
-  return new Response('Not Found', { 
-    status: 404,
-    headers: {
-      'Content-Type': 'text/plain',
-      ...corsHeaders
-    }
-  });
-});
+router.all('*', () => new Response('Not Found', { status: 404 }));
 
-// Main fetch handler
 export default {
   async fetch(request, env, ctx) {
     try {
-      // Store environment in request for handlers to access
       request.env = env;
       
-      // Log request
-      const url = new URL(request.url);
-      log(`${request.method} ${url.pathname}${url.search}`, 'info');
-      
-      // Process request
       const response = await router.handle(request);
       
       // Add CORS headers
@@ -80,18 +82,15 @@ export default {
       
       return response;
     } catch (error) {
-      // Log error
-      log(`Error handling request: ${error.message}`, 'error');
-      log(`Stack trace: ${error.stack}`, 'debug');
+      console.error(`Error handling request: ${error}`);
       
-      // Return error response
       return new Response(
-        JSON.stringify({
-          success: false,
+        JSON.stringify({ 
+          success: false, 
           error: 'Internal Server Error',
-          message: error.message
-        }),
-        {
+          message: error.message 
+        }), 
+        { 
           status: 500,
           headers: {
             'Content-Type': 'application/json',
@@ -99,16 +98,6 @@ export default {
           }
         }
       );
-    }
-  },
-  
-  // Scheduled task to clean up inactive connections
-  async scheduled(event, env, ctx) {
-    try {
-      log(`Running scheduled task: ${event.cron}`, 'info');
-      cleanupInactiveConnections();
-    } catch (error) {
-      log(`Error in scheduled task: ${error.message}`, 'error');
     }
   }
 };
