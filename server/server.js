@@ -395,14 +395,36 @@ async function main() {
   
   // Request logging middleware
   app.use((req, res, next) => {
+    // Log request details in debug mode
     log(`${req.method} ${req.url}`, 'debug');
     
-    // Add JSON content type header to all API responses
-    if (req.url.startsWith('/api/')) {
-      res.setHeader('Content-Type', 'application/json');
+    // Set appropriate Content-Type based on file extension
+    const url = req.url.toLowerCase();
+    if (url.endsWith('.js') || url.includes('.module.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (url.endsWith('.mjs')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (url.endsWith('.json') || url.endsWith('.map')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    } else if (url.startsWith('/api/')) {
+      // JSON for API endpoints
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    } else if (url.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (url.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (url.endsWith('.webmanifest')) {
+      res.setHeader('Content-Type', 'application/manifest+json');
     }
     
-    // Track response time
+    // Add CORS headers for API responses
+    if (url.startsWith('/api/')) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
+    
+    // Track response time for performance monitoring
     const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;

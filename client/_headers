@@ -1,0 +1,98 @@
+# Global headers for all files
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# JavaScript files
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+# JavaScript module files
+/*.mjs
+  Content-Type: application/javascript; charset=utf-8
+
+# JavaScript source maps
+/*.js.map
+  Content-Type: application/json; charset=utf-8
+
+# JavaScript modules
+/*.module.js
+  Content-Type: application/javascript; charset=utf-8
+
+# ES Modules in subdirectories
+/src/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/config/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/services/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/config/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/socket-event-listeners/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/global-variables/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/document-event-listeners/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/initialization/load-import-data/*.js
+  Content-Type: application/javascript; charset=utf-8
+  
+/src/initialization/mutation-observers/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/setup/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/setup/general/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/utils/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/js/metadata/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/actions/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/actions/general/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/src/actions/keybinds/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+# JSON files
+/*.json
+  Content-Type: application/json; charset=utf-8
+
+# CSS files
+/*.css
+  Content-Type: text/css; charset=utf-8
+
+# Ensure manifest is served with correct MIME type
+/src/assets/site.webmanifest
+  Content-Type: application/manifest+json
+
+# WebAssembly files if you have any
+/*.wasm
+  Content-Type: application/wasm
+
+# Fonts
+/*.woff2
+  Content-Type: font/woff2
+/*.woff
+  Content-Type: font/woff
+/*.ttf
+  Content-Type: font/ttf

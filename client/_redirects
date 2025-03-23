@@ -1,0 +1,20 @@
+# Handle module path redirects
+/src/config/*                 /src/config/:splat                 200
+/src/services/*               /src/services/:splat               200
+/js/metadata/*                /js/metadata/:splat                200
+/src/initialization/*         /src/initialization/:splat         200
+/src/initialization/socket-event-listeners/*  /src/initialization/socket-event-listeners/:splat  200
+/src/initialization/global-variables/*        /src/initialization/global-variables/:splat        200
+/src/initialization/config/*                 /src/initialization/config/:splat                  200
+/src/initialization/document-event-listeners/* /src/initialization/document-event-listeners/:splat 200
+/src/initialization/load-import-data/*       /src/initialization/load-import-data/:splat       200
+/src/initialization/mutation-observers/*     /src/initialization/mutation-observers/:splat     200
+/src/setup/*                  /src/setup/:splat                  200
+/src/setup/general/*          /src/setup/general/:splat          200
+/src/utils/*                  /src/utils/:splat                  200
+/src/actions/*                /src/actions/:splat                200
+/src/actions/general/*        /src/actions/general/:splat        200
+/src/actions/keybinds/*       /src/actions/keybinds/:splat       200
+
+# SPA fallback - direct all other routes to index.html
+/*                            /index.html                        200

@@ -21,10 +21,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
     
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="src/css/index.css">
-    <link rel="stylesheet" href="../src/css/glow.css">
-    <link rel="stylesheet" href="../src/css/connectionstatus.css">
+    <!-- Stylesheets - using consistent absolute paths -->
+    <link rel="stylesheet" href="/src/css/index.css">
+    <link rel="stylesheet" href="/src/css/glow.css">
+    <link rel="stylesheet" href="/src/css/connectionstatus.css">
     
     <!-- External Libraries -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
@@ -34,13 +34,13 @@
     
     <!-- Mobile Detection Script -->
     <script>
-        window.onload = () => {
-            var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        window.addEventListener('DOMContentLoaded', () => {
+            const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             if (isMobile) {
                 alert("PTCG-sim & Meta is still in mobile development. Please use a desktop for full functionality.");
-            };
-        };
+            }
+        });
     </script>
 </head>
 <body>
