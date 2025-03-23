@@ -11,6 +11,16 @@ class SocketService {
     this.offlineMode = false;
     this.eventHandlers = new Map();
     this.pendingEmits = [];
+    
+    this.lastConnectedTime = null;
+    this.connectionMetrics = {
+      connectCount: 0,
+      disconnectCount: 0,
+      errorCount: 0,
+      lastErrorMessage: null
+    };
+    this.debugLog = [];
+    this.debugLogMaxSize = 100;
   }
 
   async initialize() {

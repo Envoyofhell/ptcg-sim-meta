@@ -1,89 +1,140 @@
-// workers/index.js (Simplified Socket.IO support)
-
+// workers/index.js
 import { Router } from 'itty-router';
-import { corsHeaders, handleOptions } from './src/utils/cors';
-import * as gameStateApi from './src/api/game-state';
-import * as healthApi from './src/api/health';
+import { corsHeaders, handleOptions } from './src/utils/cors.js';
 
+// Import your worker functionality
+import * as gameStateApi from './src/api/game-state.js';
+import * as healthApi from './src/api/health.js';
+
+// Create a new router
 const router = Router();
 
-// Basic Socket.IO handshake handler
-async function handleSocketIO(request) {
-  const url = new URL(request.url);
-  const headers = {
-    'Content-Type': 'text/plain; charset=UTF-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
-  };
-  
-  // For handshake
-  if (!url.searchParams.has('sid')) {
-    const sid = Math.random().toString(36).substring(2, 15);
-    const handshakeData = {
-      sid,
-      upgrades: ['websocket'],
-      pingInterval: 25000,
-      pingTimeout: 20000
-    };
-    
-    return new Response(`0${JSON.stringify(handshakeData)}`, { headers });
-  }
-  
-  // For polling GET (client receiving data)
-  if (request.method === 'GET') {
-    return new Response('', { headers });
-  }
-  
-  // For polling POST (client sending data)
-  if (request.method === 'POST') {
-    try {
-      const body = await request.text();
-      console.log(`Received Socket.IO message: ${body}`);
-      
-      // Acknowledge message
-      return new Response('3', { headers });
-    } catch (error) {
-      console.error(`Error processing Socket.IO message: ${error}`);
-      return new Response('4{"message":"Error processing message"}', { headers });
-    }
-  }
-  
-  return new Response('Method not allowed', { status: 405, headers });
-}
-
-// Setup routes
+// Handle CORS preflight requests
 router.options('*', handleOptions);
+
+// Health check endpoint
 router.get('/health', healthApi.getHealth);
 router.get('/api/health', healthApi.getHealth);
+
+// Game state API endpoints
 router.get('/api/importData', gameStateApi.getGameState);
 router.post('/api/storeGameState', gameStateApi.storeGameState);
 router.delete('/api/gameState/:key', gameStateApi.deleteGameState);
 router.get('/api/stats', gameStateApi.getStats);
 
-// Socket.IO compatibility routes
-router.get('/socket.io/', handleSocketIO);
-router.post('/socket.io/', handleSocketIO);
+// Catch-all route for any other API requests
+router.all('/api/*', () => new Response('API endpoint not found', { status: 404 }));
 
-// Catch-all 404 handler
-router.all('*', () => new Response('Not Found', { status: 404 }));
-
+// Default export for Cloudflare Workers
 export default {
   async fetch(request, env, ctx) {
     try {
+      // Add environment to request for handlers to access
       request.env = env;
       
-      const response = await router.handle(request);
+      // Parse the URL from the request
+      const url = new URL(request.url);
       
-      // Add CORS headers
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
+      // Log requests in debug mode
+      if (env.LOG_LEVEL === 'debug') {
+        console.log(`${request.method} ${url.pathname}`);
+      }
       
-      return response;
+      // For API requests, use the router
+      if (url.pathname.startsWith('/api/') || url.pathname === '/health') {
+        const response = await router.handle(request);
+        
+        // Add CORS headers to all responses
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        
+        return response;
+      }
+      
+      // For requests to JavaScript files, ensure correct MIME type
+      if (
+        url.pathname.endsWith('.js') || 
+        url.pathname.endsWith('.mjs') ||
+        url.pathname.includes('.module.js')
+      ) {
+        try {
+          // Fetch the original resource
+          const originalResponse = await fetch(request);
+          
+          // Check if the response was successful
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          
+          // Create a new response with the correct MIME type
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              'Content-Type': 'application/javascript; charset=utf-8'
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling JavaScript file: ${error.message}`);
+          return fetch(request); // Fallback to original request
+        }
+      }
+      
+      // For CSS files, ensure correct MIME type
+      if (url.pathname.endsWith('.css')) {
+        try {
+          const originalResponse = await fetch(request);
+          
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              'Content-Type': 'text/css; charset=utf-8'
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling CSS file: ${error.message}`);
+          return fetch(request); // Fallback to original request
+        }
+      }
+      
+      // For JSON files, ensure correct MIME type
+      if (url.pathname.endsWith('.json') || url.pathname.endsWith('.map')) {
+        try {
+          const originalResponse = await fetch(request);
+          
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              'Content-Type': 'application/json; charset=utf-8'
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling JSON file: ${error.message}`);
+          return fetch(request); // Fallback to original request
+        }
+      }
+      
+      // For all other requests, pass through to the origin
+      return fetch(request);
     } catch (error) {
-      console.error(`Error handling request: ${error}`);
+      console.error(`Error handling request: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
       
+      // Return a JSON error response
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -94,7 +145,7 @@ export default {
           status: 500,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders
+            'Access-Control-Allow-Origin': '*'
           }
         }
       );

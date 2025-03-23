@@ -5,7 +5,7 @@
  * storage, retrieval, and management.
  */
 import { getDbClient } from './client';
-import { log } from '../utils/logging';
+import { log } from '../utils/logging.js';
 
 /**
  * Retrieve a game state by key

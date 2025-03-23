@@ -4,9 +4,9 @@
  * This module provides HTTP handlers for game state operations,
  * mapping API requests to database operations.
  */
-import { log } from '../utils/logging';
-import { isValidKey, generateRandomKey } from '../utils/key-generator';
-import * as gameStateDb from '../db/game-state';
+import { log } from '../utils/logging.js';
+import { isValidKey, generateRandomKey } from '../utils/key-generator.js';
+import * as gameStateDb from '../db/game-state.js';
 
 /**
  * Get a game state by key

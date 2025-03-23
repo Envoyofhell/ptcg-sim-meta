@@ -5,7 +5,7 @@
  * using their serverless driver optimized for Cloudflare Workers.
  */
 import { Pool } from '@neondatabase/serverless';
-import { log } from '../utils/logging';
+import { log } from '../utils/logging.js';
 
 /**
  * Create a database pool using the provided connection string

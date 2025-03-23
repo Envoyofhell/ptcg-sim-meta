@@ -4,7 +4,7 @@
  * 
  * This module provides comprehensive status checks for the worker and database
  */
-import { log } from '../utils/logging';
+import { log } from '../utils/logging.js';
 import { getDbClient } from '../db/client';
 
 export async function getHealth(request) {

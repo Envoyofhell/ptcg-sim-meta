@@ -4,8 +4,8 @@
  * This module provides functions for consistent error handling
  * and response formatting across API endpoints.
  */
-import { log, logError } from './logging';
-import { corsHeaders } from './cors';
+import { log, logError } from './logging.js';
+import { corsHeaders } from './cors.js';
 
 /**
  * Create a JSON error response with consistent formatting
