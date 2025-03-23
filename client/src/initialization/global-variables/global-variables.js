@@ -85,12 +85,15 @@ export const socket = (() => {
     
     const socketOptions = {
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 8,
       reconnectionDelay: 1000,
-      timeout: 10000, // Increased timeout
-      transports: ['polling', 'websocket'],
-      path: '/socket.io/', // Ensure this matches server config
-      autoConnect: true,
+      timeout: 10000,
+      transports: ['polling', 'websocket'], // Prioritize polling first
+      path: '/socket.io/',
+      query: { 
+        version: version,
+        client: 'web'
+      },
       debug: currentEnvironment === 'development'
     };
 
