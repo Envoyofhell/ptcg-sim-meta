@@ -6,22 +6,29 @@ var allowedOrigins = [
   "https://ptcg-sim-meta.pages.dev",
   "https://ptcg-sim-meta-dev.pages.dev",
   "http://localhost:3000",
-  "http://localhost:4000"
+  "http://localhost:4000",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:4000"
 ];
 var corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  // Replace with specific origins in production
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
   "Access-Control-Max-Age": "86400"
   // 24 hours
 };
-function handleOptions(request) {
+function getExpandedCorsHeaders(request) {
   const origin = request.headers.get("Origin");
-  const headers = new Headers(corsHeaders);
+  const headers = { ...corsHeaders };
   if (origin && allowedOrigins.includes(origin)) {
-    headers.set("Access-Control-Allow-Origin", origin);
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
   }
+  headers["Access-Control-Allow-Headers"] += ", Upgrade, Connection";
+  return headers;
+}
+function handleOptions(request) {
+  const headers = getExpandedCorsHeaders(request);
   return new Response(null, {
     status: 204,
     headers
@@ -439,28 +446,46 @@ async function getHealth(request) {
     const healthData = {
       status: "ok",
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      version: "1.5.1",
       worker: {
         status: "ok",
-        environment: request.env.ENVIRONMENT || "unknown"
+        environment: request.env.ENVIRONMENT || "production"
+      },
+      socketio: {
+        status: "limited",
+        message: "Basic Socket.IO compatibility layer available"
       },
       database: {
-        status: "unknown"
+        status: "checking"
+      },
+      features: {
+        rest_api: "full",
+        websockets: "partial",
+        socketio: "minimal",
+        database: "full"
       }
     };
     try {
-      const pool = getDbClient(request.env);
-      const result = await pool.query("SELECT NOW() as time");
-      healthData.database = {
-        status: "ok",
-        time: result.rows[0].time
-      };
+      if (request.env.DATABASE_URL) {
+        const pool = getDbClient(request.env);
+        const result = await pool.query("SELECT NOW() as time");
+        healthData.database = {
+          status: "ok",
+          time: result.rows[0].time
+        };
+      } else {
+        healthData.database = {
+          status: "disabled",
+          message: "No database connection available"
+        };
+      }
     } catch (dbError) {
       log(`Database health check failed: ${dbError.message}`, "error");
-      healthData.status = "degraded";
       healthData.database = {
         status: "error",
         error: dbError.message
       };
+      healthData.status = "degraded";
     }
     return new Response(
       JSON.stringify(healthData),
@@ -491,21 +516,94 @@ router.get("/api/importData", getGameState);
 router.post("/api/storeGameState", storeGameState2);
 router.delete("/api/gameState/:key", deleteGameState2);
 router.get("/api/stats", getStats);
-router.all("*", () => new Response("Not Found", { status: 404 }));
+router.all("/api/*", () => new Response("API endpoint not found", { status: 404 }));
 var index_default = {
+  /**
+   * Main fetch handler for all incoming requests
+   * 
+   * @param {Request} request - The incoming HTTP request
+   * @param {Object} env - Environment variables and bindings
+   * @param {Object} ctx - Execution context
+   * @returns {Response} HTTP response
+   */
   async fetch(request, env, ctx) {
     try {
       request.env = env;
-      log(`${request.method} ${new URL(request.url).pathname}`, "info");
-      const response = await router.handle(request);
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+      const url = new URL(request.url);
+      if (env.LOG_LEVEL === "debug") {
+        console.log(`${request.method} ${url.pathname}`);
+      }
+      if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
+        const response = await router.handle(request);
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        return response;
+      }
+      if (url.pathname.endsWith(".js") || url.pathname.endsWith(".mjs") || url.pathname.includes(".module.js")) {
+        try {
+          const originalResponse = await fetch(request);
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              "Content-Type": "application/javascript; charset=utf-8"
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling JavaScript file: ${error.message}`);
+          return fetch(request);
+        }
+      }
+      if (url.pathname.endsWith(".css")) {
+        try {
+          const originalResponse = await fetch(request);
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              "Content-Type": "text/css; charset=utf-8"
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling CSS file: ${error.message}`);
+          return fetch(request);
+        }
+      }
+      if (url.pathname.endsWith(".json") || url.pathname.endsWith(".map")) {
+        try {
+          const originalResponse = await fetch(request);
+          if (!originalResponse.ok) {
+            return originalResponse;
+          }
+          return new Response(originalResponse.body, {
+            status: originalResponse.status,
+            statusText: originalResponse.statusText,
+            headers: {
+              ...Object.fromEntries([...originalResponse.headers.entries()]),
+              "Content-Type": "application/json; charset=utf-8"
+            }
+          });
+        } catch (error) {
+          console.error(`Error handling JSON file: ${error.message}`);
+          return fetch(request);
+        }
+      }
+      return fetch(request);
     } catch (error) {
-      log(`Error handling request: ${error.message}`, "error");
-      log(`Stack trace: ${error.stack}`, "debug");
-      const errorResponse = new Response(
+      console.error(`Error handling request: ${error.message}`);
+      if (error.stack) {
+        console.error(`Stack trace: ${error.stack}`);
+      }
+      return new Response(
         JSON.stringify({
           success: false,
           error: "Internal Server Error",
@@ -515,14 +613,16 @@ var index_default = {
           status: 500,
           headers: {
             "Content-Type": "application/json",
-            ...corsHeaders
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization"
           }
         }
       );
-      return errorResponse;
     }
   }
 };
 export {
   index_default as default
 };
+//# sourceMappingURL=worker.js.map
