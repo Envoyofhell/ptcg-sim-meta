@@ -17,6 +17,8 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
+import { Router } from 'itty-router';
+import { corsHeaders, handleOptions } from './src/utils/cors';
 import { instrument } from '@socket.io/admin-ui';
 import bcrypt from 'bcryptjs';
 import path from 'path';
