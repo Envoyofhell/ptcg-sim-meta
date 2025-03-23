@@ -1,15 +1,24 @@
-// File: client/src/front-end.js
+// Modified client/src/front-end.js
+// Fix initialization order to prevent circular dependencies
 
-// Add after all import statements
-export * from './initialization/global-variables/global-variables.js'; // Initialize all globally accessible variables
-
-import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
-import { loadImportData } from './initialization/load-import-data/load-import-data.js';
-import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
-import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
+// Move variable declarations to the top
+let systemState = null;
 
 // Ensure all state is properly initialized for offline mode
 function ensureStateInitialization() {
+  if (!systemState) {
+    console.error('System state not yet initialized, creating default state');
+    systemState = {
+      exportActionData: [],
+      replayActionData: [],
+      actionData: {
+        self: [],
+        opponent: [],
+        spectator: []
+      }
+    };
+  }
+  
   if (!Array.isArray(systemState.exportActionData)) {
     systemState.exportActionData = [];
   }
@@ -29,9 +38,22 @@ function ensureStateInitialization() {
   console.log('[App] System state initialized');
 }
 
-// Initialize everything
+// Import in correct order, after variable declaration
+import { initializeSystemState } from './initialization/global-variables/global-variables.js';
+import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
+import { loadImportData } from './initialization/load-import-data/load-import-data.js';
+import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
+import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
+
+// Initialize system state first, then assign to our local variable
+systemState = initializeSystemState();
+
+// Only after state is initialized, run other initialization steps
 ensureStateInitialization();
-initializeSocketEventListeners(); // Initializes all event listeners for socket events
-initializeDOMEventListeners(); // Initializes all event listeners for user's actions on html elements and the window
-initializeMutationObservers(); // Initializes all mutation observers for user's actions on html elements
-loadImportData(); // get the importData (if there is any), and load the content.
+initializeSocketEventListeners();
+initializeDOMEventListeners();
+initializeMutationObservers();
+loadImportData();
+
+// Re-export necessary variables
+export * from './initialization/global-variables/global-variables.js';

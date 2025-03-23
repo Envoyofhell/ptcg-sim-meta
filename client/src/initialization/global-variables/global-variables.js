@@ -1,359 +1,165 @@
-// File: client/src/initialization/global-variables/global-variables.js
-/**
- * Global Variables and State Management
- * 
- * Centralizes all global state variables and socket functionality
- * with enhanced error handling and offline mode support.
- */
+// Updated client/src/initialization/global-variables/global-variables.js
+import { socketService } from '../../services/socket-service.js';
 import { preloadImage } from '../../setup/general/preload-image.js';
-import { getZone } from '../../setup/zones/get-zone.js';
+import { LogService } from '../../services/log-service.js';
+
+// Initialize logger
+export const logger = new LogService();
 
 /**
- * Version Tracking
- * Helps with caching, feature detection, and compatibility checks
+ * Creates and initializes the system state
+ * @returns {Object} Initialized system state
  */
-export const version = '1.5.1';
-
-/**
- * Environment Detection Utility
- * Provides a safe way to determine the current environment
- */
-function detectEnvironment() {
-  const hostname = window.location.hostname;
+export function initializeSystemState() {
+  logger.log('Initializing system state', 'info');
   
-  const environments = {
-    development: [
-      'localhost', 
-      '127.0.0.1', 
-      'ptcg-sim-meta-dev.pages.dev'
-    ],
-    production: [
-      'ptcg-sim-meta.pages.dev'
-    ]
+  // Create system state with default values
+  const state = {
+    // Version tracking
+    version: '1.5.1.1',
+    
+    // Connection state
+    isTwoPlayer: false,
+    roomId: '',
+    isConnected: false,
+    isSpectator: false,
+    
+    // Game state tracking
+    isUndoInProgress: false,
+    isReplay: false,
+    isImporting: false,
+    
+    // Action tracking
+    exportActionData: [],
+    replayActionData: [],
+    actionData: {
+      self: [],
+      opponent: [],
+      spectator: []
+    },
+    
+    // Counter tracking
+    _selfCounter: 0,
+    get selfCounter() { return this._selfCounter; },
+    set selfCounter(value) {
+      if (typeof value !== 'number') {
+        logger.log(`Invalid selfCounter value: ${value}`, 'warn');
+        return;
+      }
+      this._selfCounter = value;
+    },
+    
+    // Username management
+    usernames: {
+      p1Self: 'Blue',
+      p1Opp: 'Red',
+      p2Self: '',
+      p2Opp: '',
+      spectator: ''
+    },
+    
+    // Getting current username based on context
+    get initiator() {
+      return document.getElementById('selfContainer').classList.contains('self') ? 'self' : 'opp';
+    },
+    
+    // Deck management
+    selfDeckData: '',
+    p1OppDeckData: '',
+    p2OppDeckData: '',
+    
+    // Feature flags
+    coachingMode: false,
+    debugMode: false,
+    
+    // Card back management
+    cardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png',
+    p1OppCardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png',
+    p2OppCardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png',
+    
+    // Background setting
+    defaultBackground: `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), 
+      url('https://static0.gamerantimages.com/wordpress/wp-content/uploads/wm/2025/03/pokemon-legends-z-a-totodile-with-lumiose-bg.jpg')`
   };
-
-  if (environments.development.includes(hostname)) {
-    return 'development';
-  }
-
-  if (environments.production.includes(hostname)) {
-    return 'production';
-  }
-
-  // Default to production for unknown environments
-  return 'production';
+  
+  // Set initial background
+  document.body.style.backgroundImage = state.defaultBackground;
+  document.body.style.backgroundPosition = '-200px 0';
+  
+  // Preload default card back
+  preloadImage(state.cardBackSrc);
+  
+  return state;
 }
 
 /**
- * Advanced Environment Detection for Socket URL
- * Provides robust URL selection with comprehensive fallback
+ * Initializes the mouse click state
+ * @param {Object} systemState - The system state
+ * @returns {Object} Mouse click state
  */
-function detectSocketUrl() {
-  const hostname = window.location.hostname;
-  
-  // Comprehensive URL mapping
-  const environmentUrls = {
-    // Local development
-    'localhost': 'http://localhost:4000',
-    '127.0.0.1': 'http://localhost:4000',
-    
-    // Development Cloudflare Pages
-    'ptcg-sim-meta-dev.pages.dev': 'https://ptcg-sim-meta-dev.jasonh1993.workers.dev',
-    
-    // Production Cloudflare Pages
-    'ptcg-sim-meta.pages.dev': 'https://ptcg-sim-meta.jasonh1993.workers.dev'
-  };
-  
-  // Secure URL selection with fallback
-  const socketUrl = environmentUrls[hostname] || 
-    'https://ptcg-sim-meta.jasonh1993.workers.dev';
-  
-  console.log(`[Socket URL] Selected: ${socketUrl}`);
-  return socketUrl;
-}
-
-// Detect current environment
-const currentEnvironment = detectEnvironment();
-
-/**
- * Create a mock socket for offline mode
- * Provides a fallback when Socket.IO server is unavailable
- */
-function createOfflineSocket() {
-  console.log('[Socket] Creating offline mode socket');
-  
-  // Event handlers storage
-  const eventHandlers = {};
-  
+export function initializeMouseClickState(systemState) {
   return {
-    // Always report as connected to prevent errors
-    connected: true,
-    id: 'offline-' + Math.random().toString(36).substring(2, 10),
+    cardIndex: null,
+    zoneId: null,
+    cardUser: null,
+    playContainer: null,
+    playContainerParent: null,
+    selectingCard: false,
     
-    // Event registration
-    on: function(event, callback) {
-      if (!eventHandlers[event]) {
-        eventHandlers[event] = [];
+    // Get the card object based on current selection
+    get card() {
+      try {
+        if (!this.zoneId) return null;
+        
+        // Import getZone here to avoid circular dependencies
+        const { getZone } = require('../../setup/zones/get-zone.js');
+        const zone = getZone(this.cardUser, this.zoneId);
+        
+        return zone?.array[this.cardIndex] || null;
+      } catch (error) {
+        logger.log(`Error retrieving card: ${error.message}`, 'error');
+        return null;
       }
-      eventHandlers[event].push(callback);
-      return this;
-    },
-    
-    // Event emission - offline handling
-    emit: function(event, ...args) {
-      console.log(`[Socket-Offline] Emitting event: ${event}`, args);
-      
-      // Handle specific events
-      if (event === 'joinGame') {
-        // Simulate successful connection
-        setTimeout(() => {
-          const handlers = eventHandlers['connect'] || [];
-          handlers.forEach(handler => handler());
-          
-          const joinHandlers = eventHandlers['joinGame'] || [];
-          joinHandlers.forEach(handler => handler());
-        }, 100);
-      }
-      
-      // Store game state via REST API instead of socket
-      if (event === 'storeGameState') {
-        const data = args[0];
-        fetch('/api/storeGameState', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gameState: data })
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success && result.key) {
-            const handlers = eventHandlers['exportGameStateSuccessful'] || [];
-            handlers.forEach(handler => handler(result.key));
-          } else {
-            const handlers = eventHandlers['exportGameStateFailed'] || [];
-            handlers.forEach(handler => handler('Error storing game state'));
-          }
-        })
-        .catch(error => {
-          const handlers = eventHandlers['exportGameStateFailed'] || [];
-          handlers.forEach(handler => handler('Error storing game state'));
-        });
-      }
-      
-      return this;
-    },
-    
-    // Socket.IO methods that do nothing in offline mode
-    connect: function() { return this; },
-    disconnect: function() { return this; }
+    }
   };
 }
 
 /**
- * Robust Socket Connection Initialization
- * With offline mode fallback for reliability
+ * Safely makes a socket emission with error handling
+ * @param {string} eventName - The event name
+ * @param {...any} args - Arguments for the event
  */
-export const socket = (() => {
-  try {
-    // Validate Socket.IO global is available
-    if (typeof io === 'undefined') {
-      console.error('[Socket] Socket.IO library not loaded');
-      return createOfflineSocket();
-    }
-
-    const socketUrl = detectSocketUrl();
-    
-    const socketOptions = {
-      // Connection Resilience
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      
-      // Timeout Handling
-      timeout: 10000,
-      
-      // Transport Prioritization - use polling first for compatibility
-      transports: ['polling', 'websocket'],
-      
-      // Debug mode only in development
-      debug: currentEnvironment === 'development'
-    };
-
-    // First try to connect
-    try {
-      const socketInstance = io(socketUrl, socketOptions);
-      
-      // Connection Event Handlers
-      socketInstance.on('connect', () => {
-        console.log(`[Socket] Connected to ${socketUrl}`);
-      });
-      
-      socketInstance.on('disconnect', (reason) => {
-        console.warn(`[Socket] Disconnected: ${reason}`);
-      });
-      
-      socketInstance.on('connect_error', (error) => {
-        console.error(`[Socket] Connection Error: ${error.message}`);
-      });
-      
-      return socketInstance;
-    } catch (socketError) {
-      console.error('Socket.IO connection failed, falling back to offline mode:', socketError);
-      return createOfflineSocket();
-    }
-  } catch (error) {
-    console.error('Failed to initialize socket connection:', error);
-    return createOfflineSocket();
-  }
-})();
-
-/**
- * Handle offline events
- * Provides fallback functionality for critical game operations when socket is unavailable
- * 
- * @param {string} eventName - Socket.IO event name
- * @param {*} args - Event arguments
- */
-function handleOfflineEvent(eventName, ...args) {
-  console.log(`[Socket-Offline] Handling offline event: ${eventName}`);
-  
-  // Make sure arrays are initialized
-  if (!Array.isArray(systemState.exportActionData)) {
-    systemState.exportActionData = [];
-  }
-  
-  // Handle specific events
-  if (eventName === 'storeGameState') {
-    const data = args[0];
-    // Use fetch API instead of socket
-    fetch('/api/storeGameState', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameState: data })
-    })
-    .then(response => response.json())
-    .then(result => {
-      console.log('[Socket-Offline] Game state stored successfully', result);
-    })
-    .catch(error => {
-      console.error('[Socket-Offline] Error storing game state:', error);
-    });
-  }
-}
-
-// Preemptive error handling for socket usage
 export function safeSocketEmit(eventName, ...args) {
-  // Check if socket exists and is connected
-  if (socket) {
-    if (socket.connected) {
-      socket.emit(eventName, ...args);
-    } else {
-      console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
-      // Handle offline fallback for critical events
-      handleOfflineEvent(eventName, ...args);
-    }
-  } else {
-    console.warn(`[Socket] Cannot emit ${eventName}. Socket not available.`);
-    // Handle offline fallback for critical events
-    handleOfflineEvent(eventName, ...args);
+  try {
+    socketService.emit(eventName, ...args);
+  } catch (error) {
+    logger.log(`Error emitting ${eventName}: ${error.message}`, 'error');
   }
 }
 
-// HTML Element References
+/**
+ * Initialize HTML Element References
+ * These are available immediately and don't need to be in a function
+ */
 export const selfContainer = document.getElementById('selfContainer');
-export const selfContainerDocument = selfContainer.contentWindow.document;
+export const selfContainerDocument = selfContainer?.contentWindow?.document;
 export const oppContainer = document.getElementById('oppContainer');
-export const oppContainerDocument = oppContainer.contentWindow.document;
+export const oppContainerDocument = oppContainer?.contentWindow?.document;
 
-/**
- * System State Management
- * Centralized state tracking with enhanced type safety and logging
- */
-export const systemState = {
-  // Existing properties with added type hints and validation
-  coachingMode: false,
-  isUndoInProgress: false,
-  
-  // Initialize important array structures to prevent errors
-  exportActionData: [],
-  replayActionData: [],
-  
-  // Counter tracking with safeguards
-  _selfCounter: 0,
-  get selfCounter() { return this._selfCounter; },
-  set selfCounter(value) {
-    if (typeof value !== 'number') {
-      console.warn(`Invalid selfCounter value: ${value}`);
-      return;
-    }
-    this._selfCounter = value;
-  },
-  
-  // Expanded state tracking
-  actionData: {
-    self: [],
-    opponent: [],
-    spectator: []
-  },
-  
-  // Advanced getter/setter patterns
-  get initiator() {
-    return selfContainer.classList.contains('self') ? 'self' : 'opp';
-  },
-  
-  // Enhanced username handling
-  usernames: {
-    p1: function(user) { return user === 'self' ? 'Blue' : 'Red'; },
-    p2Self: '',
-    p2Opp: '',
-    spectator: ''
-  },
-  
-  // Deck and game state management
-  decks: {
-    self: '',
-    p1Opp: '', // 1P mode opponent deck
-    p2Opp: ''  // 2P mode opponent deck
-  },
-  
-  // Card back management with URL validation
-  cardBacks: {
-    self: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png',
-    p1Opp: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png',
-    p2Opp: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png'
+// Export element accessors with error handling
+export function getSelfDocument() {
+  if (!selfContainerDocument) {
+    throw new Error('Self container document not available');
   }
-};
+  return selfContainerDocument;
+}
 
-// Preload default card back image
-preloadImage(systemState.cardBacks.self);
-
-// Background configuration with fallback
-document.body.style.backgroundImage = `
-  linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), 
-  url('https://static0.gamerantimages.com/wordpress/wp-content/uploads/wm/2025/03/pokemon-legends-z-a-totodile-with-lumiose-bg.jpg')
-`;
-document.body.style.backgroundPosition = '-200px 0';
-
-/**
- * Mouse Click State Management
- * Enhanced tracking of selected game elements
- */
-export const mouseClick = {
-  cardIndex: '',
-  zoneId: '',
-  cardUser: '',
-  playContainer: '',
-  playContainerParent: '',
-  selectingCard: false,
-  
-  // Advanced card retrieval with error handling
-  get card() {
-    try {
-      if (!this.zoneId) return null;
-      const zone = getZone(this.cardUser, this.zoneId);
-      return zone.array[this.cardIndex] || null;
-    } catch (error) {
-      console.warn('Error retrieving card:', error);
-      return null;
-    }
+export function getOppDocument() {
+  if (!oppContainerDocument) {
+    throw new Error('Opponent container document not available');
   }
-};
+  return oppContainerDocument;
+}
+
+// Export initialized socket for use throughout the application
+export const socket = socketService;
