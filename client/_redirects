@@ -1,5 +1,5 @@
-# Bypass problematic JavaScript files with empty stubs
-/workers/src/utils/logging.js   /empty.js   200
+# Redirect only the problematic logging.js file to empty stub
+/workers/src/utils/logging.js    /empty.js    200
 
 # Handle module path redirects
 /src/config/*                 /src/config/:splat                 200
