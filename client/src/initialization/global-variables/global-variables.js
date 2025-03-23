@@ -9,23 +9,43 @@ import { getZone } from '../../setup/zones/get-zone.js';
 export const version = '1.5.1';
 
 /**
- * Advanced Environment Detection
- * Provides robust socket URL selection with multiple fallback strategies
- * 
- * Key Features:
- * - Dynamic environment detection
- * - Secure URL selection
- * - Fallback mechanisms
- * - Logging for debugging
+ * Environment Detection Utility
+ * Provides a safe way to determine the current environment
  */
-function detectSocketUrl() {
-  // Get current hostname for environment determination
+function detectEnvironment() {
   const hostname = window.location.hostname;
   
-  // Comprehensive logging for debugging environment detection
-  console.log(`[Socket URL Detection] Current Hostname: ${hostname}`);
+  const environments = {
+    development: [
+      'localhost', 
+      '127.0.0.1', 
+      'ptcg-sim-meta-dev.pages.dev'
+    ],
+    production: [
+      'ptcg-sim-meta.pages.dev'
+    ]
+  };
+
+  if (environments.development.includes(hostname)) {
+    return 'development';
+  }
+
+  if (environments.production.includes(hostname)) {
+    return 'production';
+  }
+
+  // Default to production for unknown environments
+  return 'production';
+}
+
+/**
+ * Advanced Environment Detection for Socket URL
+ * Provides robust URL selection with comprehensive fallback
+ */
+function detectSocketUrl() {
+  const hostname = window.location.hostname;
   
-  // Environment-specific URL mapping
+  // Comprehensive URL mapping
   const environmentUrls = {
     // Local development
     'localhost': 'http://localhost:4000',
@@ -40,27 +60,30 @@ function detectSocketUrl() {
   
   // Secure URL selection with fallback
   const socketUrl = environmentUrls[hostname] || 
-    // Fallback to production worker if no match
     'https://ptcg-sim-meta.jasonh1993.workers.dev';
   
-  console.log(`[Socket URL Detection] Selected URL: ${socketUrl}`);
+  console.log(`[Socket URL] Selected: ${socketUrl}`);
   return socketUrl;
 }
 
-// Detect and create socket connection
-const socketUrl = detectSocketUrl();
+// Detect current environment
+const currentEnvironment = detectEnvironment();
 
 /**
- * Socket.IO Connection with Enhanced Configuration
- * 
- * Features:
- * - Automatic reconnection
- * - Timeout handling
- * - Connection state logging
+ * Robust Socket Connection Initialization
+ * Provides advanced error handling and connection management
  */
 export const socket = (() => {
   try {
-    const socketInstance = io(socketUrl, {
+    // Validate Socket.IO global is available
+    if (typeof io === 'undefined') {
+      console.error('[Socket] Socket.IO library not loaded');
+      return null;
+    }
+
+    const socketUrl = detectSocketUrl();
+    
+    const socketOptions = {
       // Connection Resilience
       reconnection: true,
       reconnectionAttempts: 5,
@@ -72,11 +95,13 @@ export const socket = (() => {
       // Transport Prioritization
       transports: ['websocket', 'polling'],
       
-      // Connection Debugging
-      debug: process.env.NODE_ENV === 'development'
-    });
+      // Debug mode only in development
+      debug: currentEnvironment === 'development'
+    };
+
+    const socketInstance = io(socketUrl, socketOptions);
     
-    // Connection Event Logging
+    // Connection Event Handlers
     socketInstance.on('connect', () => {
       console.log(`[Socket] Connected to ${socketUrl}`);
     });
@@ -92,10 +117,18 @@ export const socket = (() => {
     return socketInstance;
   } catch (error) {
     console.error('Failed to initialize socket connection:', error);
-    // Fallback mechanism or error handling
     return null;
   }
 })();
+
+// Preemptive error handling for socket usage
+export function safeSocketEmit(eventName, ...args) {
+  if (socket && socket.connected) {
+    socket.emit(eventName, ...args);
+  } else {
+    console.warn(`[Socket] Cannot emit ${eventName}. Socket not connected.`);
+  }
+}
 
 // HTML Element References
 export const selfContainer = document.getElementById('selfContainer');
