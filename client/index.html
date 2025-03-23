@@ -17,6 +17,7 @@
     <meta property="og:description" content="PTCG-sim-meta is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. Simulate your favorite card game!">
     <meta property="og:site_name" content="PTCG-sim-meta">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
     <!-- Viewport and Favicon -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
@@ -42,6 +43,22 @@
             }
         });
     </script>
+    <script>
+        // Inline logging module - Add this to your index.html in the <head> section
+        window.logger = {
+          debug: (message, context = '') => console.debug(`[DEBUG][${context}]`, message),
+          info: (message, context = '') => console.info(`[INFO][${context}]`, message),
+          warn: (message, context = '') => console.warn(`[WARNING][${context}]`, message),
+          error: (message, context = '') => console.error(`[ERROR][${context}]`, message),
+          log: (message, level = 'info', context = '') => {
+            if (window.logger[level]) {
+              window.logger[level](message, context);
+            } else {
+              console.log(`[${level.toUpperCase()}][${context}]`, message);
+            }
+          }
+        };
+        </script>
 </head>
 <body>
     <!-- Main Container Elements -->
