@@ -1,12 +1,8 @@
 /**
- * PTCG-Sim-Meta Build Script
+ * Enhanced Build Script for PTCG-Sim-Meta
  *
- * This script handles the build process for all components of the application:
- * - Client (Cloudflare Pages)
- * - Workers (Cloudflare Workers)
- * - Server (Express.js)
- *
- * It ensures that all paths are correctly resolved and files are placed in the right locations.
+ * This script handles the build process for all components of the application,
+ * with special attention to content-type handling.
  */
 
 const fs = require('fs');
@@ -15,23 +11,12 @@ const { execSync } = require('child_process');
 
 // Configuration
 const config = {
-  // Project root is the directory where this script is located
   rootDir: __dirname,
-
-  // Component directories
   clientDir: path.join(__dirname, 'client'),
   workersDir: path.join(__dirname, 'workers'),
-  serverDir: path.join(__dirname, 'server'),
-
-  // Output directories
   distDir: path.join(__dirname, 'dist'),
   clientDistDir: path.join(__dirname, 'dist', 'client'),
   workersDistDir: path.join(__dirname, 'dist', 'workers'),
-
-  // Environment
-  isDev: process.env.NODE_ENV !== 'production',
-
-  // Build timestamp
   buildTimestamp: new Date().toISOString(),
 };
 
@@ -58,6 +43,12 @@ function copyFile(src, dest, transform = null) {
   // Create destination directory if it doesn't exist
   ensureDir(path.dirname(dest));
 
+  // Skip if the source file doesn't exist
+  if (!fs.existsSync(src)) {
+    console.warn(`Warning: File not found: ${src}`);
+    return;
+  }
+
   // Read the source file
   const content = fs.readFileSync(src, 'utf8');
 
@@ -69,51 +60,139 @@ function copyFile(src, dest, transform = null) {
 }
 
 /**
- * IMPORTANT UPDATE: Add this function to your build.js file
- * This ensures that all HTML files have proper metadata
+ * Recursively copy a directory
+ * @param {string} src - Source directory
+ * @param {string} dest - Destination directory
+ */
+function copyDir(src, dest) {
+  ensureDir(dest);
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      copyFile(srcPath, destPath);
+    }
+  }
+}
+
+/**
+ * Ensure HTML files have proper metadata and doctype
  */
 function ensureHtmlMetadata() {
   console.log('\n=== Ensuring HTML Metadata ===\n');
 
-  const htmlFiles = [
-    'index.html',
-    'self-containers.html',
-    'opp-containers.html',
-  ];
-
-  htmlFiles.forEach((file) => {
-    const filePath = path.join(config.clientDistDir, file);
-
-    if (fs.existsSync(filePath)) {
-      console.log(`Checking ${file} for proper metadata...`);
-
-      let content = fs.readFileSync(filePath, 'utf8');
-
-      // Ensure the file has proper doctype
-      if (!content.trim().startsWith('<!DOCTYPE html>')) {
-        content = '<!DOCTYPE html>\n' + content;
-        console.log(`Added DOCTYPE to ${file}`);
+  // List all HTML files in the client dist directory
+  const htmlFiles = [];
+  function findHtmlFiles(dir) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isDirectory()) {
+        findHtmlFiles(fullPath);
+      } else if (entry.name.endsWith('.html')) {
+        htmlFiles.push(fullPath);
       }
-
-      // Ensure content-type meta tag exists
-      if (!content.includes('<meta http-equiv="Content-Type"')) {
-        const headEndPos = content.indexOf('</head>');
-        if (headEndPos !== -1) {
-          content =
-            content.slice(0, headEndPos) +
-            '\n    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n' +
-            content.slice(headEndPos);
-          console.log(`Added Content-Type meta tag to ${file}`);
-        }
-      }
-
-      // Write the updated content back
-      fs.writeFileSync(filePath, content, 'utf8');
     }
+  }
+  
+  findHtmlFiles(config.clientDistDir);
+  
+  console.log(`Found ${htmlFiles.length} HTML files to process`);
+
+  htmlFiles.forEach((filePath) => {
+    const fileName = path.relative(config.clientDistDir, filePath);
+    console.log(`Checking ${fileName} for proper metadata...`);
+
+    let content = fs.readFileSync(filePath, 'utf8');
+
+    // Ensure the file has proper doctype
+    if (!content.trim().startsWith('<!DOCTYPE html>')) {
+      content = '<!DOCTYPE html>\n' + content;
+      console.log(`Added DOCTYPE to ${fileName}`);
+    }
+
+    // Ensure content-type meta tag exists
+    if (!content.includes('<meta http-equiv="Content-Type"')) {
+      const headEndPos = content.indexOf('</head>');
+      if (headEndPos !== -1) {
+        content =
+          content.slice(0, headEndPos) +
+          '\n    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n' +
+          content.slice(headEndPos);
+        console.log(`Added Content-Type meta tag to ${fileName}`);
+      }
+    }
+
+    // Write the updated content back
+    fs.writeFileSync(filePath, content, 'utf8');
   });
 
   console.log('HTML metadata verification complete!');
 }
+
+/**
+ * Create _headers file for Cloudflare Pages
+ */
+function createCloudflareHeaders() {
+  console.log('\n=== Creating Cloudflare Headers File ===\n');
+  
+  const headersPath = path.join(config.clientDistDir, '_headers');
+  const headersContent = `
+# Content type headers for proper MIME types
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# JavaScript files
+*.js
+  Content-Type: application/javascript; charset=utf-8
+
+# CSS files
+*.css
+  Content-Type: text/css; charset=utf-8
+
+# HTML files
+*.html
+  Content-Type: text/html; charset=utf-8
+
+# JSON files
+*.json
+  Content-Type: application/json; charset=utf-8
+
+# Fallback for SPA routing
+/*
+  X-Content-Type-Options: nosniff
+`;
+
+  fs.writeFileSync(headersPath, headersContent.trim());
+  console.log(`Created Cloudflare _headers file at ${headersPath}`);
+}
+
+/**
+ * Create _redirects file for SPA routing
+ */
+function createCloudflareRedirects() {
+  console.log('\n=== Creating Cloudflare Redirects File ===\n');
+  
+  const redirectsPath = path.join(config.clientDistDir, '_redirects');
+  const redirectsContent = `
+# Redirect all paths to index.html for SPA routing
+/*    /index.html   200
+`;
+
+  fs.writeFileSync(redirectsPath, redirectsContent.trim());
+  console.log(`Created Cloudflare _redirects file at ${redirectsPath}`);
+}
+
 /**
  * Run a command and log the output
  * @param {string} command - Command to run
@@ -143,8 +222,6 @@ function buildClient() {
   // Copy static files from client directory to client dist
   const clientFiles = [
     'index.html',
-    '_headers',
-    '_redirects',
     'data.json',
     'self-containers.html',
     'opp-containers.html',
@@ -167,11 +244,15 @@ function buildClient() {
     path.join(config.clientDistDir, 'src')
   );
 
+  // Create Cloudflare Pages configuration files
+  createCloudflareHeaders();
+  createCloudflareRedirects();
+
   // Create a build info file
   const buildInfo = {
-    version: require('./package.json').version,
+    version: '1.5.1',
     buildTimestamp: config.buildTimestamp,
-    environment: config.isDev ? 'development' : 'production',
+    environment: process.env.NODE_ENV || 'production',
   };
 
   fs.writeFileSync(
@@ -179,29 +260,10 @@ function buildClient() {
     JSON.stringify(buildInfo, null, 2)
   );
 
+  // Ensure HTML files have proper metadata
+  ensureHtmlMetadata();
+
   console.log('Client build complete!');
-}
-
-/**
- * Recursively copy a directory
- * @param {string} src - Source directory
- * @param {string} dest - Destination directory
- */
-function copyDir(src, dest) {
-  ensureDir(dest);
-
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      copyFile(srcPath, destPath);
-    }
-  }
 }
 
 /**
@@ -232,278 +294,13 @@ function buildWorkers() {
     (content) => {
       // Replace build timestamp placeholder
       return content.replace(
-        'WORKER_VERSION = "1.5.1"',
-        `WORKER_VERSION = "1.5.1"\n  BUILD_TIMESTAMP = "${config.buildTimestamp}"`
+        'BUILD_TIMESTAMP = ""',
+        `BUILD_TIMESTAMP = "${config.buildTimestamp}"`
       );
     }
   );
 
-  // Create a dummy empty.js file for redirects
-  fs.writeFileSync(
-    path.join(config.clientDistDir, 'empty.js'),
-    '// Empty module for redirects\n'
-  );
-
   console.log('Workers build complete!');
-}
-
-/**
- * Fix critical module paths
- */
-function fixModulePaths() {
-  console.log('\n=== Fixing Module Paths ===\n');
-
-  // Create necessary utility modules directly in the client dist directory
-  // This fixes the issue where the build process looks for worker files in the client folder
-
-  // Create logging module
-  const loggingContent = `
-// Inline logging module for PTCG-Sim-Meta
-// This file is automatically generated during build
-
-/**
- * Simple logging utility for browser environment
- */
-export const log = function(message, level = 'info', context = '') {
-  const timestamp = new Date().toISOString();
-  const prefix = level.toUpperCase();
-  
-  // Format the message
-  const formattedMessage = \`[\${timestamp}] [\${prefix}]\${context ? \` [\${context}]\` : ''} \${message}\`;
-  
-  // Use appropriate console method
-  switch (level) {
-    case 'error':
-      console.error(formattedMessage);
-      break;
-    case 'warn':
-      console.warn(formattedMessage);
-      break;
-    case 'debug':
-      console.debug(formattedMessage);
-      break;
-    case 'info':
-    default:
-      console.info(formattedMessage);
-  }
-  
-  return { timestamp, level, message, context };
-};
-
-// For compatibility with both named and default exports
-export default log;
-
-// Legacy API compatibility
-export const logger = {
-  debug: (message, context = '') => log(message, 'debug', context),
-  info: (message, context = '') => log(message, 'info', context),
-  warn: (message, context = '') => log(message, 'warn', context),
-  error: (message, context = '') => log(message, 'error', context),
-  log: (message, level = 'info', context = '') => log(message, level, context)
-};
-`;
-
-  // Write the logging module to the client dist
-  const loggingDirs = [
-    path.join(config.clientDistDir, 'workers', 'src', 'utils'),
-    path.join(config.clientDistDir, 'src', 'utils'),
-  ];
-
-  loggingDirs.forEach((dir) => {
-    ensureDir(dir);
-    fs.writeFileSync(path.join(dir, 'logging.js'), loggingContent);
-  });
-
-  // Create CORS utility module
-  const corsContent = `
-// Inline CORS utility for PTCG-Sim-Meta
-// This file is automatically generated during build
-
-/**
- * CORS headers for cross-origin requests
- */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-  'Access-Control-Max-Age': '86400' // 24 hours
-};
-
-/**
- * Handle OPTIONS requests for CORS preflight
- * 
- * @param {Request} request - HTTP request
- * @returns {Response} HTTP response with CORS headers
- */
-export function handleOptions(request) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
-}
-
-// For compatibility with both named and default exports
-export default { corsHeaders, handleOptions };
-`;
-
-  // Write the CORS module to the client dist
-  const corsDirs = [
-    path.join(config.clientDistDir, 'workers', 'src', 'utils'),
-    path.join(config.clientDistDir, 'src', 'utils'),
-  ];
-
-  corsDirs.forEach((dir) => {
-    ensureDir(dir);
-    fs.writeFileSync(path.join(dir, 'cors.js'), corsContent);
-  });
-
-  // Create key generator utility
-  const keyGeneratorContent = `
-// Inline key generator utility for PTCG-Sim-Meta
-// This file is automatically generated during build
-
-/**
- * Generate a random alphanumeric key
- * 
- * @param {number} length - Length of the key
- * @returns {string} Random alphanumeric key
- */
-export function generateRandomKey(length = 4) {
-  const characters = 
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let key = '';
-  
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    key += characters.charAt(randomIndex);
-  }
-  
-  return key;
-}
-
-/**
- * Validate a key format
- * 
- * @param {string} key - Key to validate
- * @param {number} length - Expected length
- * @returns {boolean} Whether the key is valid
- */
-export function isValidKey(key, length = 4) {
-  // Key must be a string
-  if (typeof key !== 'string') {
-    return false;
-  }
-  
-  // Key must be the right length
-  if (key.length !== length) {
-    return false;
-  }
-  
-  // Key must contain only alphanumeric characters
-  const alphanumericRegex = /^[a-zA-Z0-9]+$/;
-  return alphanumericRegex.test(key);
-}
-
-// For compatibility with both named and default exports
-export default { generateRandomKey, isValidKey };
-`;
-
-  // Write the key generator module to the client dist
-  const keyGenDirs = [
-    path.join(config.clientDistDir, 'workers', 'src', 'utils'),
-    path.join(config.clientDistDir, 'src', 'utils'),
-  ];
-
-  keyGenDirs.forEach((dir) => {
-    ensureDir(dir);
-    fs.writeFileSync(path.join(dir, 'key-generator.js'), keyGeneratorContent);
-  });
-
-  // Create error handling utility
-  const errorHandlingContent = `
-// Inline error handling utility for PTCG-Sim-Meta
-// This file is automatically generated during build
-
-/**
- * Create a structured error response
- * 
- * @param {number} status - HTTP status code
- * @param {string} message - Error message
- * @param {Object} details - Additional error details
- * @returns {Response} HTTP response with error details
- */
-export function errorResponse(status, message, details = {}) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  };
-  
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: message,
-      status,
-      ...details
-    }),
-    {
-      status,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders
-      }
-    }
-  );
-}
-
-// For compatibility with both named and default exports
-export default { errorResponse };
-`;
-
-  // Write the error handling module to the client dist
-  const errorHandlingDirs = [
-    path.join(config.clientDistDir, 'workers', 'src', 'utils'),
-    path.join(config.clientDistDir, 'src', 'utils'),
-  ];
-
-  errorHandlingDirs.forEach((dir) => {
-    ensureDir(dir);
-    fs.writeFileSync(path.join(dir, 'error-handling.js'), errorHandlingContent);
-  });
-
-  console.log('Module paths fixed!');
-}
-
-/**
- * Fix global-variables.js to include BUILD_TIMESTAMP
- */
-function fixGlobalVariables() {
-  console.log('\n=== Fixing Global Variables ===\n');
-
-  const globalVarsPath = path.join(
-    config.clientDistDir,
-    'src',
-    'initialization',
-    'global-variables',
-    'global-variables.js'
-  );
-
-  if (fs.existsSync(globalVarsPath)) {
-    console.log(`Updating ${globalVarsPath}`);
-
-    let content = fs.readFileSync(globalVarsPath, 'utf8');
-
-    // Replace the BUILD_TIMESTAMP placeholder
-    content = content.replace(
-      "const BUILD_TIMESTAMP = '__BUILD_TIMESTAMP__';",
-      `const BUILD_TIMESTAMP = '${config.buildTimestamp}';`
-    );
-
-    fs.writeFileSync(globalVarsPath, content);
-    console.log('Global variables updated!');
-  } else {
-    console.warn(`Warning: ${globalVarsPath} not found, skipping`);
-  }
 }
 
 /**
@@ -511,7 +308,6 @@ function fixGlobalVariables() {
  */
 function build() {
   console.log('=== PTCG-Sim-Meta Build Process ===');
-  console.log(`Environment: ${config.isDev ? 'Development' : 'Production'}`);
   console.log(`Build Timestamp: ${config.buildTimestamp}`);
 
   // Ensure the dist directory exists
@@ -520,13 +316,6 @@ function build() {
   // Build each component
   buildClient();
   buildWorkers();
-
-  // Fix paths and configurations
-  fixModulePaths();
-  fixGlobalVariables();
-
-  // NEW: Ensure HTML files have proper metadata
-  ensureHtmlMetadata();
 
   console.log('\n=== Build Complete! ===\n');
 }
