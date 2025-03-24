@@ -2,4 +2,4 @@ packages:
   - 'client'
   - 'server'
   - 'workers'
-  - '.' # Root workspace
+  - '.'
