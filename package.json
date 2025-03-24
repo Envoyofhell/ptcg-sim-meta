@@ -1,22 +1,33 @@
 {
   "name": "ptcg-sim-meta",
-  "version": "1.5.1.1",
-  "private": true,
+  "version": "1.5.1",
   "packageManager": "pnpm@9.10.0",
   "scripts": {
-    "start": "pnpm -C server start",
-    "start:workers": "pnpm -C workers dev",
+    "build": "node build.js",
+    "build:client": "pnpm -C client build",
+    "build:workers": "pnpm -C workers build",
+    "build:server": "pnpm -C server build",
+    "dev": "pnpm -C client dev & pnpm -C workers dev & pnpm -C server start",
+    "dev:client": "pnpm -C client dev",
+    "dev:workers": "pnpm -C workers dev",
+    "dev:server": "pnpm -C server start",
+    "deploy": "node deploy.js",
+    "deploy:dev": "node deploy.js dev",
+    "deploy:production": "node deploy.js production",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,json,md}\"",
-    "deploy:workers": "pnpm -C workers deploy"
+    "prepare": "husky install"
   },
   "devDependencies": {
-    "@eslint/js": "^9.23.0",
-    "eslint": "^9.23.0",
-    "eslint-config-prettier": "^10.1.1",
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
-    "globals": "^15.15.0",
-    "nodemon": "^3.1.9",
+    "husky": "^9.0.0",
     "prettier": "^3.5.3"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true
 }

@@ -1,0 +1,94 @@
+{
+    "version": 1,
+    "framework": null,
+    "buildCommand": "node build.js",
+    "devCommand": "pnpm dev",
+    "installCommand": "pnpm install",
+    "environment": {
+      "NODE_VERSION": "18.x",
+      "NODE_ENV": "production"
+    },
+    "routes": [
+      {
+        "source": "/api/*",
+        "destination": "https://ptcg-sim-meta.workers.dev"
+      },
+      {
+        "source": "/socket.io/*",
+        "destination": "https://ptcg-sim-meta.workers.dev"
+      },
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          {
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=()"
+          }
+        ]
+      },
+      {
+        "source": "*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "*.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400, must-revalidate"
+          }
+        ]
+      }
+    ],
+    "functions": {
+      "routes": {
+        "include": ["/api/*", "/socket.io/*"],
+        "exclude": ["/static/*"]
+      }
+    },
+    "security": {
+      "contentSecurityPolicy": {
+        "directives": {
+          "default-src": ["'self'"],
+          "script-src": [
+            "'self'", 
+            "'unsafe-inline'", 
+            "'unsafe-eval'", 
+            "https://cdn.socket.io", 
+            "https://static.cloudflareinsights.com"
+          ],
+          "style-src": ["'self'", "'unsafe-inline'"],
+          "img-src": ["'self'", "data:", "https:"],
+          "connect-src": ["'self'", "wss:", "https:", "ws:"],
+          "font-src": ["'self'", "https:"],
+          "object-src": ["'none'"],
+          "media-src": ["'self'"],
+          "frame-src": ["'self'"],
+          "worker-src": ["'self'", "blob:"]
+        }
+      }
+    }
+  }

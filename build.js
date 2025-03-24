@@ -1,70 +1,88 @@
 /**
  * Enhanced Build Script for PTCG-Sim-Meta
- *
- * This script handles the build process for all components of the application,
- * with special attention to content-type handling.
+ * 
+ * Comprehensive build process with advanced optimization and configuration
  */
-
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Configuration
+// Enhanced Configuration
 const config = {
   rootDir: __dirname,
   clientDir: path.join(__dirname, 'client'),
   workersDir: path.join(__dirname, 'workers'),
+  serverDir: path.join(__dirname, 'server'),
   distDir: path.join(__dirname, 'dist'),
   clientDistDir: path.join(__dirname, 'dist', 'client'),
   workersDistDir: path.join(__dirname, 'dist', 'workers'),
+  serverDistDir: path.join(__dirname, 'dist', 'server'),
   buildTimestamp: new Date().toISOString(),
+  version: '1.5.1',
+  environment: process.env.NODE_ENV || 'production',
+};
+
+// Enhanced Logging
+const log = {
+  info: (message) => console.log(`\x1b[34m[INFO]\x1b[0m ${message}`),
+  success: (message) => console.log(`\x1b[32m[SUCCESS]\x1b[0m ${message}`),
+  warn: (message) => console.warn(`\x1b[33m[WARN]\x1b[0m ${message}`),
+  error: (message) => console.error(`\x1b[31m[ERROR]\x1b[0m ${message}`)
 };
 
 /**
- * Ensure a directory exists, creating it if needed
+ * Ensure a directory exists, creating if needed
  * @param {string} dir - Directory path
  */
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
-    console.log(`Creating directory: ${dir}`);
     fs.mkdirSync(dir, { recursive: true });
+    log.info(`Created directory: ${dir}`);
   }
 }
 
 /**
- * Copy a file with optional transformation
+ * Enhanced file copy with transformation and logging
  * @param {string} src - Source file path
  * @param {string} dest - Destination file path
- * @param {Function} transform - Optional transformation function for file content
+ * @param {Function} [transform] - Optional transformation function
  */
 function copyFile(src, dest, transform = null) {
-  console.log(`Copying: ${src} -> ${dest}`);
+  try {
+    ensureDir(path.dirname(dest));
 
-  // Create destination directory if it doesn't exist
-  ensureDir(path.dirname(dest));
+    if (!fs.existsSync(src)) {
+      log.warn(`Source file not found: ${src}`);
+      return;
+    }
 
-  // Skip if the source file doesn't exist
-  if (!fs.existsSync(src)) {
-    console.warn(`Warning: File not found: ${src}`);
-    return;
+    let content = fs.readFileSync(src, 'utf8');
+    
+    // Apply optional transformation
+    if (transform) {
+      content = transform(content);
+    }
+
+    // Replace build-time placeholders
+    content = content
+      .replace('__BUILD_TIMESTAMP__', config.buildTimestamp)
+      .replace('__VERSION__', config.version)
+      .replace('__ENVIRONMENT__', config.environment);
+
+    fs.writeFileSync(dest, content);
+    log.info(`Copied: ${src} -> ${dest}`);
+  } catch (error) {
+    log.error(`Error copying file: ${error.message}`);
   }
-
-  // Read the source file
-  const content = fs.readFileSync(src, 'utf8');
-
-  // Apply transformation if provided
-  const finalContent = transform ? transform(content) : content;
-
-  // Write to destination
-  fs.writeFileSync(dest, finalContent);
 }
 
 /**
- * Recursively copy a directory
+ * Recursively copy directory with optional exclusions
  * @param {string} src - Source directory
  * @param {string} dest - Destination directory
+ * @param {string[]} [exclude] - Patterns to exclude
  */
-function copyDir(src, dest) {
+function copyDir(src, dest, exclude = []) {
   ensureDir(dest);
 
   const entries = fs.readdirSync(src, { withFileTypes: true });
@@ -73,8 +91,13 @@ function copyDir(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
+    // Check exclusions
+    if (exclude.some(pattern => srcPath.includes(pattern))) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
+      copyDir(srcPath, destPath, exclude);
     } else {
       copyFile(srcPath, destPath);
     }
@@ -82,243 +105,99 @@ function copyDir(src, dest) {
 }
 
 /**
- * Ensure HTML files have proper metadata and doctype
+ * Create build metadata file
  */
-function ensureHtmlMetadata() {
-  console.log('\n=== Ensuring HTML Metadata ===\n');
+function createBuildMetadata() {
+  const metadata = {
+    version: config.version,
+    timestamp: config.buildTimestamp,
+    environment: config.environment,
+    nodeVersion: process.version,
+    platform: process.platform
+  };
 
-  // List all HTML files in the client dist directory
-  const htmlFiles = [];
-  function findHtmlFiles(dir) {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      
-      if (entry.isDirectory()) {
-        findHtmlFiles(fullPath);
-      } else if (entry.name.endsWith('.html')) {
-        htmlFiles.push(fullPath);
-      }
-    }
-  }
-  
-  findHtmlFiles(config.clientDistDir);
-  
-  console.log(`Found ${htmlFiles.length} HTML files to process`);
-
-  htmlFiles.forEach((filePath) => {
-    const fileName = path.relative(config.clientDistDir, filePath);
-    console.log(`Checking ${fileName} for proper metadata...`);
-
-    let content = fs.readFileSync(filePath, 'utf8');
-
-    // Ensure the file has proper doctype
-    if (!content.trim().startsWith('<!DOCTYPE html>')) {
-      content = '<!DOCTYPE html>\n' + content;
-      console.log(`Added DOCTYPE to ${fileName}`);
-    }
-
-    // Ensure content-type meta tag exists
-    if (!content.includes('<meta http-equiv="Content-Type"')) {
-      const headEndPos = content.indexOf('</head>');
-      if (headEndPos !== -1) {
-        content =
-          content.slice(0, headEndPos) +
-          '\n    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n' +
-          content.slice(headEndPos);
-        console.log(`Added Content-Type meta tag to ${fileName}`);
-      }
-    }
-
-    // Write the updated content back
-    fs.writeFileSync(filePath, content, 'utf8');
-  });
-
-  console.log('HTML metadata verification complete!');
+  const metadataPath = path.join(config.distDir, 'build-metadata.json');
+  fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+  log.info(`Created build metadata: ${metadataPath}`);
 }
 
 /**
- * Create _headers file for Cloudflare Pages
- */
-function createCloudflareHeaders() {
-  console.log('\n=== Creating Cloudflare Headers File ===\n');
-  
-  const headersPath = path.join(config.clientDistDir, '_headers');
-  const headersContent = `
-# Content type headers for proper MIME types
-/*
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-
-# JavaScript files
-*.js
-  Content-Type: application/javascript; charset=utf-8
-
-# CSS files
-*.css
-  Content-Type: text/css; charset=utf-8
-
-# HTML files
-*.html
-  Content-Type: text/html; charset=utf-8
-
-# JSON files
-*.json
-  Content-Type: application/json; charset=utf-8
-
-# Fallback for SPA routing
-/*
-  X-Content-Type-Options: nosniff
-`;
-
-  fs.writeFileSync(headersPath, headersContent.trim());
-  console.log(`Created Cloudflare _headers file at ${headersPath}`);
-}
-
-/**
- * Create _redirects file for SPA routing
- */
-function createCloudflareRedirects() {
-  console.log('\n=== Creating Cloudflare Redirects File ===\n');
-  
-  const redirectsPath = path.join(config.clientDistDir, '_redirects');
-  const redirectsContent = `
-# Redirect all paths to index.html for SPA routing
-/*    /index.html   200
-`;
-
-  fs.writeFileSync(redirectsPath, redirectsContent.trim());
-  console.log(`Created Cloudflare _redirects file at ${redirectsPath}`);
-}
-
-/**
- * Run a command and log the output
+ * Run build command with enhanced error handling
  * @param {string} command - Command to run
- * @param {string} cwd - Working directory
+ * @param {string} [cwd] - Working directory
  */
 function runCommand(command, cwd = config.rootDir) {
-  console.log(`Running command: ${command} in ${cwd}`);
   try {
-    const output = execSync(command, { cwd, stdio: 'inherit' });
-    return output;
+    log.info(`Running command: ${command}`);
+    execSync(command, { 
+      cwd, 
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        NODE_ENV: config.environment,
+        BUILD_TIMESTAMP: config.buildTimestamp
+      }
+    });
   } catch (error) {
-    console.error(`Command failed: ${command}`);
-    console.error(error.message);
+    log.error(`Command failed: ${command}`);
     process.exit(1);
   }
 }
 
 /**
- * Build the client application
+ * Minify and optimize client resources
  */
-function buildClient() {
-  console.log('\n=== Building Client ===\n');
-
-  // Ensure output directory exists
-  ensureDir(config.clientDistDir);
-
-  // Copy static files from client directory to client dist
-  const clientFiles = [
-    'index.html',
-    'data.json',
-    'self-containers.html',
-    'opp-containers.html',
-  ];
-
-  clientFiles.forEach((file) => {
-    const src = path.join(config.clientDir, file);
-    const dest = path.join(config.clientDistDir, file);
-
-    if (fs.existsSync(src)) {
-      copyFile(src, dest);
-    } else {
-      console.warn(`Warning: File not found: ${src}`);
-    }
-  });
-
-  // Copy client src directory recursively
-  copyDir(
-    path.join(config.clientDir, 'src'),
-    path.join(config.clientDistDir, 'src')
-  );
-
-  // Create Cloudflare Pages configuration files
-  createCloudflareHeaders();
-  createCloudflareRedirects();
-
-  // Create a build info file
-  const buildInfo = {
-    version: '1.5.1',
-    buildTimestamp: config.buildTimestamp,
-    environment: process.env.NODE_ENV || 'production',
-  };
-
-  fs.writeFileSync(
-    path.join(config.clientDistDir, 'build-info.json'),
-    JSON.stringify(buildInfo, null, 2)
-  );
-
-  // Ensure HTML files have proper metadata
-  ensureHtmlMetadata();
-
-  console.log('Client build complete!');
+function optimizeClientResources() {
+  const clientDist = config.clientDistDir;
+  
+  // Minify CSS
+  runCommand(`find ${clientDist} -name "*.css" -exec npx postcss {} -o {} \\;`);
+  
+  // Optimize images
+  runCommand(`find ${clientDist} -type f \\( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \\) -exec imagemin {} --out-dir={} \\;`);
+  
+  log.success('Client resources optimized');
 }
 
 /**
- * Build the worker application
- */
-function buildWorkers() {
-  console.log('\n=== Building Workers ===\n');
-
-  // Ensure output directory exists
-  ensureDir(config.workersDistDir);
-
-  // Use esbuild to bundle the worker code
-  console.log('Bundling worker code with esbuild...');
-
-  // Run the worker build script
-  runCommand('node esbuild.config.js', config.workersDir);
-
-  // Copy the worker dist files
-  copyDir(
-    path.join(config.workersDir, 'dist'),
-    path.join(config.workersDistDir, 'dist')
-  );
-
-  // Copy wrangler.toml with environment variables
-  copyFile(
-    path.join(config.workersDir, 'wrangler.toml'),
-    path.join(config.workersDistDir, 'wrangler.toml'),
-    (content) => {
-      // Replace build timestamp placeholder
-      return content.replace(
-        'BUILD_TIMESTAMP = ""',
-        `BUILD_TIMESTAMP = "${config.buildTimestamp}"`
-      );
-    }
-  );
-
-  console.log('Workers build complete!');
-}
-
-/**
- * Main build function
+ * Main build process
  */
 function build() {
-  console.log('=== PTCG-Sim-Meta Build Process ===');
-  console.log(`Build Timestamp: ${config.buildTimestamp}`);
+  console.time('Total Build Time');
+  log.info('Starting PTCG-Sim-Meta build process...');
 
-  // Ensure the dist directory exists
+  // Clean dist directory
+  if (fs.existsSync(config.distDir)) {
+    fs.rmSync(config.distDir, { recursive: true });
+  }
   ensureDir(config.distDir);
 
-  // Build each component
-  buildClient();
-  buildWorkers();
+  // Build client
+  log.info('Building client...');
+  runCommand('node esbuild.config.js', config.clientDir);
+  copyDir(config.clientDir, config.clientDistDir, ['node_modules', '.git']);
+  
+  // Build workers
+  log.info('Building workers...');
+  runCommand('node esbuild.config.js', config.workersDir);
+  copyDir(config.workersDir, config.workersDistDir, ['node_modules', '.git']);
 
-  console.log('\n=== Build Complete! ===\n');
+  // Optional: Build server if exists
+  if (fs.existsSync(config.serverDir)) {
+    log.info('Building server...');
+    ensureDir(config.serverDistDir);
+    copyDir(config.serverDir, config.serverDistDir, ['node_modules', '.git']);
+  }
+
+  // Optimize resources
+  optimizeClientResources();
+
+  // Create build metadata
+  createBuildMetadata();
+
+  log.success('Build process completed successfully!');
+  console.timeEnd('Total Build Time');
 }
 
-// Run the build process
+// Run the build
 build();

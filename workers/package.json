@@ -1,36 +1,38 @@
 {
-  "name": "ptcg-sim-meta-workers",
-  "version": "1.0.0",
-  "description": "Cloudflare Workers for PTCG-Sim-Meta",
-  "main": "dist/worker.js",
-  "type": "commonjs",
-  "packageManager": "pnpm@9.10.0",
-  "scripts": {
-    "prebuild": "node -e \"const fs = require('fs'); fs.mkdirSync('dist', { recursive: true })\"",
-    "build": "node esbuild.config.js",
-    "build:debug": "node esbuild.config.js",
-    "dev:debug": "wrangler dev --env dev --inspect",
-    "predeploy": "pnpm run build",
-    "deploy:dev": "wrangler deploy --env dev",
-    "deploy:prod": "wrangler deploy --env production",
-    "dev": "wrangler dev --env dev"
-  },
-  "keywords": [
-    "cloudflare",
-    "workers",
-    "ptcg",
-    "pokemon"
-  ],
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@neondatabase/serverless": "^0.8.1",
-    "itty-router": "^4.0.27"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.1",
-    "wrangler": "^3.114.2"
+    "name": "ptcg-sim-meta-workers",
+    "version": "1.5.1",
+    "description": "Cloudflare Workers for PTCG-Sim-Meta",
+    "main": "dist/worker.js",
+    "type": "commonjs",
+    "packageManager": "pnpm@9.10.0",
+    "scripts": {
+      "prebuild": "node -e \"const fs = require('fs'); fs.mkdirSync('dist', { recursive: true })\"",
+      "build": "node esbuild.config.js",
+      "build:debug": "node esbuild.config.js --debug",
+      "dev": "wrangler dev --env dev",
+      "dev:debug": "wrangler dev --env dev --inspect",
+      "predeploy": "pnpm run build",
+      "deploy": "wrangler deploy",
+      "deploy:dev": "wrangler deploy --env dev",
+      "deploy:prod": "wrangler deploy --env production"
+    },
+    "keywords": [
+      "cloudflare",
+      "workers",
+      "ptcg",
+      "pokemon"
+    ],
+    "license": "MIT",
+    "engines": {
+      "node": ">=18.0.0"
+    },
+    "dependencies": {
+      "@neondatabase/serverless": "^0.8.1",
+      "itty-router": "^4.0.27",
+      "zod": "^3.22.4"
+    },
+    "devDependencies": {
+      "esbuild": "^0.25.1",
+      "wrangler": "^3.114.2"
+    }
   }
-}

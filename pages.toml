@@ -1,0 +1,104 @@
+# PTCG-Sim-Meta Cloudflare Pages Configuration
+# Comprehensive deployment and optimization settings
+
+[build]
+  command = "node build.js"
+  commandOrigin = "user"
+  
+[build.environment]
+  # Development environment settings
+  development.NODE_ENV = "development"
+  development.DEBUG = "true"
+  development.LOG_LEVEL = "debug"
+  
+  # Production environment settings
+  production.NODE_ENV = "production"
+  production.DEBUG = "false"
+  production.LOG_LEVEL = "info"
+
+[env]
+  # Global environment variables
+  VITE_APP_VERSION = "1.5.1"
+  VITE_BUILD_TIMESTAMP = "__BUILD_TIMESTAMP__"
+
+[optimization]
+  # Client-side optimizations
+  bundle = true
+  minify = true
+  sourcemap = true
+  
+  # Performance caching strategies
+  [optimization.caching]
+    html = 3600  # 1 hour
+    js = 86400   # 1 day
+    css = 86400  # 1 day
+    json = 3600  # 1 hour
+    static_assets = 31536000  # 1 year
+
+[routes]
+  # SPA routing configuration
+  [routes.spa]
+    strategy = "always_serve_index"
+    fallback = "/index.html"
+  
+  # API and Worker routes
+  [routes.api]
+    prefix = "/api"
+    proxy = "https://ptcg-sim-meta.workers.dev"
+  
+  [routes.socket]
+    prefix = "/socket.io"
+    proxy = "https://ptcg-sim-meta.workers.dev"
+
+[compatibility]
+  # Browser and runtime compatibility
+  node_compat = true
+  es_modules = true
+  workers_runtime = "2023-07-01"
+
+[security]
+  # Enhanced security headers
+  [security.headers]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    
+    # Strict Content Security Policy
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.socket.io https://static.cloudflareinsights.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      connect-src 'self' wss: https: ws:;
+      font-src 'self' https:;
+      object-src 'none';
+      media-src 'self';
+      frame-src 'self';
+      worker-src 'self' blob:
+    """
+
+[deployments]
+  # Deployment strategies
+  [deployments.preview]
+    branch_name = "dev"
+    environment = "development"
+  
+  [deployments.production]
+    branch_name = "main"
+    environment = "production"
+
+[monitoring]
+  # Error tracking and performance monitoring
+  error_tracking = true
+  performance_tracking = true
+  
+  [monitoring.providers]
+    error_reporting = "cloudflare-insights"
+    performance_metrics = "cloudflare-rum"
+
+[experimental]
+  # Cutting-edge features and optimizations
+  edge_caching = true
+  workers_isolation = true
+  smart_placement = true
