@@ -14,8 +14,8 @@
     "deploy": "node deploy.js",
     "deploy:dev": "node deploy.js dev",
     "deploy:production": "node deploy.js production",
-    "lint": "eslint .",
-    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "prepare": "husky install"
   },
   "devDependencies": {
