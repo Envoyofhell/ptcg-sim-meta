@@ -5,7 +5,7 @@
   "packageManager": "pnpm@9.10.0",
   "scripts": {
     "start": "pnpm -C server start",
-    "start:workers": "pnpm -C workers dev", 
+    "start:workers": "pnpm -C workers dev",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "deploy:workers": "pnpm -C workers deploy"

@@ -1,6 +1,6 @@
 /**
  * PTCG-Sim-Meta Main Server
- * 
+ *
  * This is the main entry point for the server.
  * It uses the modular structure to handle database, CORS, and API routes.
  */
@@ -35,7 +35,7 @@ async function main() {
 
   // Initialize database
   await initializeDatabase();
-  
+
   // Apply CORS middleware
   applyCors(app, [
     // Add any additional domains that need access here
@@ -45,7 +45,11 @@ async function main() {
   const io = new Server(server, {
     connectionStateRecovery: {},
     cors: {
-      origin: ['https://admin.socket.io', 'https://ptcg-sim-meta.pages.dev', 'http://localhost:3000'],
+      origin: [
+        'https://admin.socket.io',
+        'https://ptcg-sim-meta.pages.dev',
+        'http://localhost:3000',
+      ],
       credentials: true,
     },
   });
@@ -67,7 +71,7 @@ async function main() {
 
   // Serve static files from client directory
   app.use(express.static(clientDir));
-  
+
   // API routes
   app.use('/api', apiRoutes);
 
@@ -87,7 +91,7 @@ async function main() {
 
   // Room management
   const roomInfo = new Map();
-  
+
   // Function to periodically clean up empty rooms
   const cleanUpEmptyRooms = () => {
     roomInfo.forEach((room, roomId) => {
@@ -96,10 +100,10 @@ async function main() {
       }
     });
   };
-  
+
   // Set up a timer to clean up empty rooms every 5 minutes
   setInterval(cleanUpEmptyRooms, 5 * 60 * 1000);
-  
+
   // Socket.IO Connection Handling
   io.on('connection', async (socket) => {
     // Function to handle disconnections (unintended)
@@ -123,7 +127,7 @@ async function main() {
         }
       }
     };
-    
+
     // Function to handle event emission
     const emitToRoom = (eventName, data) => {
       socket.broadcast.to(data.roomId).emit(eventName, data);
@@ -137,23 +141,24 @@ async function main() {
         }
       }
     };
-    
+
     // Handle game state storage - using the service now
     socket.on('storeGameState', async (exportData) => {
       try {
         // Generate a unique key
         const key = generateRandomKey(4);
-        
+
         // Store the game state using the service
         const result = await storeGameState(exportData, key);
-        
+
         if (result.success) {
           socket.emit('exportGameStateSuccessful', key);
           console.log(`Game state with key ${key} successfully stored`);
         } else {
           socket.emit(
             'exportGameStateFailed',
-            result.error || 'Error exporting game! Please try again or save as a file.'
+            result.error ||
+              'Error exporting game! Please try again or save as a file.'
           );
         }
       } catch (error) {
@@ -243,7 +248,7 @@ async function main() {
 
   // Get port from environment variable or use default
   const port = process.env.PORT || 4000;
-  
+
   server.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
   });
@@ -252,7 +257,7 @@ async function main() {
 }
 
 // Start the server
-main().catch(error => {
+main().catch((error) => {
   console.error('Fatal error starting server:', error);
   process.exit(1);
 });

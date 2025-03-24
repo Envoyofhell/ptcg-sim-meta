@@ -15,7 +15,7 @@ const SOCKET_PROTOCOL = {
   ACK: '3',
   CONNECT_ERROR: '4',
   BINARY_EVENT: '5',
-  BINARY_ACK: '6'
+  BINARY_ACK: '6',
 };
 
 /**
@@ -28,20 +28,23 @@ function formatSocketResponse(type, data = {}) {
   if (type === SOCKET_PROTOCOL.CONNECT) {
     return `${type}{"sid":"${data.sid || generateId()}"}`;
   }
-  
+
   if (type === SOCKET_PROTOCOL.EVENT) {
     return `${type}${JSON.stringify([data.event, ...(data.args || [])])}`;
   }
-  
-  if (type === SOCKET_PROTOCOL.DISCONNECT || type === SOCKET_PROTOCOL.CONNECT_ERROR) {
+
+  if (
+    type === SOCKET_PROTOCOL.DISCONNECT ||
+    type === SOCKET_PROTOCOL.CONNECT_ERROR
+  ) {
     return `${type}{"message":"${data.message || ''}"}`;
   }
-  
+
   // For ping/pong
   if (type === SOCKET_PROTOCOL.CONNECT || type === SOCKET_PROTOCOL.ACK) {
     return type;
   }
-  
+
   return `${type}${JSON.stringify(data)}`;
 }
 
@@ -63,7 +66,7 @@ function parseSocketMessage(message) {
     // Extract type and data
     const type = message.charAt(0);
     let data = null;
-    
+
     if (message.length > 1) {
       try {
         data = JSON.parse(message.substring(1));
@@ -71,7 +74,7 @@ function parseSocketMessage(message) {
         log(`Error parsing Socket.IO message data: ${e.message}`, 'error');
       }
     }
-    
+
     return { type, data };
   } catch (error) {
     log(`Error parsing Socket.IO message: ${error.message}`, 'error');
@@ -90,12 +93,12 @@ export async function handleSocketHandshake(request) {
   const headers = {
     'Content-Type': 'text/plain; charset=UTF-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Credentials': 'true'
+    'Access-Control-Allow-Credentials': 'true',
   };
-  
+
   // Create a new session
   const sid = generateId();
-  
+
   // Store connection information
   activeConnections.set(sid, {
     id: sid,
@@ -103,21 +106,21 @@ export async function handleSocketHandshake(request) {
     lastActivity: Date.now(),
     request: {
       ip: request.headers.get('CF-Connecting-IP') || 'unknown',
-      userAgent: request.headers.get('User-Agent') || 'unknown'
-    }
+      userAgent: request.headers.get('User-Agent') || 'unknown',
+    },
   });
-  
+
   log(`New Socket.IO connection: ${sid} (${transport})`, 'info');
-  
+
   // Format handshake response
   const handshakeResponse = {
     sid,
     upgrades: ['websocket'],
     pingInterval: 25000,
     pingTimeout: 20000,
-    maxPayload: 1000000
+    maxPayload: 1000000,
   };
-  
+
   return new Response(`0${JSON.stringify(handshakeResponse)}`, { headers });
 }
 
@@ -129,22 +132,24 @@ export async function handleSocketHandshake(request) {
 export async function handleSocketPolling(request) {
   const url = new URL(request.url);
   const sid = url.searchParams.get('sid');
-  
+
   const headers = {
     'Content-Type': 'text/plain; charset=UTF-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Credentials': 'true'
+    'Access-Control-Allow-Credentials': 'true',
   };
-  
+
   // Handle session not found
   if (sid && !activeConnections.has(sid)) {
     log(`Socket.IO session not found: ${sid}`, 'warn');
     return new Response(
-      formatSocketResponse(SOCKET_PROTOCOL.CONNECT_ERROR, { message: 'Session not found' }),
+      formatSocketResponse(SOCKET_PROTOCOL.CONNECT_ERROR, {
+        message: 'Session not found',
+      }),
       { headers }
     );
   }
-  
+
   // Update last activity
   if (sid) {
     const connection = activeConnections.get(sid);
@@ -152,7 +157,7 @@ export async function handleSocketPolling(request) {
       connection.lastActivity = Date.now();
     }
   }
-  
+
   if (request.method === 'GET') {
     // Handle GET (client receiving data)
     return new Response('', { headers });
@@ -161,26 +166,28 @@ export async function handleSocketPolling(request) {
     try {
       const body = await request.text();
       log(`Received Socket.IO message: ${body}`, 'debug');
-      
+
       const { type, data } = parseSocketMessage(body);
-      
+
       // Process message based on type
       if (type === SOCKET_PROTOCOL.EVENT && Array.isArray(data)) {
         const [event, ...args] = data;
         await handleSocketEvent(sid, event, args);
       }
-      
+
       // Acknowledge receipt
       return new Response(SOCKET_PROTOCOL.ACK, { headers });
     } catch (error) {
       log(`Error processing Socket.IO message: ${error.message}`, 'error');
       return new Response(
-        formatSocketResponse(SOCKET_PROTOCOL.CONNECT_ERROR, { message: 'Error processing message' }),
+        formatSocketResponse(SOCKET_PROTOCOL.CONNECT_ERROR, {
+          message: 'Error processing message',
+        }),
         { headers }
       );
     }
   }
-  
+
   return new Response('Method not allowed', { status: 405, headers });
 }
 
@@ -192,13 +199,13 @@ export async function handleSocketPolling(request) {
  */
 async function handleSocketEvent(sid, event, args) {
   log(`Socket.IO event: ${event} from ${sid}`, 'debug');
-  
+
   // Update last activity
   const connection = activeConnections.get(sid);
   if (connection) {
     connection.lastActivity = Date.now();
   }
-  
+
   // Handle different events
   switch (event) {
     case 'joinGame':
@@ -228,7 +235,7 @@ async function handleJoinGame(sid, roomId, username, isSpectator) {
     log(`Invalid room ID for join game: ${roomId}`, 'warn');
     return;
   }
-  
+
   // Create room if it doesn't exist
   if (!rooms.has(roomId)) {
     rooms.set(roomId, {
@@ -236,28 +243,31 @@ async function handleJoinGame(sid, roomId, username, isSpectator) {
       players: [],
       spectators: [],
       gameState: null,
-      lastActivity: Date.now()
+      lastActivity: Date.now(),
     });
   }
-  
+
   const room = rooms.get(roomId);
-  
+
   // Check if room is full
   if (!isSpectator && room.players.length >= 2) {
     log(`Room ${roomId} is full, rejecting join request`, 'warn');
     // Send roomReject event to client
     return;
   }
-  
+
   // Add user to room
   if (isSpectator) {
     room.spectators.push({ sid, username });
   } else {
     room.players.push({ sid, username });
   }
-  
-  log(`User ${username} joined room ${roomId} as ${isSpectator ? 'spectator' : 'player'}`, 'info');
-  
+
+  log(
+    `User ${username} joined room ${roomId} as ${isSpectator ? 'spectator' : 'player'}`,
+    'info'
+  );
+
   // Update room activity
   room.lastActivity = Date.now();
 }
@@ -269,23 +279,25 @@ async function handleJoinGame(sid, roomId, username, isSpectator) {
  */
 async function handleLeaveRoom(sid, data) {
   const { roomId, username, isSpectator } = data;
-  
+
   if (!roomId || !rooms.has(roomId)) {
     log(`Invalid room ID for leave room: ${roomId}`, 'warn');
     return;
   }
-  
+
   const room = rooms.get(roomId);
-  
+
   // Remove user from room
   if (isSpectator) {
-    room.spectators = room.spectators.filter(spectator => spectator.sid !== sid);
+    room.spectators = room.spectators.filter(
+      (spectator) => spectator.sid !== sid
+    );
   } else {
-    room.players = room.players.filter(player => player.sid !== sid);
+    room.players = room.players.filter((player) => player.sid !== sid);
   }
-  
+
   log(`User ${username} left room ${roomId}`, 'info');
-  
+
   // Clean up empty rooms
   if (room.players.length === 0 && room.spectators.length === 0) {
     rooms.delete(roomId);
@@ -303,23 +315,26 @@ async function handleStoreGameState(sid, gameState) {
     // Import game state functions
     const { storeGameState } = await import('../db/game-state.js');
     const { generateRandomKey } = await import('../utils/key-generator.js');
-    
+
     // Generate a unique key
     const key = generateRandomKey(4);
-    
+
     // Store game state
     const result = await storeGameState(
       key,
       typeof gameState === 'string' ? gameState : JSON.stringify(gameState)
     );
-    
-    log(`Game state stored with key ${key} (${result.size_bytes} bytes)`, 'info');
-    
+
+    log(
+      `Game state stored with key ${key} (${result.size_bytes} bytes)`,
+      'info'
+    );
+
     // Send success response to client
     // This would be handled by your Socket.IO implementation
   } catch (error) {
     log(`Error storing game state: ${error.message}`, 'error');
-    
+
     // Send error response to client
     // This would be handled by your Socket.IO implementation
   }
@@ -332,7 +347,7 @@ async function handleStoreGameState(sid, gameState) {
 export function cleanupInactiveConnections() {
   const now = Date.now();
   const timeout = 30 * 60 * 1000; // 30 minutes
-  
+
   // Clean up inactive connections
   for (const [sid, connection] of activeConnections.entries()) {
     if (now - connection.lastActivity > timeout) {
@@ -340,7 +355,7 @@ export function cleanupInactiveConnections() {
       log(`Cleaned up inactive connection: ${sid}`, 'info');
     }
   }
-  
+
   // Clean up inactive rooms
   for (const [roomId, room] of rooms.entries()) {
     if (now - room.lastActivity > timeout) {

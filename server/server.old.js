@@ -1,15 +1,15 @@
 /**
  * PTCG-Sim-Meta Server Implementation
- * 
+ *
  * Comprehensive backend for Pokémon Trading Card Game Simulator
- * 
+ *
  * Key Features:
  * - PostgreSQL database integration
  * - Real-time Socket.IO communication
  * - Game state management
  * - Advanced room and user tracking
  * - Secure key generation and storage
- * 
+ *
  * @module ServerApplication
  */
 
@@ -46,26 +46,35 @@ const CONFIG = {
   PORT: process.env.PORT || 4000,
   NODE_ENV: process.env.NODE_ENV || 'development',
   DEBUG_MODE: process.env.DEBUG_MODE === 'true',
-  
+
   // PostgreSQL settings
   POSTGRES_POOL_SIZE: parseInt(process.env.POSTGRES_POOL_SIZE || '20', 10),
-  POSTGRES_IDLE_TIMEOUT: parseInt(process.env.POSTGRES_IDLE_TIMEOUT || '30000', 10),
-  POSTGRES_CONNECTION_TIMEOUT: parseInt(process.env.POSTGRES_CONNECTION_TIMEOUT || '5000', 10),
-  
+  POSTGRES_IDLE_TIMEOUT: parseInt(
+    process.env.POSTGRES_IDLE_TIMEOUT || '30000',
+    10
+  ),
+  POSTGRES_CONNECTION_TIMEOUT: parseInt(
+    process.env.POSTGRES_CONNECTION_TIMEOUT || '5000',
+    10
+  ),
+
   // Game state settings
   GAME_STATE_KEY_LENGTH: parseInt(process.env.GAME_STATE_KEY_LENGTH || '4', 10),
-  MAX_GAME_STATE_SIZE_MB: parseInt(process.env.MAX_GAME_STATE_SIZE_MB || '50', 10),
+  MAX_GAME_STATE_SIZE_MB: parseInt(
+    process.env.MAX_GAME_STATE_SIZE_MB || '50',
+    10
+  ),
   DATA_RETENTION_DAYS: parseInt(process.env.DATA_RETENTION_DAYS || '30', 10),
-  
+
   // Allowed origins for CORS
   ALLOWED_ORIGINS: [
-    ...currentEnv.ALLOWED_ORIGINS || [],
+    ...(currentEnv.ALLOWED_ORIGINS || []),
     'https://ptcg-sim-meta.pages.dev',
     'https://ptcg-sim-meta-dev.pages.dev',
     'https://ptcg-sim-meta.jasonh1993.workers.dev',
     'https://ptcg-sim-meta-dev.jasonh1993.workers.dev',
     'http://localhost:3000',
-    'http://localhost:4000'
+    'http://localhost:4000',
   ],
 };
 
@@ -87,24 +96,38 @@ let databaseError = null;
 /**
  * Enhanced Logging Utility
  * Provides context-aware logging with color and timestamp
- * 
+ *
  * @param {string} message - Log message
  * @param {string} [level='info'] - Log level
  */
 function log(message, level = 'info') {
   const timestamp = new Date().toISOString();
   const envPrefix = CONFIG.NODE_ENV === 'development' ? '🔧 DEV' : '🚀 PROD';
-  
+
   const logLevels = {
-    error: () => console.error(`${COLORS.red}[${timestamp}] ${envPrefix} ERROR:${COLORS.reset} ${message}`),
-    warn: () => console.warn(`${COLORS.yellow}[${timestamp}] ${envPrefix} WARNING:${COLORS.reset} ${message}`),
+    error: () =>
+      console.error(
+        `${COLORS.red}[${timestamp}] ${envPrefix} ERROR:${COLORS.reset} ${message}`
+      ),
+    warn: () =>
+      console.warn(
+        `${COLORS.yellow}[${timestamp}] ${envPrefix} WARNING:${COLORS.reset} ${message}`
+      ),
     debug: () => {
       if (CONFIG.DEBUG_MODE) {
-        console.log(`${COLORS.gray}[${timestamp}] ${envPrefix} DEBUG:${COLORS.reset} ${message}`);
+        console.log(
+          `${COLORS.gray}[${timestamp}] ${envPrefix} DEBUG:${COLORS.reset} ${message}`
+        );
       }
     },
-    success: () => console.log(`${COLORS.green}[${timestamp}] ${envPrefix} SUCCESS:${COLORS.reset} ${message}`),
-    info: () => console.log(`${COLORS.blue}[${timestamp}] ${envPrefix} INFO:${COLORS.reset} ${message}`)
+    success: () =>
+      console.log(
+        `${COLORS.green}[${timestamp}] ${envPrefix} SUCCESS:${COLORS.reset} ${message}`
+      ),
+    info: () =>
+      console.log(
+        `${COLORS.blue}[${timestamp}] ${envPrefix} INFO:${COLORS.reset} ${message}`
+      ),
   };
 
   (logLevels[level] || logLevels.info)();
@@ -116,40 +139,41 @@ function log(message, level = 'info') {
  */
 async function initializePostgres() {
   const postgresUrl = process.env.DATABASE_POSTGRES_URL;
-  
+
   if (!postgresUrl) {
-    databaseError = 'No PostgreSQL connection string found in environment variables';
+    databaseError =
+      'No PostgreSQL connection string found in environment variables';
     log(databaseError, 'error');
     return false;
   }
-  
+
   try {
     log('Initializing PostgreSQL connection...', 'info');
-    
+
     // Create connection pool with optimal settings
     pgPool = new pg.Pool({
       connectionString: postgresUrl,
       ssl: {
-        rejectUnauthorized: false  // Important for Neon connections
+        rejectUnauthorized: false, // Important for Neon connections
       },
       max: CONFIG.POSTGRES_POOL_SIZE,
       idleTimeoutMillis: CONFIG.POSTGRES_IDLE_TIMEOUT,
       connectionTimeoutMillis: CONFIG.POSTGRES_CONNECTION_TIMEOUT,
       application_name: 'ptcg-sim-meta',
     });
-    
+
     // Handle pool errors to prevent application crashes
     pgPool.on('error', (err) => {
       log(`PostgreSQL pool error: ${err.message}`, 'error');
       log(`Error details: ${JSON.stringify(err)}`, 'debug');
       dbInitialized = false;
     });
-    
+
     // Test connection and create tables
     const client = await pgPool.connect();
     try {
       log('Connected to PostgreSQL database', 'success');
-      
+
       // Create tables if they don't exist
       await client.query(`
         CREATE TABLE IF NOT EXISTS key_value_pairs (
@@ -161,20 +185,20 @@ async function initializePostgres() {
           metadata JSONB DEFAULT '{}'::jsonb
         )
       `);
-      
+
       // Create indices for faster querying
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_key_value_pairs_created_at 
         ON key_value_pairs (created_at)
       `);
-      
+
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_key_value_pairs_accessed_at 
         ON key_value_pairs (accessed_at)
       `);
-      
+
       log('PostgreSQL tables and indices initialized', 'success');
-      
+
       // Set up automatic cleanup function
       await client.query(`
         CREATE OR REPLACE FUNCTION cleanup_old_game_states()
@@ -185,9 +209,12 @@ async function initializePostgres() {
         END;
         $$ LANGUAGE plpgsql;
       `);
-      
-      log(`Database cleanup configured for records older than ${CONFIG.DATA_RETENTION_DAYS} days`, 'info');
-      
+
+      log(
+        `Database cleanup configured for records older than ${CONFIG.DATA_RETENTION_DAYS} days`,
+        'info'
+      );
+
       log('Database initialization completed successfully', 'success');
       dbInitialized = true;
       return true;
@@ -211,26 +238,26 @@ async function initializePostgres() {
  * @returns {string} Random alphanumeric key
  */
 function generateRandomKey(length) {
-  const characters = 
+  const characters =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let key = '';
-  
+
   // Use crypto if available for better randomness
   const getRandomValue = () => {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       const array = new Uint32Array(1);
       crypto.getRandomValues(array);
-      return array[0] / (0xFFFFFFFF + 1);
+      return array[0] / (0xffffffff + 1);
     } else {
       return Math.random();
     }
   };
-  
+
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(getRandomValue() * characters.length);
     key += characters.charAt(randomIndex);
   }
-  
+
   return key;
 }
 
@@ -275,7 +302,7 @@ function isValidKey(key) {
   if (!key || typeof key !== 'string') {
     return false;
   }
-  
+
   // Check key format (alphanumeric of specified length)
   const keyRegex = new RegExp(`^[a-zA-Z0-9]{${CONFIG.GAME_STATE_KEY_LENGTH}}$`);
   return keyRegex.test(key);
@@ -287,11 +314,19 @@ function isValidKey(key) {
  */
 async function getDatabaseStats() {
   try {
-    const countResult = await pgPool.query('SELECT COUNT(*) FROM key_value_pairs');
-    const sizeResult = await pgPool.query('SELECT SUM(size_bytes) FROM key_value_pairs');
-    const oldestResult = await pgPool.query('SELECT MIN(created_at) FROM key_value_pairs');
-    const newestResult = await pgPool.query('SELECT MAX(created_at) FROM key_value_pairs');
-    
+    const countResult = await pgPool.query(
+      'SELECT COUNT(*) FROM key_value_pairs'
+    );
+    const sizeResult = await pgPool.query(
+      'SELECT SUM(size_bytes) FROM key_value_pairs'
+    );
+    const oldestResult = await pgPool.query(
+      'SELECT MIN(created_at) FROM key_value_pairs'
+    );
+    const newestResult = await pgPool.query(
+      'SELECT MAX(created_at) FROM key_value_pairs'
+    );
+
     return {
       recordCount: parseInt(countResult.rows[0].count, 10),
       totalSizeBytes: parseInt(sizeResult.rows[0].sum || '0', 10),
@@ -313,24 +348,26 @@ async function main() {
   log('Starting PTCG-Sim-Meta server (PostgreSQL only)...', 'info');
   log(`Environment: ${CONFIG.NODE_ENV}`, 'info');
   log(`Debug mode: ${CONFIG.DEBUG_MODE ? 'enabled' : 'disabled'}`, 'info');
-  
+
   // Initialize PostgreSQL database
   const dbInitResult = await initializePostgres();
   if (!dbInitResult) {
     log('Warning: Server starting with database initialization errors', 'warn');
   }
-  
+
   // Initialize Express application
   const app = express();
-  
+
   // Enable JSON body parsing for POST requests
-  app.use(express.json({ 
-    limit: `${CONFIG.MAX_GAME_STATE_SIZE_MB}mb`,
-    type: ['application/json', 'text/plain']
-  }));
-  
+  app.use(
+    express.json({
+      limit: `${CONFIG.MAX_GAME_STATE_SIZE_MB}mb`,
+      type: ['application/json', 'text/plain'],
+    })
+  );
+
   const server = http.createServer(app);
-  
+
   // Socket.IO Server Setup with comprehensive CORS configuration
   const io = new Server(server, {
     connectionStateRecovery: {
@@ -338,9 +375,12 @@ async function main() {
       skipMiddlewares: true,
     },
     cors: {
-      origin: ["https://ptcg-sim-meta.pages.dev", "https://ptcg-sim-meta-dev.pages.dev"],
-      methods: ["GET", "POST"],
-      credentials: true
+      origin: [
+        'https://ptcg-sim-meta.pages.dev',
+        'https://ptcg-sim-meta-dev.pages.dev',
+      ],
+      methods: ['GET', 'POST'],
+      credentials: true,
     },
     // Additional Socket.IO options for better performance
     pingTimeout: 60000,
@@ -348,15 +388,18 @@ async function main() {
     transports: ['polling', 'websocket'],
     allowEIO3: true,
   });
-  
+
   // Bcrypt Configuration
   const saltRounds = 10;
   const plainPassword = process.env.ADMIN_PASSWORD || 'defaultPassword';
   if (process.env.ADMIN_PASSWORD === undefined) {
-    log('No ADMIN_PASSWORD environment variable set, using default password', 'warn');
+    log(
+      'No ADMIN_PASSWORD environment variable set, using default password',
+      'warn'
+    );
   }
   const hashedPassword = bcrypt.hashSync(plainPassword, saltRounds);
-  
+
   // Socket.IO Admin Instrumentation
   instrument(io, {
     auth: {
@@ -367,37 +410,39 @@ async function main() {
     mode: CONFIG.NODE_ENV === 'production' ? 'production' : 'development',
     namespaceName: '/admin',
   });
-  
+
   // Comprehensive CORS Configuration for Express
-  app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-      
-      // Check if origin is in allowed list
-      if (CONFIG.ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-      } else {
-        log(`CORS blocked request from origin: ${origin}`, 'warn');
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400, // Cache preflight requests for 24 hours
-  }));
-  
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        // Check if origin is in allowed list
+        if (CONFIG.ALLOWED_ORIGINS.includes(origin)) {
+          callback(null, true);
+        } else {
+          log(`CORS blocked request from origin: ${origin}`, 'warn');
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+      maxAge: 86400, // Cache preflight requests for 24 hours
+    })
+  );
+
   // Serve static files from client directory
   app.use(express.static(clientDir));
-  
+
   // Request logging middleware
   app.use((req, res, next) => {
     // Log request details in debug mode
     log(`${req.method} ${req.url}`, 'debug');
-    
+
     // Set appropriate Content-Type based on file extension
     const url = req.url.toLowerCase();
     if (url.endsWith('.js') || url.includes('.module.js')) {
@@ -416,41 +461,50 @@ async function main() {
     } else if (url.endsWith('.webmanifest')) {
       res.setHeader('Content-Type', 'application/manifest+json');
     }
-    
+
     // Add CORS headers for API responses
     if (url.startsWith('/api/')) {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, OPTIONS, PUT, DELETE'
+      );
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization'
+      );
     }
-    
+
     // Track response time for performance monitoring
     const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;
-      log(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`, 'debug');
+      log(
+        `${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`,
+        'debug'
+      );
     });
-    
+
     next();
   });
-  
+
   // Error handling middleware
   app.use((err, req, res, next) => {
     log(`Express error: ${err.message}`, 'error');
-    
+
     // Always set JSON content type for API errors
     if (req.url.startsWith('/api/')) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
-    
+
     // For non-API routes, continue to next error handler
     next(err);
   });
-  
+
   // Health check endpoint for monitoring
   app.get('/health', (req, res) => {
     res.json({
@@ -460,88 +514,88 @@ async function main() {
       databaseError: databaseError,
       version: process.env.npm_package_version || '1.0.0',
       env: CONFIG.NODE_ENV,
-      uptime: process.uptime()
+      uptime: process.uptime(),
     });
   });
   // Add this endpoint to test database connection
-app.get('/api/db-test', async (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  
-  try {
-    if (!pgPool) {
+  app.get('/api/db-test', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    try {
+      if (!pgPool) {
+        return res.status(500).json({
+          success: false,
+          error: 'Database pool not initialized',
+        });
+      }
+
+      // Try to connect and run a simple query
+      const client = await pgPool.connect();
+      try {
+        const result = await client.query('SELECT NOW() as time');
+
+        // Also test our table
+        const tableTest = await client.query(
+          'SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)',
+          ['key_value_pairs']
+        );
+
+        return res.json({
+          success: true,
+          message: 'Database connection successful',
+          time: result.rows[0].time,
+          tableExists: tableTest.rows[0].exists,
+        });
+      } finally {
+        client.release();
+      }
+    } catch (error) {
       return res.status(500).json({
         success: false,
-        error: 'Database pool not initialized'
+        error: error.message,
+        code: error.code,
+        stack: error.stack,
       });
     }
-    
-    // Try to connect and run a simple query
-    const client = await pgPool.connect();
-    try {
-      const result = await client.query('SELECT NOW() as time');
-      
-      // Also test our table
-      const tableTest = await client.query(
-        'SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)',
-        ['key_value_pairs']
-      );
-      
-      return res.json({
-        success: true,
-        message: 'Database connection successful',
-        time: result.rows[0].time,
-        tableExists: tableTest.rows[0].exists
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-  }
-});
+  });
   // Database stats endpoint
   app.get('/api/stats', async (req, res) => {
     if (!dbInitialized) {
       return res.status(503).json({
         success: false,
         error: 'Database not initialized',
-        details: databaseError
+        details: databaseError,
       });
     }
-    
+
     try {
       const stats = await getDatabaseStats();
       res.json({
         success: true,
-        stats
+        stats,
       });
     } catch (error) {
       log(`Error getting database stats: ${error.message}`, 'error');
       res.status(500).json({
         success: false,
-        error: 'Error retrieving database statistics'
+        error: 'Error retrieving database statistics',
       });
     }
   });
-  
+
   // Main application route
   app.get('/', (req, res) => {
     res.sendFile(path.join(clientDir, 'index.html'));
   });
-  
+
   // Import page route
   app.get('/import', (req, res) => {
     const key = req.query.key;
     if (!key) {
       if (req.headers.accept?.includes('application/json')) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'Key parameter is missing' 
+          error: 'Key parameter is missing',
         });
       } else {
         // If browser request, still serve the page
@@ -550,147 +604,152 @@ app.get('/api/db-test', async (req, res) => {
     }
     res.sendFile(path.join(clientDir, 'index.html'));
   });
-  
+
   /**
    * API endpoint to retrieve game state data by key
    * Enhanced with better error handling and response formatting
    */
   app.get('/api/importData', async (req, res) => {
     log('Received request for /api/importData', 'debug');
-    
+
     // Database check
     if (!dbInitialized) {
       return res.status(503).json({
         success: false,
         error: 'Database not available',
-        details: databaseError
+        details: databaseError,
       });
     }
-    
+
     const key = req.query.key;
     if (!key) {
       log('Request missing key parameter', 'warn');
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Key parameter is missing' 
+        error: 'Key parameter is missing',
       });
     }
-    
+
     // Validate key format
     if (!isValidKey(key)) {
       log(`Invalid key format: ${key}`, 'warn');
       return res.status(400).json({
         success: false,
-        error: 'Invalid key format'
+        error: 'Invalid key format',
       });
     }
-    
+
     log(`Looking up game state with key: ${key}`, 'debug');
-    
+
     try {
       const result = await pgPool.query(
         'SELECT value FROM key_value_pairs WHERE key = $1',
         [key]
       );
-      
+
       if (result.rows.length > 0) {
         try {
           log(`Found game state with key: ${key}`, 'success');
-          
+
           // Update access timestamp asynchronously (don't wait for it)
-          updateAccessTimestamp(key).catch(err => {
+          updateAccessTimestamp(key).catch((err) => {
             log(`Error updating timestamp: ${err.message}`, 'warn');
           });
-          
+
           // Parse and return the JSON data
           const jsonData = JSON.parse(result.rows[0].value);
           return res.json(jsonData);
         } catch (parseError) {
           log(`Error parsing JSON data: ${parseError.message}`, 'error');
-          return res.status(500).json({ 
+          return res.status(500).json({
             success: false,
             error: 'Error parsing game state data',
-            details: parseError.message
+            details: parseError.message,
           });
         }
       } else {
         log(`Game state with key ${key} not found`, 'warn');
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          error: 'Game state not found' 
+          error: 'Game state not found',
         });
       }
     } catch (dbError) {
       log(`Database error: ${dbError.message}`, 'error');
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
         error: 'Database error',
-        details: dbError.message
+        details: dbError.message,
       });
     }
   });
-  
+
   /**
    * API endpoint to store game state data with a key
    * Direct HTTP storage option (alternative to Socket.IO)
    */
   app.post('/api/storeGameState', async (req, res) => {
     log('Received POST request for /api/storeGameState', 'debug');
-    
+
     // Database check
     if (!dbInitialized) {
       return res.status(503).json({
         success: false,
         error: 'Database not available',
-        details: databaseError
+        details: databaseError,
       });
     }
-    
+
     // Check if the request body contains game state data
     if (!req.body || !req.body.gameState) {
       log('Request missing gameState in body', 'warn');
       return res.status(400).json({
         success: false,
-        error: 'Game state data is missing'
+        error: 'Game state data is missing',
       });
     }
-    
+
     try {
       // Generate a unique key or use provided key
-      const key = req.body.key || generateRandomKey(CONFIG.GAME_STATE_KEY_LENGTH);
-      
+      const key =
+        req.body.key || generateRandomKey(CONFIG.GAME_STATE_KEY_LENGTH);
+
       // Validate custom key if provided
       if (req.body.key && !isValidKey(req.body.key)) {
         log(`Invalid custom key format: ${req.body.key}`, 'warn');
         return res.status(400).json({
           success: false,
-          error: 'Invalid key format'
+          error: 'Invalid key format',
         });
       }
-      
+
       // Convert game state to string if it's an object
-      const gameStateData = typeof req.body.gameState === 'string' 
-        ? req.body.gameState 
-        : JSON.stringify(req.body.gameState);
-      
+      const gameStateData =
+        typeof req.body.gameState === 'string'
+          ? req.body.gameState
+          : JSON.stringify(req.body.gameState);
+
       log(`Generated key for game state: ${key}`, 'debug');
-      
+
       // Calculate size for metrics
       const sizeBytes = Buffer.byteLength(gameStateData, 'utf8');
       const sizeMB = sizeBytes / (1024 * 1024);
-      
+
       // Check if game state is too large
       if (sizeMB > CONFIG.MAX_GAME_STATE_SIZE_MB) {
-        log(`Game state too large: ${sizeMB.toFixed(2)}MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB}MB`, 'warn');
+        log(
+          `Game state too large: ${sizeMB.toFixed(2)}MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB}MB`,
+          'warn'
+        );
         return res.status(413).json({
           success: false,
-          error: `Game state too large (${sizeMB.toFixed(2)}MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB}MB limit)`
+          error: `Game state too large (${sizeMB.toFixed(2)}MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB}MB limit)`,
         });
       }
-      
+
       // Store metadata if provided
       const metadata = req.body.metadata || {};
-      
+
       // Store in database
       await pgPool.query(
         `INSERT INTO key_value_pairs (key, value, created_at, accessed_at, size_bytes, metadata) 
@@ -699,64 +758,67 @@ app.get('/api/db-test', async (req, res) => {
          SET value = $2, created_at = NOW(), accessed_at = NOW(), size_bytes = $3, metadata = $4`,
         [key, gameStateData, sizeBytes, JSON.stringify(metadata)]
       );
-      
-      log(`Game state with key ${key} successfully stored in database (${sizeMB.toFixed(2)}MB)`, 'success');
+
+      log(
+        `Game state with key ${key} successfully stored in database (${sizeMB.toFixed(2)}MB)`,
+        'success'
+      );
       return res.status(201).json({
         success: true,
         key: key,
         size: {
           bytes: sizeBytes,
-          megabytes: sizeMB.toFixed(2)
-        }
+          megabytes: sizeMB.toFixed(2),
+        },
       });
     } catch (error) {
       log(`Error storing game state: ${error.message}`, 'error');
-      
+
       return res.status(500).json({
         success: false,
         error: 'Error storing game state in database',
-        details: error.message
+        details: error.message,
       });
     }
   });
-  
+
   /**
    * API endpoint to delete a game state
    */
   app.delete('/api/gameState/:key', async (req, res) => {
     const key = req.params.key;
-    
+
     // Database check
     if (!dbInitialized) {
       return res.status(503).json({
         success: false,
         error: 'Database not available',
-        details: databaseError
+        details: databaseError,
       });
     }
-    
+
     // Validate key format
     if (!isValidKey(key)) {
       log(`Invalid key format for deletion: ${key}`, 'warn');
       return res.status(400).json({
         success: false,
-        error: 'Invalid key format'
+        error: 'Invalid key format',
       });
     }
-    
+
     try {
       const result = await pgPool.query(
         'DELETE FROM key_value_pairs WHERE key = $1',
         [key]
       );
-      
+
       if (result.rowCount > 0) {
         log(`Deleted game state ${key} from database`, 'success');
         return res.json({ success: true });
       } else {
         return res.status(404).json({
           success: false,
-          error: 'Game state not found'
+          error: 'Game state not found',
         });
       }
     } catch (error) {
@@ -764,14 +826,14 @@ app.get('/api/db-test', async (req, res) => {
       return res.status(500).json({
         success: false,
         error: 'Database error',
-        details: error.message
+        details: error.message,
       });
     }
   });
-  
+
   // Room management data structure
   const roomInfo = new Map();
-  
+
   // Function to periodically clean up empty rooms
   const cleanUpEmptyRooms = () => {
     let deletedRooms = 0;
@@ -785,26 +847,29 @@ app.get('/api/db-test', async (req, res) => {
       log(`Cleaned up ${deletedRooms} empty rooms`, 'debug');
     }
   };
-  
+
   // Set up a timer to clean up empty rooms every 5 minutes
   setInterval(cleanUpEmptyRooms, 300000);
-  
+
   // Set up periodic database maintenance
-  setInterval(() => {
-    if (dbInitialized) {
-      cleanupOldRecords(CONFIG.DATA_RETENTION_DAYS);
-    }
-  }, 24 * 60 * 60 * 1000); // Run once per day
-  
+  setInterval(
+    () => {
+      if (dbInitialized) {
+        cleanupOldRecords(CONFIG.DATA_RETENTION_DAYS);
+      }
+    },
+    24 * 60 * 60 * 1000
+  ); // Run once per day
+
   // Socket.IO Connection Handling
   io.on('connection', async (socket) => {
     log(`New socket connection: ${socket.id}`, 'debug');
-    
+
     // Add socket error handling
     socket.on('error', (error) => {
       log(`Socket error for ${socket.id}: ${error.message}`, 'error');
     });
-    
+
     // Function to handle disconnections (unintended)
     const disconnectHandler = (roomId, username) => {
       if (!socket.data.leaveRoom) {
@@ -827,16 +892,16 @@ app.get('/api/db-test', async (req, res) => {
         }
       }
     };
-    
+
     // Function to handle event emission
     const emitToRoom = (eventName, data) => {
       if (!data || !data.roomId) {
         log(`Invalid data for ${eventName} event`, 'warn');
         return;
       }
-      
+
       socket.broadcast.to(data.roomId).emit(eventName, data);
-      
+
       if (eventName === 'leaveRoom') {
         socket.leave(data.roomId);
         if (socket.data.disconnectListener) {
@@ -847,14 +912,14 @@ app.get('/api/db-test', async (req, res) => {
         }
       }
     };
-    
+
     /**
      * Handle game state storage via Socket.IO
      * Optimized for better error handling and performance
      */
     socket.on('storeGameState', async (exportData) => {
       log(`Received storeGameState request from ${socket.id}`, 'debug');
-      
+
       // Database check
       if (!dbInitialized) {
         socket.emit(
@@ -863,7 +928,7 @@ app.get('/api/db-test', async (req, res) => {
         );
         return;
       }
-      
+
       try {
         // Validate data
         if (!exportData || typeof exportData !== 'string') {
@@ -874,33 +939,36 @@ app.get('/api/db-test', async (req, res) => {
           );
           return;
         }
-        
+
         // Generate a unique key
         const key = generateRandomKey(CONFIG.GAME_STATE_KEY_LENGTH);
         log(`Generated key ${key} for socket ${socket.id}`, 'debug');
-        
+
         // Calculate size for metrics
         const sizeBytes = Buffer.byteLength(exportData, 'utf8');
         const sizeMB = sizeBytes / (1024 * 1024);
         log(`Game state size: ${sizeMB.toFixed(2)} MB`, 'debug');
-        
+
         // Check if game state is too large
         if (sizeMB > CONFIG.MAX_GAME_STATE_SIZE_MB) {
-          log(`Game state too large: ${sizeMB.toFixed(2)} MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB} MB`, 'warn');
+          log(
+            `Game state too large: ${sizeMB.toFixed(2)} MB > ${CONFIG.MAX_GAME_STATE_SIZE_MB} MB`,
+            'warn'
+          );
           socket.emit(
             'exportGameStateFailed',
             `Game state too large (${sizeMB.toFixed(2)} MB). Please try exporting as a file instead.`
           );
           return;
         }
-        
+
         // Store in database with metadata
         const metadata = {
           socketId: socket.id,
           userAgent: socket.handshake.headers['user-agent'],
           timestamp: new Date().toISOString(),
         };
-        
+
         await pgPool.query(
           `INSERT INTO key_value_pairs (key, value, created_at, accessed_at, size_bytes, metadata) 
            VALUES ($1, $2, NOW(), NOW(), $3, $4) 
@@ -908,9 +976,12 @@ app.get('/api/db-test', async (req, res) => {
            SET value = $2, created_at = NOW(), accessed_at = NOW(), size_bytes = $3, metadata = $4`,
           [key, exportData, sizeBytes, JSON.stringify(metadata)]
         );
-        
+
         socket.emit('exportGameStateSuccessful', key);
-        log(`Game state with key ${key} successfully stored (${sizeMB.toFixed(2)} MB)`, 'success');
+        log(
+          `Game state with key ${key} successfully stored (${sizeMB.toFixed(2)} MB)`,
+          'success'
+        );
       } catch (error) {
         log(`Error storing game state: ${error.message}`, 'error');
         socket.emit(
@@ -919,7 +990,7 @@ app.get('/api/db-test', async (req, res) => {
         );
       }
     });
-    
+
     /**
      * Handle room joining with improved validation and error handling
      */
@@ -930,68 +1001,77 @@ app.get('/api/db-test', async (req, res) => {
         socket.emit('roomReject', 'Invalid room ID');
         return;
       }
-      
+
       if (!username || typeof username !== 'string') {
         log(`Invalid username in joinGame request: ${username}`, 'warn');
         socket.emit('roomReject', 'Invalid username');
         return;
       }
-      
-      log(`User ${username} attempting to join room ${roomId}${isSpectator ? ' as spectator' : ''}`);
-      
+
+      log(
+        `User ${username} attempting to join room ${roomId}${isSpectator ? ' as spectator' : ''}`
+      );
+
       // Create room if it doesn't exist
       if (!roomInfo.has(roomId)) {
-        roomInfo.set(roomId, { 
-          players: new Set(), 
+        roomInfo.set(roomId, {
+          players: new Set(),
           spectators: new Set(),
           created: new Date().toISOString(),
-          messages: []
+          messages: [],
         });
         log(`Created new room: ${roomId}`, 'info');
       }
-      
+
       const room = roomInfo.get(roomId);
 
       // Check if the room has space or if user is spectator
       if (room.players.size < 2 || isSpectator) {
         socket.join(roomId);
         log(`User ${username} joined room ${roomId}`, 'success');
-        
+
         if (isSpectator) {
           room.spectators.add(username);
           socket.emit('spectatorJoin', {
             roomId,
             playerCount: room.players.size,
-            spectatorCount: room.spectators.size
+            spectatorCount: room.spectators.size,
           });
-          log(`User ${username} joined as spectator (${room.spectators.size} spectator(s))`, 'success');
+          log(
+            `User ${username} joined as spectator (${room.spectators.size} spectator(s))`,
+            'success'
+          );
         } else {
           room.players.add(username);
           socket.emit('joinGame', {
             roomId,
             playerCount: room.players.size,
-            spectatorCount: room.spectators.size
+            spectatorCount: room.spectators.size,
           });
-          log(`User ${username} joined as player (${room.players.size}/2 players)`, 'success');
-          
+          log(
+            `User ${username} joined as player (${room.players.size}/2 players)`,
+            'success'
+          );
+
           // Set up disconnect listener
-          socket.data.disconnectListener = () => disconnectHandler(roomId, username);
+          socket.data.disconnectListener = () =>
+            disconnectHandler(roomId, username);
           socket.on('disconnect', socket.data.disconnectListener);
         }
-        
+
         // Notify everyone in the room about the new user
         socket.to(roomId).emit('userJoined', {
           username,
           isSpectator,
           playerCount: room.players.size,
-          spectatorCount: room.spectators.size
+          spectatorCount: room.spectators.size,
         });
       } else {
         socket.emit('roomReject', 'Room is full');
         log(`User ${username} rejected from full room ${roomId}`, 'warn');
       }
     });
-    
+
     /**
      * Handle user reconnection with improved state management
      */
@@ -1002,23 +1082,23 @@ app.get('/api/db-test', async (req, res) => {
         socket.emit('reconnectFailed', 'Invalid reconnection data');
         return;
       }
-      
+
       log(`User ${data.username} reconnecting to room ${data.roomId}`);
-      
+
       // Create room if it doesn't exist
       if (!roomInfo.has(data.roomId)) {
         roomInfo.set(data.roomId, {
           players: new Set(),
           spectators: new Set(),
           created: new Date().toISOString(),
-          messages: []
+          messages: [],
         });
         log(`Created new room for reconnection: ${data.roomId}`, 'info');
       }
-      
+
       const room = roomInfo.get(data.roomId);
       socket.join(data.roomId);
-      
+
       if (!data.notSpectator) {
         room.spectators.add(data.username);
         log(`User ${data.username} reconnected as spectator`, 'success');
@@ -1026,33 +1106,34 @@ app.get('/api/db-test', async (req, res) => {
           type: 'spectator',
           roomId: data.roomId,
           playerCount: room.players.size,
-          spectatorCount: room.spectators.size
+          spectatorCount: room.spectators.size,
         });
       } else {
         room.players.add(data.username);
         log(`User ${data.username} reconnected as player`, 'success');
-        
+
         // Set up disconnect listener
-        socket.data.disconnectListener = () => disconnectHandler(data.roomId, data.username);
+        socket.data.disconnectListener = () =>
+          disconnectHandler(data.roomId, data.username);
         socket.on('disconnect', socket.data.disconnectListener);
-        
+
         // Notify all clients in the room
         io.to(data.roomId).emit('userReconnected', {
           username: data.username,
           roomId: data.roomId,
           playerCount: room.players.size,
-          spectatorCount: room.spectators.size
+          spectatorCount: room.spectators.size,
         });
-        
+
         socket.emit('reconnectSuccess', {
           type: 'player',
           roomId: data.roomId,
           playerCount: room.players.size,
-          spectatorCount: room.spectators.size
+          spectatorCount: room.spectators.size,
         });
       }
     });
-    
+
     /**
      * Process Socket.IO chat messages with moderation
      */
@@ -1061,32 +1142,32 @@ app.get('/api/db-test', async (req, res) => {
         log('Invalid message data', 'warn');
         return;
       }
-      
+
       // Basic message validation and moderation
       const sanitizedMessage = data.message.substring(0, 500); // Limit message length
-      
+
       // Store message in room history (limited to last 100 messages)
       if (roomInfo.has(data.roomId)) {
         const room = roomInfo.get(data.roomId);
         room.messages.push({
           username: data.username || 'Unknown',
           message: sanitizedMessage,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-        
+
         // Keep only last 100 messages
         if (room.messages.length > 100) {
           room.messages.shift();
         }
       }
-      
+
       // Forward the message to all users in the room
       emitToRoom('appendMessage', {
         ...data,
-        message: sanitizedMessage
+        message: sanitizedMessage,
       });
     });
-    
+
     // List of Socket.IO events to forward with validation
     const events = [
       'leaveRoom',
@@ -1107,7 +1188,7 @@ app.get('/api/db-test', async (req, res) => {
       'lookShortcut',
       'stopLookingShortcut',
     ];
-    
+
     // Register event listeners with improved error handling
     for (const event of events) {
       socket.on(event, (data) => {
@@ -1117,11 +1198,11 @@ app.get('/api/db-test', async (req, res) => {
             log(`Invalid data for ${event} event`, 'warn');
             return;
           }
-          
+
           if (CONFIG.DEBUG_MODE) {
             log(`Forwarding ${event} event to room ${data.roomId}`, 'debug');
           }
-          
+
           // Forward event to room
           emitToRoom(event, data);
         } catch (error) {
@@ -1129,37 +1210,46 @@ app.get('/api/db-test', async (req, res) => {
         }
       });
     }
-    
+
     // Handle socket disconnection
     socket.on('disconnect', (reason) => {
       log(`Socket disconnected: ${socket.id}, reason: ${reason}`, 'debug');
     });
   });
-  
+
   // Get port from environment variable or use default
   const port = CONFIG.PORT;
-  
+
   // Start the server with enhanced error handling
   try {
     server.listen(port, () => {
-      log(`✨ PTCG-Sim-Meta server is running at http://localhost:${port}`, 'success');
-      log(`💾 Database status: ${dbInitialized ? 'Connected' : 'Error - ' + databaseError}`, 'info');
-      
+      log(
+        `✨ PTCG-Sim-Meta server is running at http://localhost:${port}`,
+        'success'
+      );
+      log(
+        `💾 Database status: ${dbInitialized ? 'Connected' : 'Error - ' + databaseError}`,
+        'info'
+      );
+
       // Log environment information for debugging
       log(`Node.js version: ${process.version}`, 'debug');
       log(`Environment: ${CONFIG.NODE_ENV}`, 'debug');
     });
-    
+
     // Handle server errors
     server.on('error', (error) => {
       log(`Server error: ${error.message}`, 'error');
-      
+
       if (error.code === 'EADDRINUSE') {
-        log(`Port ${port} is already in use. Please use a different port.`, 'error');
+        log(
+          `Port ${port} is already in use. Please use a different port.`,
+          'error'
+        );
         process.exit(1);
       }
     });
-    
+
     return server;
   } catch (error) {
     log(`Error starting server: ${error.message}`, 'error');
@@ -1170,28 +1260,28 @@ app.get('/api/db-test', async (req, res) => {
 // Process signal handling for graceful shutdown
 process.on('SIGTERM', () => {
   log('SIGTERM signal received. Shutting down gracefully...', 'info');
-  
+
   // Close database connection if open
   if (pgPool) {
-    pgPool.end().catch(err => {
+    pgPool.end().catch((err) => {
       log(`Error closing database connection: ${err.message}`, 'error');
     });
   }
-  
+
   // Exit with success code
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   log('SIGINT signal received. Shutting down gracefully...', 'info');
-  
+
   // Close database connection if open
   if (pgPool) {
-    pgPool.end().catch(err => {
+    pgPool.end().catch((err) => {
       log(`Error closing database connection: ${err.message}`, 'error');
     });
   }
-  
+
   // Exit with success code
   process.exit(0);
 });
@@ -1200,27 +1290,27 @@ process.on('SIGINT', () => {
 process.on('uncaughtException', (error) => {
   log(`Uncaught exception: ${error.message}`, 'error');
   log(`Stack trace: ${error.stack}`, 'debug');
-  
+
   // Keep process running but log the error
   // Don't exit the process as it could be a non-fatal error
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   log(`Unhandled promise rejection: ${reason}`, 'error');
-  
+
   // Keep process running but log the error
   // Don't exit the process as it could be a non-fatal error
 });
 
 export default main;
 // Start the application with improved error handling
-main().catch(error => {
+main().catch((error) => {
   log(`Fatal error starting server: ${error.message}`, 'error');
-  
+
   // Log stack trace in debug mode
   if (CONFIG.DEBUG_MODE) {
     log(`Stack trace: ${error.stack}`, 'debug');
   }
-  
+
   process.exit(1);
 });

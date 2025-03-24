@@ -3,15 +3,14 @@
 
 # Basic Worker metadata
 name = "ptcg-sim-meta"  # Unique name for your Cloudflare Worker
-main = "index.js"       # Entry point of your Worker
+main = "dist/worker.js" # Updated entry point to use the bundled worker
 compatibility_date = "2025-03-22"  # Locks in specific runtime features
 compatibility_flags = ["nodejs_compat"]  # Enable Node.js compatibility mode
 
 # Required to connect to Neon database
 node_compat = true
 
-# Worker routes configuration
-# This tells Cloudflare which requests should be handled by your worker
+# Worker routes configuration - modified to prevent conflict with Pages
 routes = [
   { pattern = "*ptcg-sim-meta.pages.dev/api/*", zone_name = "ptcg-sim-meta.pages.dev" },
   { pattern = "*ptcg-sim-meta.pages.dev/socket.io/*", zone_name = "ptcg-sim-meta.pages.dev" }
@@ -19,6 +18,10 @@ routes = [
 
 # Enhanced Content type headers for proper MIME types
 [headers]
+  # HTML files
+  [headers."*.html"]
+    Content-Type = "text/html; charset=utf-8"
+  
   # JavaScript files
   [headers."*.js"]
     Content-Type = "application/javascript; charset=utf-8"
@@ -38,21 +41,11 @@ routes = [
   # JSON files
   [headers."*.json"]
     Content-Type = "application/json; charset=utf-8"
-  
-  # Specific paths that might cause issues
-  [headers."/workers/src/utils/logging.js"]
-    Content-Type = "application/javascript; charset=utf-8"
-  
-  [headers."/workers/src/utils/cors.js"]
-    Content-Type = "application/javascript; charset=utf-8"
-  
-  [headers."/workers/src/db/client.js"]
-    Content-Type = "application/javascript; charset=utf-8"
 
 # CORS configuration for proper API access
 [cors]
   allowed_origins = ["*"]
-  allowed_methods = ["GET", "POST", PUT, "DELETE", "OPTIONS"]
+  allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   allowed_headers = ["Content-Type", "Authorization", "X-Requested-With", "Upgrade", "Connection"]
   max_age = 86400
 
@@ -82,24 +75,15 @@ routes = [
   { pattern = "*ptcg-sim-meta.pages.dev/socket.io/*", zone_name = "ptcg-sim-meta.pages.dev" }
 ]
 
-# Build configuration
+# Build configuration - updated to use esbuild properly
 [build]
 command = "node esbuild.config.js"  # Use this for the Worker build
-cwd = "workers"                      # Build in the workers directory
-watch_dir = "workers"                # Watch this directory for changes
+cwd = "."                          # Build in the root directory to access all files
+watch_dir = ["src", "workers"]     # Watch these directories for changes
 
 # Scheduled tasks for maintenance operations
 [triggers]
 crons = ["0 0 * * *"]      # Run maintenance daily at midnight UTC
-
-# Advanced logging configuration
-[log]
-level = "info"            # Default log level
-
-# Advanced cache configuration
-[cache]
-  browser_ttl = 3600    # 1 hour browser cache
-  serve_stale = true    # Serve stale content while revalidating
 
 # Variable bindings
 [vars]
@@ -109,7 +93,7 @@ level = "info"            # Default log level
   API_BASE = "/api"
   SOCKET_PATH = "/socket.io"
 
-# D1 Database binding
+# D1 Database binding (optional)
 [[d1_databases]]
 binding = "DB"
 database_name = "ptcg_sim_meta"

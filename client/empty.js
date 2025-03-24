@@ -1,7 +1,7 @@
 /**
  * Empty JavaScript module for PTCG-Sim-Meta
  * This file is used as a placeholder for redirects
- * 
+ *
  * File: client/empty.js
  */
 
@@ -19,4 +19,10 @@ export const debug = () => {};
 export const info = () => {};
 export const warn = () => {};
 export const error = () => {};
-export const logger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {}, log: () => {} };
+export const logger = {
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  log: () => {},
+};

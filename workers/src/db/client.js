@@ -1,6 +1,6 @@
 /**
  * Database client configuration for Neon PostgreSQL
- * 
+ *
  * This module sets up the connection to Neon PostgreSQL database
  * using their serverless driver optimized for Cloudflare Workers.
  */
@@ -9,7 +9,7 @@ import { log } from '../utils/logging.js';
 
 /**
  * Create a database pool using the provided connection string
- * 
+ *
  * @param {string} connectionString - Neon PostgreSQL connection string
  * @returns {Pool} Database connection pool
  */
@@ -18,24 +18,24 @@ export function createPool(connectionString) {
     log('No database connection string provided', 'error');
     throw new Error('Database connection string is required');
   }
-  
+
   // Log connection attempt with redacted password
   const redactedUrl = connectionString.replace(
     /postgresql:\/\/([^:]+):([^@]+)@/,
     'postgresql://$1:***@'
   );
   log(`Connecting to Neon PostgreSQL: ${redactedUrl}`, 'debug');
-  
+
   // Create connection pool
   return new Pool({
     connectionString,
-    ssl: true
+    ssl: true,
   });
 }
 
 /**
  * Initialize database tables if they don't exist
- * 
+ *
  * @param {Pool} pool - Database connection pool
  */
 export async function initializeTables(pool) {
@@ -51,18 +51,18 @@ export async function initializeTables(pool) {
         metadata JSONB DEFAULT '{}'::jsonb
       )
     `);
-    
+
     // Create indices for performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_key_value_pairs_created_at 
       ON key_value_pairs (created_at)
     `);
-    
+
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_key_value_pairs_accessed_at 
       ON key_value_pairs (accessed_at)
     `);
-    
+
     log('Database tables and indices initialized', 'info');
     return true;
   } catch (error) {
@@ -73,7 +73,7 @@ export async function initializeTables(pool) {
 
 /**
  * Get database client from environment
- * 
+ *
  * @param {Object} env - Environment variables
  * @returns {Pool} Database connection pool
  */

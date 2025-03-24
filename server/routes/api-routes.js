@@ -3,7 +3,11 @@
  * Handles all API endpoints for game state management
  */
 import express from 'express';
-import { getGameState, storeGameState, deleteGameState } from '../services/game-state.js';
+import {
+  getGameState,
+  storeGameState,
+  deleteGameState,
+} from '../services/game-state.js';
 
 // Create router
 const router = express.Router();
@@ -14,17 +18,17 @@ const router = express.Router();
  */
 router.get('/importData', async (req, res) => {
   const key = req.query.key;
-  
+
   if (!key) {
     return res.status(400).json({
       success: false,
-      error: 'Key parameter is missing'
+      error: 'Key parameter is missing',
     });
   }
-  
+
   try {
     const result = await getGameState(key);
-    
+
     if (result.success) {
       // Try to parse the JSON data
       try {
@@ -34,20 +38,20 @@ router.get('/importData', async (req, res) => {
         console.error('Error parsing JSON data:', parseError);
         return res.status(500).json({
           success: false,
-          error: 'Error parsing game state data'
+          error: 'Error parsing game state data',
         });
       }
     } else {
       return res.status(404).json({
         success: false,
-        error: result.error || 'Game state not found'
+        error: result.error || 'Game state not found',
       });
     }
   } catch (error) {
     console.error('API error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
     });
   }
 });
@@ -58,33 +62,33 @@ router.get('/importData', async (req, res) => {
  */
 router.post('/storeGameState', express.json(), async (req, res) => {
   const { data, key } = req.body;
-  
+
   if (!data) {
     return res.status(400).json({
       success: false,
-      error: 'Game state data is missing'
+      error: 'Game state data is missing',
     });
   }
-  
+
   try {
     const result = await storeGameState(data, key);
-    
+
     if (result.success) {
       return res.json({
         success: true,
-        key: result.key
+        key: result.key,
       });
     } else {
       return res.status(500).json({
         success: false,
-        error: result.error || 'Failed to store game state'
+        error: result.error || 'Failed to store game state',
       });
     }
   } catch (error) {
     console.error('API error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
     });
   }
 });
@@ -95,32 +99,32 @@ router.post('/storeGameState', express.json(), async (req, res) => {
  */
 router.delete('/deleteGameState', async (req, res) => {
   const key = req.query.key;
-  
+
   if (!key) {
     return res.status(400).json({
       success: false,
-      error: 'Key parameter is missing'
+      error: 'Key parameter is missing',
     });
   }
-  
+
   try {
     const result = await deleteGameState(key);
-    
+
     if (result.success) {
       return res.json({
-        success: true
+        success: true,
       });
     } else {
       return res.status(404).json({
         success: false,
-        error: result.error || 'Game state not found'
+        error: result.error || 'Game state not found',
       });
     }
   } catch (error) {
     console.error('API error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
     });
   }
 });

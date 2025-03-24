@@ -33,6 +33,20 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 9.10.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install
@@ -44,6 +58,7 @@ jobs:
         run: node build.js
         env:
           NODE_ENV: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' && 'development' || 'production' }}
+          BUILD_TIMESTAMP: ${{ github.event.repository.updated_at || github.event.head_commit.timestamp }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -52,7 +67,7 @@ jobs:
           path: dist
           retention-days: 7
 
-  deploy:
+  deploy-pages:
     needs: build
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -70,6 +85,7 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 9.10.0
+          run_install: false
 
       - name: Download build artifacts
         uses: actions/download-artifact@v3
@@ -78,7 +94,7 @@ jobs:
           path: dist
 
       - name: Install Wrangler
-        run: npm install -g wrangler
+        run: pnpm add -g wrangler@latest
 
       - name: Deploy to Cloudflare Pages
         run: |
@@ -91,13 +107,45 @@ jobs:
             DEPLOY_ENV="dev"
           fi
 
-          # Deploy Pages
+          # Set build timestamp as an environment variable
+          export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Deploy Pages with specific headers
           wrangler pages deploy dist/client --project-name=ptcg-sim-meta-${DEPLOY_ENV} \
             --commit-hash=${{ github.sha }} \
             --commit-message="${{ github.event.head_commit.message || 'Manual deployment' }}" \
             --branch=$([ "${DEPLOY_ENV}" = "production" ] && echo "main" || echo "dev")
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+  deploy-workers:
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.10.0
+          run_install: false
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Install Wrangler
+        run: pnpm add -g wrangler@latest
 
       - name: Deploy to Cloudflare Workers
         run: |
@@ -110,8 +158,14 @@ jobs:
             DEPLOY_ENV="dev"
           fi
 
-          # Copy wrangler.toml to dist/workers
-          cp workers/wrangler.toml dist/workers/
+          # Copy wrangler.toml to dist/workers if needed
+          if [ ! -f "dist/workers/wrangler.toml" ]; then
+            cp workers/wrangler.toml dist/workers/
+          fi
+
+          # Update BUILD_TIMESTAMP in wrangler.toml
+          BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          sed -i "s/BUILD_TIMESTAMP = \"\"/BUILD_TIMESTAMP = \"$BUILD_TIMESTAMP\"/g" dist/workers/wrangler.toml
 
           # Deploy Worker
           cd dist/workers
@@ -121,7 +175,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   cleanup-old-deployments:
-    needs: deploy
+    needs: [deploy-pages, deploy-workers]
     runs-on: ubuntu-latest
 
     steps:
@@ -133,8 +187,14 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.10.0
+          run_install: false
+
       - name: Install Wrangler
-        run: npm install -g wrangler
+        run: pnpm add -g wrangler@latest
 
       - name: Cleanup old deployments
         run: |

@@ -19,29 +19,14 @@ export async function storeGameState(data, key) {
       };
     }
     
-    // Handle different database types
-    if (db.query) {
-      // PostgreSQL
-      await db.query(
-        `INSERT INTO key_value_pairs (key, value, created_at) 
-         VALUES ($1, $2, NOW()) 
-         ON CONFLICT (key) DO UPDATE 
-         SET value = $2, created_at = NOW()`,
-        [key, data]
-      );
-    } else {
-      // SQLite
-      await new Promise((resolve, reject) => {
-        db.run(
-          `INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)`,
-          [key, data],
-          function(err) {
-            if (err) reject(err);
-            else resolve();
-          }
-        );
-      });
-    }
+    // PostgreSQL implementation
+    await db.query(
+      `INSERT INTO key_value_pairs (key, value, created_at) 
+       VALUES ($1, $2, NOW()) 
+       ON CONFLICT (key) DO UPDATE 
+       SET value = $2, created_at = NOW()`,
+      [key, data]
+    );
     
     return { success: true, key };
   } catch (error) {
@@ -70,37 +55,17 @@ export async function getGameState(key) {
       };
     }
     
-    // Handle different database types
-    if (db.query) {
-      // PostgreSQL
-      const result = await db.query(
-        'SELECT value FROM key_value_pairs WHERE key = $1',
-        [key]
-      );
-      
-      if (result.rows.length === 0) {
-        return { success: false, error: 'Game state not found' };
-      }
-      
-      return { success: true, data: result.rows[0].value };
-    } else {
-      // SQLite
-      return await new Promise((resolve, reject) => {
-        db.get(
-          'SELECT value FROM KeyValuePairs WHERE key = ?',
-          [key],
-          (err, row) => {
-            if (err) {
-              reject(err);
-            } else if (!row) {
-              resolve({ success: false, error: 'Game state not found' });
-            } else {
-              resolve({ success: true, data: row.value });
-            }
-          }
-        );
-      });
+    // PostgreSQL implementation
+    const result = await db.query(
+      'SELECT value FROM key_value_pairs WHERE key = $1',
+      [key]
+    );
+    
+    if (result.rows.length === 0) {
+      return { success: false, error: 'Game state not found' };
     }
+    
+    return { success: true, data: result.rows[0].value };
   } catch (error) {
     console.error('Error retrieving game state:', error);
     return { 
@@ -127,37 +92,17 @@ export async function deleteGameState(key) {
       };
     }
     
-    // Handle different database types
-    if (db.query) {
-      // PostgreSQL
-      const result = await db.query(
-        'DELETE FROM key_value_pairs WHERE key = $1',
-        [key]
-      );
-      
-      if (result.rowCount === 0) {
-        return { success: false, error: 'Game state not found' };
-      }
-      
-      return { success: true };
-    } else {
-      // SQLite
-      return await new Promise((resolve, reject) => {
-        db.run(
-          'DELETE FROM KeyValuePairs WHERE key = ?',
-          [key],
-          function(err) {
-            if (err) {
-              reject(err);
-            } else if (this.changes === 0) {
-              resolve({ success: false, error: 'Game state not found' });
-            } else {
-              resolve({ success: true });
-            }
-          }
-        );
-      });
+    // PostgreSQL implementation
+    const result = await db.query(
+      'DELETE FROM key_value_pairs WHERE key = $1',
+      [key]
+    );
+    
+    if (result.rowCount === 0) {
+      return { success: false, error: 'Game state not found' };
     }
+    
+    return { success: true };
   } catch (error) {
     console.error('Error deleting game state:', error);
     return { 

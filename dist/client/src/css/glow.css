@@ -1,0 +1,89 @@
+/* Glow effect for opponent elements */
+.opp-outline {
+    position: relative; /* Position relative to include glow effect */
+    background-color: rgba(255, 255, 255, 0.1); /* Adjust background if necessary */
+    box-shadow: 
+      0 0 5px rgba(255, 85, 100, 0.5),  /* Faint inner glow */
+      0 0 10px rgba(255, 85, 100, 0.4),
+      0 0 15px rgba(255, 85, 100, 0.3); /* Soft neon glow */
+  }
+  
+  /* Optional: Animation for opponent glow */
+  @keyframes faintNeonPulseOpp {
+    0%, 100% {
+      box-shadow: 
+        0 0 5px rgba(255, 85, 100, 0.5),
+        0 0 10px rgba(255, 85, 100, 0.4),
+        0 0 15px rgba(255, 85, 100, 0.3);
+    }
+    50% {
+      box-shadow: 
+        0 0 10px rgba(255, 85, 100, 0.6),
+        0 0 15px rgba(255, 85, 100, 0.5),
+        0 0 20px rgba(255, 85, 100, 0.4);
+    }
+  }
+  
+  .opp-outline {
+    animation: faintNeonPulseOpp 4s infinite; /* Add animation */
+  }
+  
+  /* Glow effect for self elements */
+  .self-outline {
+    position: relative; /* Position relative to include glow effect */
+    background-color: rgba(255, 255, 255, 0.1); /* Adjust background if necessary */
+    box-shadow: 
+      0 0 5px rgba(0, 123, 255, 0.5),  /* Faint inner glow */
+      0 0 10px rgba(0, 123, 255, 0.4),
+      0 0 15px rgba(0, 123, 255, 0.3); /* Soft neon glow */
+  }
+  
+  /* Optional: Animation for self glow */
+  @keyframes faintNeonPulseSelf {
+    0%, 100% {
+      box-shadow: 
+        0 0 5px rgba(0, 123, 255, 0.5),
+        0 0 10px rgba(0, 123, 255, 0.4),
+        0 0 15px rgba(0, 123, 255, 0.3);
+    }
+    50% {
+      box-shadow: 
+        0 0 10px rgba(0, 123, 255, 0.6),
+        0 0 15px rgba(0, 123, 255, 0.5),
+        0 0 20px rgba(0, 123, 255, 0.4);
+    }
+  }
+  
+  .self-outline {
+    animation: faintNeonPulseSelf 4s infinite; /* Add animation */
+  }
+  
+  /* Glow effect for stadium box */
+  .stadium-outline {
+    position: relative; /* Position relative to include glow effect */
+    background-color: rgba(255, 255, 255, 0.1); /* Adjust background if necessary */
+    box-shadow: 
+      0 0 5px rgba(128, 0, 128, 0.5),  /* Faint inner glow (purple) */
+      0 0 10px rgba(128, 0, 128, 0.4),
+      0 0 15px rgba(128, 0, 128, 0.3); /* Soft neon purple glow */
+  }
+  
+  /* Optional: Animation for stadium glow */
+@keyframes faintNeonPulseStadium {
+    0%, 100% {
+      box-shadow: 
+        0 0 5px rgba(128, 0, 128, 0.5),  /* Faint inner glow (purple) */
+        0 0 10px rgba(128, 0, 128, 0.4),
+        0 0 15px rgba(128, 0, 128, 0.3); /* Soft neon purple glow */
+    }
+    50% {
+      box-shadow: 
+        0 0 10px rgba(128, 0, 128, 0.6),
+        0 0 15px rgba(128, 0, 128, 0.5),
+        0 0 20px rgba(128, 0, 128, 0.4);
+    }
+  }
+  
+  .stadium-outline {
+    animation: faintNeonPulseStadium 4s infinite; /* Add animation */
+  }

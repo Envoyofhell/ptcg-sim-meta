@@ -1,13 +1,8 @@
 /**
  * Database configuration module for PTCG-Sim-Meta
- * Handles connections to PostgreSQL (Neon) database
- * 
- * This module can be gradually integrated with your existing code
- * to transition from SQLite to PostgreSQL.
+ * Handles connections to PostgreSQL (Neon) database only
  */
 import pg from 'pg';
-import sqlite3 from 'sqlite3';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -19,14 +14,8 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-// Path to SQLite database
-const SQLITE_DB_PATH = path.join(__dirname, '../../database/db.sqlite');
-
 // PostgreSQL connection pool
 let pgPool = null;
-
-// SQLite database connection
-let sqliteDb = null;
 
 /**
  * Initialize and return a PostgreSQL connection pool
@@ -61,37 +50,6 @@ export function initPostgres() {
   });
   
   return pgPool;
-}
-
-/**
- * Initialize and return a SQLite database connection
- */
-export function initSqlite() {
-  if (sqliteDb) return sqliteDb;
-  
-  // Create directory if it doesn't exist
-  const dbDir = path.dirname(SQLITE_DB_PATH);
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
-  
-  sqliteDb = new sqlite3.Database(SQLITE_DB_PATH, (err) => {
-    if (err) {
-      console.error('Error opening SQLite database:', err);
-      return null;
-    }
-    console.log('Connected to SQLite database');
-    
-    // Create table if it doesn't exist
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS KeyValuePairs (
-        key TEXT PRIMARY KEY,
-        value TEXT
-      )
-    `);
-  });
-  
-  return sqliteDb;
 }
 
 /**
@@ -131,37 +89,19 @@ export async function initPostgresTables() {
 }
 
 /**
- * Check if we should use PostgreSQL (based on environment)
- */
-export function shouldUsePostgres() {
-  // Check if PostgreSQL connection string is available
-  return !!process.env.DATABASE_POSTGRES_URL;
-}
-
-/**
- * Get the appropriate database connection
- * Will use PostgreSQL if available, otherwise fallback to SQLite
+ * Get the database connection (PostgreSQL only)
  */
 export function getDatabaseConnection() {
-  if (shouldUsePostgres()) {
-    return initPostgres();
-  } else {
-    return initSqlite();
-  }
+  return initPostgres();
 }
 
 /**
  * Initialize the database system
- * Sets up the appropriate database based on environment
+ * Sets up PostgreSQL database
  */
 export async function initializeDatabase() {
-  if (shouldUsePostgres()) {
-    console.log('Using PostgreSQL database');
-    const pool = initPostgres();
-    await initPostgresTables();
-    return pool;
-  } else {
-    console.log('Using SQLite database');
-    return initSqlite();
-  }
+  console.log('Using PostgreSQL database');
+  const pool = initPostgres();
+  await initPostgresTables();
+  return pool;
 }
