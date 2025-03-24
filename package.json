@@ -4,14 +4,11 @@
   "description": "Cloudflare Workers for PTCG-Sim-Meta",
   "main": "dist/worker.js",
   "type": "module",
-  "packageManager": "pnpm@9.10.0",
   "scripts": {
-    "prebuild": "node -e \"import('fs').then(fs => fs.promises.mkdir('dist', { recursive: true }));\"",
-    "build": "node esbuild.config.js",
-    "build:debug": "node esbuild.config.js --debug",
+    "prebuild": "mkdir -p dist",
+    "build": "node ./esbuild.config.js",
     "dev": "wrangler dev --env dev",
     "dev:debug": "wrangler dev --env dev --inspect",
-    "predeploy": "pnpm run build",
     "deploy": "wrangler deploy",
     "deploy:dev": "wrangler deploy --env dev",
     "deploy:prod": "wrangler deploy --env production"
