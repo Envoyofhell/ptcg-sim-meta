@@ -1,100 +1,18 @@
-# Enhanced wrangler.toml for PTCG-Sim-Meta
-# This configuration sets up both the Cloudflare Worker and Page deployments
+# Comprehensive Wrangler Configuration for PTCG-Sim-Meta
 
-# Basic Worker metadata
-name = "ptcg-sim-meta"  # Unique name for your Cloudflare Worker
-main = "dist/worker.js" # Updated entry point to use the bundled worker
-compatibility_date = "2025-03-22"  # Locks in specific runtime features
-compatibility_flags = ["nodejs_compat"]  # Enable Node.js compatibility mode
-
-# Remove the node_compat = true line to avoid the conflict error
-
-# Worker routes configuration - modified to prevent conflict with Pages
-routes = [
-  { pattern = "*ptcg-sim-meta.pages.dev/api/*", zone_name = "ptcg-sim-meta.pages.dev" },
-  { pattern = "*ptcg-sim-meta.pages.dev/socket.io/*", zone_name = "ptcg-sim-meta.pages.dev" }
-]
-
-# Build configuration - updated to use esbuild properly
-[build]
-command = "node esbuild.config.js"  # Use this for the Worker build
-cwd = "."                          # Build in the root directory to access all files
-watch_dir = ["src", "workers"]     # Watch these directories for changes
-
-# Scheduled tasks for maintenance operations
-[triggers]
-crons = ["0 0 * * *"]      # Run maintenance daily at midnight UTC
-
-# Development environment configuration
-[env.dev]
-name = "ptcg-sim-meta-dev"
-ENVIRONMENT = "development"
-LOG_LEVEL = "debug"
-SOCKET_ENABLED = "true"
-DATABASE_URL = { binding = "DATABASE_URL" }
-workers_dev = true  # Deploy to workers.dev subdomain
-routes = [
-  { pattern = "*ptcg-sim-meta-dev.pages.dev/api/*", zone_name = "ptcg-sim-meta-dev.pages.dev" },
-  { pattern = "*ptcg-sim-meta-dev.pages.dev/socket.io/*", zone_name = "ptcg-sim-meta-dev.pages.dev" },
-  { pattern = "dev.ptcg-meta.org/api/*", zone_name = "ptcg-meta.org" },
-  { pattern = "dev.ptcg-meta.org/socket.io/*", zone_name = "ptcg-meta.org" }
-]
-
-# Variable bindings for dev environment
-[env.dev.vars]
-  DEBUG_MODE = "true"
-  WORKER_VERSION = "1.5.1"
-  BUILD_TIMESTAMP = "" # Will be replaced during build
-  API_BASE = "/api"
-  SOCKET_PATH = "/socket.io"
-
-# D1 Database binding for dev environment (optional)
-[[env.dev.d1_databases]]
-binding = "DB"
-database_name = "ptcg_sim_meta"
-database_id = "d1-placeholder-id" # Replace with real ID
-
-# Enhanced Content type headers for dev environment
-[env.dev.headers]
-  # HTML files
-  [env.dev.headers."*.html"]
-    Content-Type = "text/html; charset=utf-8"
-  
-  # JavaScript files
-  [env.dev.headers."*.js"]
-    Content-Type = "application/javascript; charset=utf-8"
-  
-  # JavaScript module files
-  [env.dev.headers."*.mjs"]
-    Content-Type = "application/javascript; charset=utf-8" 
-  
-  # JavaScript source maps
-  [env.dev.headers."*.js.map"]
-    Content-Type = "application/json; charset=utf-8"
-  
-  # CSS files
-  [env.dev.headers."*.css"]
-    Content-Type = "text/css; charset=utf-8"
-  
-  # JSON files
-  [env.dev.headers."*.json"]
-    Content-Type = "application/json; charset=utf-8"
-
-# CORS configuration for dev environment
-[env.dev.cors]
-  allowed_origins = ["*"]
-  allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-  allowed_headers = ["Content-Type", "Authorization", "X-Requested-With", "Upgrade", "Connection"]
-  max_age = 86400
-
-# Production environment configuration
-[env.production]
+# Basic Worker Metadata
 name = "ptcg-sim-meta"
-ENVIRONMENT = "production"
-LOG_LEVEL = "info"
-SOCKET_ENABLED = "true"
-DATABASE_URL = { binding = "DATABASE_URL" }
-workers_dev = false  # Use custom domain
+main = "dist/worker.js"
+compatibility_date = "2025-03-22"
+compatibility_flags = ["nodejs_compat"]
+
+# Optimized Build Configuration
+[build]
+command = "node esbuild.config.js"
+cwd = "."
+watch_dir = ["src", "workers"]
+
+# Global Routes Configuration
 routes = [
   { pattern = "*ptcg-sim-meta.pages.dev/api/*", zone_name = "ptcg-sim-meta.pages.dev" },
   { pattern = "*ptcg-sim-meta.pages.dev/socket.io/*", zone_name = "ptcg-sim-meta.pages.dev" },
@@ -102,49 +20,111 @@ routes = [
   { pattern = "meta-ptcg.org/socket.io/*", zone_name = "meta-ptcg.org" }
 ]
 
-# Variable bindings for production environment
-[env.production.vars]
-  DEBUG_MODE = "false"
+# Periodic Maintenance Triggers
+[triggers]
+crons = [
+  "0 0 * * *",      # Daily maintenance at midnight UTC
+  "0 12 * * *"      # Additional midday check
+]
+
+# Development Environment Configuration
+[env.dev]
+name = "ptcg-sim-meta-dev"
+workers_dev = true
+ENVIRONMENT = "development"
+
+# Development Environment Variables
+[env.dev.vars]
+  # Application Configuration
+  DEBUG_MODE = "true"
+  LOG_LEVEL = "debug"
   WORKER_VERSION = "1.5.1"
-  BUILD_TIMESTAMP = "" # Will be replaced during build
+  BUILD_TIMESTAMP = "" # Dynamically replaced during build
   API_BASE = "/api"
   SOCKET_PATH = "/socket.io"
+  SOCKET_ENABLED = "true"
 
-# D1 Database binding for production environment (optional)
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "ptcg_sim_meta"
-database_id = "d1-placeholder-id" # Replace with real ID
+  # Performance and Security Optimizations
+  RATE_LIMIT_WINDOW = "60"
+  RATE_LIMIT_MAX_REQUESTS = "100"
+  CACHE_CONTROL_MAX_AGE = "3600"
 
-# Enhanced Content type headers for production environment
-[env.production.headers]
-  # HTML files
-  [env.production.headers."*.html"]
-    Content-Type = "text/html; charset=utf-8"
-  
-  # JavaScript files
-  [env.production.headers."*.js"]
-    Content-Type = "application/javascript; charset=utf-8"
-  
-  # JavaScript module files
-  [env.production.headers."*.mjs"]
-    Content-Type = "application/javascript; charset=utf-8" 
-  
-  # JavaScript source maps
-  [env.production.headers."*.js.map"]
-    Content-Type = "application/json; charset=utf-8"
-  
-  # CSS files
-  [env.production.headers."*.css"]
-    Content-Type = "text/css; charset=utf-8"
-  
-  # JSON files
-  [env.production.headers."*.json"]
-    Content-Type = "application/json; charset=utf-8"
+# Development Environment Performance Headers
+[env.dev.headers]
+  # Aggressive Caching for Static Assets
+  [env.dev.headers."*.js"]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=60"
+  [env.dev.headers."*.css"]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=60"
+  [env.dev.headers."*.json"]
+    Cache-Control = "public, max-age=300, stale-while-revalidate=60"
 
-# CORS configuration for production environment
-[env.production.cors]
+# Development Environment CORS Configuration
+[env.dev.cors]
   allowed_origins = ["*"]
   allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-  allowed_headers = ["Content-Type", "Authorization", "X-Requested-With", "Upgrade", "Connection"]
+  allowed_headers = [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With", 
+    "Upgrade", 
+    "Connection"
+  ]
   max_age = 86400
+
+# Production Environment Configuration
+[env.production]
+name = "ptcg-sim-meta"
+workers_dev = false
+ENVIRONMENT = "production"
+
+# Production Environment Variables
+[env.production.vars]
+  # Application Configuration
+  DEBUG_MODE = "false"
+  LOG_LEVEL = "info"
+  WORKER_VERSION = "1.5.1"
+  BUILD_TIMESTAMP = "" # Dynamically replaced during build
+  API_BASE = "/api"
+  SOCKET_PATH = "/socket.io"
+  SOCKET_ENABLED = "true"
+
+  # Performance and Security Optimizations
+  RATE_LIMIT_WINDOW = "60"
+  RATE_LIMIT_MAX_REQUESTS = "50"
+  CACHE_CONTROL_MAX_AGE = "86400"
+
+# Production Environment Performance Headers
+[env.production.headers]
+  # Strict Caching for Static Assets
+  [env.production.headers."*.js"]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=3600"
+  [env.production.headers."*.css"]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=3600"
+  [env.production.headers."*.json"]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=600"
+
+# Production Environment CORS Configuration
+[env.production.cors]
+  allowed_origins = [
+    "https://meta-ptcg.org",
+    "https://www.meta-ptcg.org"
+  ]
+  allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowed_headers = [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With", 
+    "Upgrade", 
+    "Connection"
+  ]
+  max_age = 86400
+
+# Additional Optimization Configurations
+[placement]
+mode = "smart"
+
+# Experimental Features (Use with caution)
+[experimental]
+# Enable new runtime features if available
+enable_preview = true
