@@ -58,6 +58,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.21.2
+      itty-router:
+        specifier: ^4.2.2
+        version: 4.2.2
       socket.io:
         specifier: ^4.7.4
         version: 4.8.1
@@ -68,6 +71,19 @@ importers:
       nodemon:
         specifier: ^3.0.2
         version: 3.1.9
+      wrangler:
+        specifier: ^4.4.0
+        version: 4.4.0
+
+  workers:
+    dependencies:
+      itty-router:
+        specifier: ^5.0.18
+        version: 5.0.18
+    devDependencies:
+      wrangler:
+        specifier: ^4.4.0
+        version: 4.4.0
 
 packages:
 
@@ -1109,6 +1125,9 @@ packages:
 
   itty-router@4.2.2:
     resolution: {integrity: sha512-KegPW0l9SNPadProoFT07AB84uOqLUwzlXQ7HsqkS31WUrxkjdhcemRpTDUuetbMJ89uBtWeQSVoiEmUAu31uw==}
+
+  itty-router@5.0.18:
+    resolution: {integrity: sha512-mK3ReOt4ARAGy0V0J7uHmArG2USN2x0zprZ+u+YgmeRjXTDbaowDy3kPcsmQY6tH+uHhDgpWit9Vqmv/4rTXwA==}
 
   jake@10.9.2:
     resolution: {integrity: sha512-2P4SQ0HrLQ+fw6llpLnOaGAvN2Zu6778SJMrCUwns4fOoG9ayrTiZk3VV8sCPkVZF8ab0zksVpS8FDY5pRCNBA==}
@@ -2756,6 +2775,8 @@ snapshots:
   isexe@2.0.0: {}
 
   itty-router@4.2.2: {}
+
+  itty-router@5.0.18: {}
 
   jake@10.9.2:
     dependencies:

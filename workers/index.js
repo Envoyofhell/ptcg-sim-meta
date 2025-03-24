@@ -1,15 +1,13 @@
 // workers/index.js
-// Main entry point for the Cloudflare Worker
 import { Router } from 'itty-router';
 import { handleApiRequests } from './api.js';
 import { GameRoom } from './game-room.js';
 
-// Create a router for handling HTTP requests
+// Create a router
 const router = Router();
 
 // API routes
 router.get('/api/importData', handleApiRequests);
-router.all('*', (request) => new Response('404 Not Found', { status: 404 }));
 
 // Main worker handlers
 export default {
@@ -17,18 +15,33 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
-    // Check if this is a WebSocket upgrade request
+    // Handle WebSocket upgrade requests
     if (request.headers.get('Upgrade') === 'websocket') {
       return handleWebSocket(request, env);
     }
     
-    // Handle API requests
+    // Handle API requests through the router
     if (url.pathname.startsWith('/api/')) {
-      return router.handle(request, env);
+      const response = await router.handle(request, env);
+      if (response) return response;
     }
     
-    // Otherwise serve static assets from Cloudflare Pages
-    return env.ASSETS.fetch(request);
+    // Serve static files from the site
+    try {
+      // Add a cache control header for static assets
+      const response = await env.ASSETS.fetch(request);
+      
+      // Return the response with cache control headers
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          ...Object.fromEntries(response.headers),
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    } catch (e) {
+      return new Response('Not found', { status: 404 });
+    }
   }
 };
 
