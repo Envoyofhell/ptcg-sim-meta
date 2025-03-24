@@ -1,11 +1,8 @@
-/* eslint-disable no-undef */
+// client/src/initialization/global-variables/global-variables.js
 import { preloadImage } from '../../setup/general/preload-image.js';
 import { getZone } from '../../setup/zones/get-zone.js';
+import { socket } from '../../websocket-client.js'; // Import WebSocket client
 
-// Define server URL based on environment or hostname
-import { socket } from '../../websocket-client.js'; // Import the WebSocket client
-
-// Other variables remain the same
 export const version = '1.5.1';
 
 // export references to HTML elements
@@ -14,7 +11,7 @@ export const selfContainerDocument = selfContainer.contentWindow.document;
 export const oppContainer = document.getElementById('oppContainer');
 export const oppContainerDocument = oppContainer.contentWindow.document;
 
-// Create globally accessible variable systemState
+// create globally accessible variable systemState
 export const systemState = {
   coachingMode: false,
   isUndoInProgress: false,
@@ -42,18 +39,23 @@ export const systemState = {
   selfDeckData: '',
   p1OppDeckData: '',
   p2OppDeckData: '',
+  // Update URLs to use the new domain
   cardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
   p1OppCardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
   p2OppCardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
 };
 
-// Update any other asset URLs to use the new domain
+// Export socket for use throughout the application
+export { socket };
+
+// Update preload image URL
 preloadImage('https://test.meta-ptcg.org/src/assets/ccb.png');
 
-document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://static0.gamerantimages.com/wordpress/wp-content/uploads/wm/2025/03/pokemon-legends-z-a-totodile-with-lumiose-bg.jpg')`;
+// Set background image
+document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://test.meta-ptcg.org/src/assets/background1.jpg')`;
 document.body.style.backgroundPosition = '-200px 0';
 
-// create global variable that holds the information of a selected card, i.e., the card that has been clicked and highlighted and can trigger keybinds
+// create global variable that holds the information of a selected card
 export const mouseClick = {
   cardIndex: '',
   zoneId: '',

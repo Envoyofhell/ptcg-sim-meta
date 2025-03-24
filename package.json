@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "deploy:production": "wrangler deploy --env production"
+    "deploy:production": "wrangler deploy --env production",
+    "build": "cp -r client/* ./",
+    "pages:deploy": "wrangler pages deploy client"
   },
   "dependencies": {
     "itty-router": "^4.0.23"
