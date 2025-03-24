@@ -1,5 +1,9 @@
+// workers/gamestate.js
 // Functions to manage game state in D1 database
 
+/**
+ * Stores game state in D1 database
+ */
 export async function storeGameState(env, key, data) {
     try {
       const stmt = env.DB.prepare('INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)').bind(key, data);
@@ -11,6 +15,9 @@ export async function storeGameState(env, key, data) {
     }
   }
   
+  /**
+   * Generates a random key of specified length
+   */
   export function generateRandomKey(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let key = '';

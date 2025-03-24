@@ -1,3 +1,9 @@
+// workers/api.js
+// API request handlers
+
+/**
+ * Handles API requests for game data
+ */
 export async function handleApiRequests(request, env) {
     const url = new URL(request.url);
     
@@ -27,10 +33,12 @@ export async function handleApiRequests(request, env) {
           });
         }
       } catch (error) {
-        return new Response(JSON.stringify({ error: 'Database error' }), {
+        return new Response(JSON.stringify({ error: 'Database error', details: error.message }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' }
         });
       }
     }
+    
+    return null;
   }

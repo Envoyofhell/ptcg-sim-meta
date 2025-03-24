@@ -1,45 +1,49 @@
 // workers/index.js
+// Main entry point for the Cloudflare Worker
 import { Router } from 'itty-router';
 import { handleApiRequests } from './api.js';
 import { GameRoom } from './game-room.js';
 
-// Create a router
+// Create a router for handling HTTP requests
 const router = Router();
 
 // API routes
 router.get('/api/importData', handleApiRequests);
+router.all('*', (request) => new Response('404 Not Found', { status: 404 }));
 
-// Main router handler
+// Main worker handlers
 export default {
+  // HTTP request handler
   async fetch(request, env, ctx) {
-    try {
-      // Try API routes first
-      const apiResponse = await router.handle(request, env);
-      if (apiResponse) return apiResponse;
-      
-      // If not an API route, serve static files from Pages
-      return env.ASSETS.fetch(request);
-    } catch (error) {
-      return new Response(`Error: ${error.message}`, { status: 500 });
+    const url = new URL(request.url);
+    
+    // Check if this is a WebSocket upgrade request
+    if (request.headers.get('Upgrade') === 'websocket') {
+      return handleWebSocket(request, env);
     }
-  },
-  // Durable Object binding for WebSocket connections
-  async websocket(message, env, context) {
-    // Route WebSocket messages to appropriate Durable Object instances
-    const url = new URL(context.request.url);
-    // Use existing room ID from URL params or generate a new one
-    const roomId = url.searchParams.get('roomId') || crypto.randomUUID();
     
-    // Get or create a Game Room Durable Object
-    const roomObject = env.GAME_ROOM.get(env.GAME_ROOM.idFromName(roomId));
+    // Handle API requests
+    if (url.pathname.startsWith('/api/')) {
+      return router.handle(request, env);
+    }
     
-    // Forward the message to the appropriate Durable Object
-    return roomObject.fetch(context.request.url, {
-      method: 'POST',
-      body: JSON.stringify(message)
-    });
+    // Otherwise serve static assets from Cloudflare Pages
+    return env.ASSETS.fetch(request);
   }
 };
 
-// Export Durable Object class
+// WebSocket connection handler
+async function handleWebSocket(request, env) {
+  const url = new URL(request.url);
+  const roomId = url.searchParams.get('roomId') || crypto.randomUUID();
+  
+  // Get Durable Object for this room
+  const id = env.GAME_ROOM.idFromName(roomId);
+  const room = env.GAME_ROOM.get(id);
+  
+  // Forward request to the Durable Object
+  return room.fetch(request);
+}
+
+// Export the Durable Object class
 export { GameRoom };

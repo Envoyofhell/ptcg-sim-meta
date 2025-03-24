@@ -1,16 +1,16 @@
 # wrangler.toml
 name = "ptcg-sim-meta"
 compatibility_date = "2025-03-24"
+main = "workers/index.js"
 
 [site]
 bucket = "./client"
-entry-point = "workers-site"
 
-# Make sure to use double brackets for an array
+# Test environment database (default)
 [[d1_databases]]
 binding = "DB"
 database_name = "ptcg-sim-meta-db-test"
-database_id = "YOUR_TEST_DATABASE_ID_HERE"
+database_id = "1b70b17d-fa48-4a36-8f02-3698604bdc7f"
 
 # Production environment configuration
 [env.production]
@@ -21,4 +21,4 @@ routes = [
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "ptcg-sim-meta-db"
-database_id = "YOUR_PRODUCTION_DATABASE_ID_HERE"
+database_id = "9da27bfc-4435-44b9-8229-79bc0933e432"

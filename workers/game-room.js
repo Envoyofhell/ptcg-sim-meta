@@ -1,6 +1,7 @@
+// workers/game-room.js
+// Durable Object for real-time game room management
 import { storeGameState, generateRandomKey } from './gamestate.js';
 
-// Durable Object to manage individual game rooms with WebSocket connections
 export class GameRoom {
   constructor(state, env) {
     this.state = state;
@@ -23,22 +24,18 @@ export class GameRoom {
   async fetch(request) {
     // Handle WebSocket connections
     if (request.headers.get('Upgrade') === 'websocket') {
+      // Create a WebSocket pair
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
       
+      // Set up the server's WebSocket handlers
       await this.handleSession(server);
       
+      // Return the client end of the WebSocket
       return new Response(null, {
         status: 101,
         webSocket: client
       });
-    }
-    
-    // Handle regular HTTP requests for commands
-    if (request.method === 'POST') {
-      const message = await request.json();
-      await this.handleCommand(message);
-      return new Response('OK');
     }
     
     return new Response('Not found', { status: 404 });
@@ -48,7 +45,7 @@ export class GameRoom {
     // Generate a unique session ID
     const sessionId = generateRandomKey(16);
     
-    // Set up event handlers for this WebSocket
+    // Accept the WebSocket connection
     webSocket.accept();
     
     // Store the WebSocket session
@@ -59,6 +56,7 @@ export class GameRoom {
       isSpectator: false
     });
     
+    // Set up message handler
     webSocket.addEventListener('message', async msg => {
       try {
         const data = JSON.parse(msg.data);
@@ -68,6 +66,7 @@ export class GameRoom {
       }
     });
     
+    // Set up close handler
     webSocket.addEventListener('close', () => {
       this.handleDisconnection(sessionId);
     });
@@ -77,7 +76,7 @@ export class GameRoom {
     const session = this.sessions.get(sessionId);
     if (!session) return;
     
-    // Handle various message types
+    // Handle message based on type
     switch (data.type) {
       case 'joinGame':
         await this.handleJoinGame(sessionId, data);
@@ -85,11 +84,13 @@ export class GameRoom {
       case 'storeGameState':
         await this.handleStoreGameState(sessionId, data);
         break;
-      // Handle all the other events like in your current socket.io implementation
-      // ...
+      case 'leaveRoom':
+        await this.handleLeaveRoom(sessionId, data);
+        break;
       default:
-        // Broadcast message to all other sessions
+        // Broadcast other message types to all clients
         this.broadcast(sessionId, data);
+        break;
     }
   }
   
@@ -133,6 +134,25 @@ export class GameRoom {
     }
   }
   
+  async handleLeaveRoom(sessionId, data) {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+    
+    // Handle player leaving
+    if (session.isPlayer && session.username) {
+      this.roomInfo.players.delete(session.username);
+      this.broadcast(sessionId, {
+        type: 'leaveRoom',
+        username: session.username
+      });
+    } else if (session.isSpectator && session.username) {
+      this.roomInfo.spectators.delete(session.username);
+    }
+    
+    // Save room state
+    await this.state.storage.put('roomInfo', this.roomInfo);
+  }
+  
   handleDisconnection(sessionId) {
     const session = this.sessions.get(sessionId);
     if (!session) return;
@@ -153,11 +173,6 @@ export class GameRoom {
     
     // Save room state
     this.state.storage.put('roomInfo', this.roomInfo);
-    
-    // Clean up empty rooms
-    if (this.roomInfo.players.size === 0 && this.roomInfo.spectators.size === 0) {
-      // No need to delete the Durable Object as Cloudflare will handle this
-    }
   }
   
   broadcast(excludeSessionId, message) {

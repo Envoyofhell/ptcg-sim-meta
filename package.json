@@ -1,23 +1,16 @@
 {
   "name": "ptcg-sim-meta",
-  "version": "1.5.1.1",
+  "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "start": "pnpm -C server start",
-    "lint": "eslint .",
-    "format": "prettier --write \"**/*.{js,json,md}\""
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:production": "wrangler deploy --env production"
+  },
+  "dependencies": {
+    "itty-router": "^4.0.23"
   },
   "devDependencies": {
-    "@eslint/js": "^9.20.0",
-    "eslint": "^9.20.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "globals": "^15.14.0",
-    "nodemon": "^3.1.9",
-    "prettier": "^3.2.5"
+    "wrangler": "^4.4.0"
   }
 }
