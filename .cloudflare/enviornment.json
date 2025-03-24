@@ -1,0 +1,35 @@
+{
+    "environments": {
+      "development": {
+        "vars": {
+          "DEBUG_MODE": "true",
+          "LOG_LEVEL": "debug",
+          "DEPLOYMENT_STAGE": "development"
+        },
+        "routes": [
+          {
+            "pattern": "dev.ptcg-sim-meta.pages.dev/*",
+            "zone_name": "ptcg-sim-meta.pages.dev"
+          }
+        ]
+      },
+      "production": {
+        "vars": {
+          "DEBUG_MODE": "false", 
+          "LOG_LEVEL": "info",
+          "DEPLOYMENT_STAGE": "production"
+        },
+        "routes": [
+          {
+            "pattern": "ptcg-sim-meta.pages.dev/*",
+            "zone_name": "ptcg-sim-meta.pages.dev"
+          }
+        ]
+      }
+    },
+    "secrets": [
+      "DATABASE_URL",
+      "SOCKET_SECRET",
+      "API_KEY"
+    ]
+  }

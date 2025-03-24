@@ -1,0 +1,21 @@
+# Strict peer dependencies
+strict-peer-dependencies=false
+
+# Save exact versions
+save-exact=true
+
+# Use node-linker for better performance
+node-linker=pnpm
+
+# Engine strict
+engine-strict=true
+
+# Default registry
+registry=https://registry.npmjs.org/
+
+# Prefer offline mode
+prefer-offline=true
+
+# Cache settings
+cache-dir=/home/circleci/.pnpm-store
+```

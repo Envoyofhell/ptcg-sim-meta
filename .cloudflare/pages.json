@@ -1,0 +1,44 @@
+{
+    "version": 1,
+    "framework": null,
+    "buildCommand": "node build.js",
+    "devCommand": "pnpm dev",
+    "installCommand": "pnpm install",
+    "environment": {
+      "NODE_VERSION": "18.x",
+      "NODE_ENV": "production"
+    },
+    "routes": [
+      {
+        "source": "/api/*",
+        "destination": "/api/index.js"
+      },
+      {
+        "source": "/socket.io/*", 
+        "destination": "/socket.io/index.js"
+      },
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          {
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          }
+        ]
+      }
+    ]
+  }
