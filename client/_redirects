@@ -2,10 +2,10 @@
 # This file controls URL redirects and rewrites
 
 # Redirect problematic worker files to stub versions
-/workers/src/utils/logging.js    /workers/src/utils/logging-stub.js    200
-/workers/src/utils/cors.js       /workers/src/utils/cors-stub.js       200
-/workers/src/utils/key-generator.js /workers/src/utils/key-generator-stub.js 200
-/workers/src/utils/error-handling.js /workers/src/utils/error-handling-stub.js 200
+/workers/src/utils/logging.js    /src/utils/logging-stub.js    200
+/workers/src/utils/cors.js       /src/utils/cors-stub.js       200
+/workers/src/utils/key-generator.js /src/utils/key-generator-stub.js 200
+/workers/src/utils/error-handling.js /src/utils/error-handling-stub.js 200
 /workers/src/db/client.js        /workers/src/db/client-stub.js        200
 /workers/src/db/game-state.js    /workers/src/db/game-state-stub.js    200
 /workers/src/api/game-state.js   /workers/src/api/game-state-stub.js   200
