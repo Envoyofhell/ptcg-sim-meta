@@ -1,40 +1,36 @@
-const esbuild = require('esbuild');
-const { parse } = require('path');
+import js from '@eslint/js';
+import prettier from 'eslint-config-prettier';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from 'globals';
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const isDebug = args.includes('--debug');
-
-esbuild
-  .build({
-    entryPoints: ['index.js'],
-    bundle: true,
-    outfile: 'dist/worker.js',
-    format: 'esm',
-    external: [
-      '@neondatabase/serverless', 
-      'itty-router', 
-      'zod'
-    ],
-    platform: 'browser',
-    target: 'es2020',
-    minify: !isDebug,
-    sourcemap: isDebug,
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(isDebug ? 'development' : 'production')
+export default [
+  js.configs.recommended,
+  prettier,
+  eslintPluginPrettierRecommended,
+  {
+    files: ['**/*.{js,jsx,mjs,cjs}'], // More explicit file matching
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+      },
     },
-    metafile: true,
-    loader: {
-      '.js': 'jsx',  // Support JSX in workers if needed
-    }
-  })
-  .then(result => {
-    // Optional: Log build details in debug mode
-    if (isDebug) {
-      console.log('Build metadata:', result.metafile);
-    }
-  })
-  .catch((error) => {
-    console.error('Build failed:', error);
-    process.exit(1);
-  });
+    rules: {
+      'no-unused-vars': 'warn',
+      'no-console': 'warn',
+      'prettier/prettier': [
+        'warn',
+        {
+          endOfLine: 'auto',
+          singleQuote: true,
+          trailingComma: 'es5',
+          printWidth: 100,
+          tabWidth: 2,
+        },
+      ],
+    },
+  },
+];
