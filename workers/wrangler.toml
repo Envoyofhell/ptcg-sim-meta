@@ -31,11 +31,11 @@ crons = [
 [env.dev]
 name = "ptcg-sim-meta-dev"
 workers_dev = true
-ENVIRONMENT = "development"
 
 # Development Environment Variables
 [env.dev.vars]
   # Application Configuration
+  ENVIRONMENT = "development"
   DEBUG_MODE = "true"
   LOG_LEVEL = "debug"
   WORKER_VERSION = "1.5.1"
@@ -76,11 +76,11 @@ ENVIRONMENT = "development"
 [env.production]
 name = "ptcg-sim-meta"
 workers_dev = false
-ENVIRONMENT = "production"
 
 # Production Environment Variables
 [env.production.vars]
   # Application Configuration
+  ENVIRONMENT = "production"
   DEBUG_MODE = "false"
   LOG_LEVEL = "info"
   WORKER_VERSION = "1.5.1"
