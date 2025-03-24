@@ -1,46 +1,45 @@
 # PTCG-Sim-Meta Cloudflare Pages Redirects Configuration
-# This file controls URL redirects and rewrites
+# Enhanced routing to handle various asset and module paths
 
-# Redirect problematic worker files to stub versions
-/workers/src/utils/logging.js    /src/utils/logging-stub.js    200
-/workers/src/utils/cors.js       /src/utils/cors-stub.js       200
-/workers/src/utils/key-generator.js /src/utils/key-generator-stub.js 200
-/workers/src/utils/error-handling.js /src/utils/error-handling-stub.js 200
-/workers/src/db/client.js        /workers/src/db/client-stub.js        200
-/workers/src/db/game-state.js    /workers/src/db/game-state-stub.js    200
-/workers/src/api/game-state.js   /workers/src/api/game-state-stub.js   200
-/workers/src/api/health.js       /workers/src/api/health-stub.js       200
+# Static Asset Routing
+/src/assets/*                 /src/assets/:splat                 200
+/src/css/*                    /src/css/:splat                    200
+/src/js/*                     /src/js/:splat                     200
 
-# Handle module path redirects
+# Module Path Redirects
 /src/config/*                 /src/config/:splat                 200
 /src/services/*               /src/services/:splat               200
-/js/metadata/*                /js/metadata/:splat                200
 /src/initialization/*         /src/initialization/:splat         200
+/src/setup/*                  /src/setup/:splat                  200
+/src/utils/*                  /src/utils/:splat                  200
+/src/actions/*                /src/actions/:splat                200
+
+# Specific Initialization Path Redirects
 /src/initialization/socket-event-listeners/*  /src/initialization/socket-event-listeners/:splat  200
 /src/initialization/global-variables/*        /src/initialization/global-variables/:splat        200
 /src/initialization/config/*                 /src/initialization/config/:splat                  200
 /src/initialization/document-event-listeners/* /src/initialization/document-event-listeners/:splat 200
 /src/initialization/load-import-data/*       /src/initialization/load-import-data/:splat       200
 /src/initialization/mutation-observers/*     /src/initialization/mutation-observers/:splat     200
-/src/setup/*                  /src/setup/:splat                  200
-/src/setup/general/*          /src/setup/general/:splat          200
-/src/utils/*                  /src/utils/:splat                  200
-/src/actions/*                /src/actions/:splat                200
-/src/actions/general/*        /src/actions/general/:splat        200
-/src/actions/keybinds/*       /src/actions/keybinds/:splat       200
 
-# Make sure static assets are accessible
-/src/assets/*                 /src/assets/:splat                 200
-/src/css/*                    /src/css/:splat                    200
+# Handling Specific File Types
+*.js                          /:path                            200
+*.mjs                         /:path                            200
+*.css                         /:path                            200
+*.json                        /:path                            200
 
-# Handle worker paths with explicit content types
+# Handle worker and external script paths
 /workers/src/utils/*          /workers/src/utils/:splat          200
 /workers/src/api/*            /workers/src/api/:splat            200
 /workers/src/db/*             /workers/src/db/:splat             200
 /workers/dist/*               /workers/dist/:splat               200
 
-# Create empty module fallback
-/empty.js                     /empty.js                          200
+# External Library Handling
+/cdn/*                        /cdn/:splat                        200
 
-# SPA fallback - direct all other routes to index.html
+# Health Check and API Endpoints
+/health                       /health                            200
+/api/*                        /api/:splat                        200
+
+# SPA Fallback - MUST BE THE LAST RULE
 /*                            /index.html                        200
