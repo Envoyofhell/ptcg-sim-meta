@@ -1,6 +1,6 @@
 /**
  * Simplified PTCG-Sim-Meta Worker
- * This version focuses on correctly serving HTML content
+ * This version correctly handles content types and SPA routing
  */
 
 // CORS headers for cross-origin requests
@@ -81,15 +81,17 @@ export default {
       // Determine content type based on path
       const contentType = getContentType(path);
       
-      // Fetch the requested resource
+      // Forward the request to the original destination
       let response;
       try {
+        // Simply pass through the request
         response = await fetch(request);
         
-        // If response wasn't successful, try fetching index.html for SPA routing
+        // If response wasn't successful, try serving index.html for SPA routing
         if (!response.ok && (path !== '/' && !path.endsWith('.html'))) {
-          // For SPA routing, serve index.html for non-file routes
-          const indexRequest = new Request(new URL('/', url), request);
+          // Create request for index.html
+          const indexUrl = new URL('/', url);
+          const indexRequest = new Request(indexUrl, request);
           response = await fetch(indexRequest);
         }
       } catch (error) {
@@ -103,7 +105,7 @@ export default {
         });
       }
       
-      // If we got a response, ensure it has the correct content type
+      // If we got a response, return it with correct content type
       if (response) {
         const body = await response.text();
         

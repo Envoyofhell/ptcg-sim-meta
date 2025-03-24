@@ -1,64 +1,38 @@
 {
-  "name": "ptcg-sim-meta",
+  "name": "ptcg-sim-meta-workers",
   "version": "1.5.1",
-  "description": "Pokémon Trading Card Game Simulator with Enhanced Meta Features",
-  "private": true,
+  "description": "Cloudflare Workers for PTCG-Sim-Meta",
+  "main": "dist/worker.js",
+  "type": "module",
   "packageManager": "pnpm@9.10.0",
+  "scripts": {
+    "prebuild": "node -e \"import('fs').then(fs => fs.promises.mkdir('dist', { recursive: true }));\"",
+    "build": "node esbuild.config.js",
+    "build:debug": "node esbuild.config.js --debug",
+    "dev": "wrangler dev --env dev",
+    "dev:debug": "wrangler dev --env dev --inspect",
+    "predeploy": "pnpm run build",
+    "deploy": "wrangler deploy",
+    "deploy:dev": "wrangler deploy --env dev",
+    "deploy:prod": "wrangler deploy --env production"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "ptcg",
+    "pokemon"
+  ],
+  "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
   },
-  "workspaces": [
-    "client",
-    "server", 
-    "workers"
-  ],
-  "scripts": {
-    "prepare": "husky",
-    "preinstall": "npx only-allow pnpm",
-    "postinstall": "husky",
-    
-    "dev": "pnpm --parallel --stream dev",
-    "dev:client": "pnpm -C client dev",
-    "dev:server": "pnpm -C server dev",
-    "dev:workers": "pnpm -C workers dev",
-    
-    "build": "pnpm --parallel build",
-    "build:client": "pnpm -C client build",
-    "build:server": "pnpm -C server build",
-    "build:workers": "pnpm -C workers build",
-    
-    "start": "pnpm --parallel start",
-    "start:client": "pnpm -C client start",
-    "start:server": "pnpm -C server start",
-    "start:workers": "pnpm -C workers start",
-    
-    "test": "pnpm --parallel test",
-    "test:client": "pnpm -C client test",
-    "test:server": "pnpm -C server test",
-    "test:workers": "pnpm -C workers test",
-    
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    
-    "deploy": "node deploy.js",
-    "deploy:dev": "node deploy.js dev",
-    "deploy:prod": "node deploy.js production"
+  "dependencies": {
+    "@neondatabase/serverless": "^0.8.1",
+    "itty-router": "^4.0.27",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.23.0",
-    "eslint": "^9.23.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.4",
-    "husky": "^9.1.7",
-    "prettier": "^3.5.3",
-    "only-allow": "^1.2.1"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pnpm lint && pnpm format:check"
-    }
-  },
-  "license": "MIT"
+    "esbuild": "^0.25.1",
+    "wrangler": "^3.114.2"
+  }
 }
