@@ -1,24 +1,50 @@
 {
   "name": "ptcg-sim-meta",
   "version": "1.5.1",
+  "description": "Pokémon Trading Card Game Simulator with Enhanced Meta Features",
+  "private": true,
   "packageManager": "pnpm@9.10.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "client",
+    "server", 
+    "workers"
+  ],
   "scripts": {
-    "build": "node build.js",
-    "build:client": "pnpm -C client build",
-    "build:workers": "pnpm -C workers build",
-    "build:server": "pnpm -C server build",
-    "dev": "pnpm -C client dev & pnpm -C workers dev & pnpm -C server start",
+    "prepare": "husky",
+    "preinstall": "npx only-allow pnpm",
+    "postinstall": "husky",
+    
+    "dev": "pnpm --parallel --stream dev",
     "dev:client": "pnpm -C client dev",
+    "dev:server": "pnpm -C server dev",
     "dev:workers": "pnpm -C workers dev",
-    "dev:server": "pnpm -C server start",
-    "deploy": "node deploy.js",
-    "deploy:dev": "node deploy.js dev",
-    "deploy:production": "node deploy.js production",
+    
+    "build": "pnpm --parallel build",
+    "build:client": "pnpm -C client build",
+    "build:server": "pnpm -C server build",
+    "build:workers": "pnpm -C workers build",
+    
+    "start": "pnpm --parallel start",
+    "start:client": "pnpm -C client start",
+    "start:server": "pnpm -C server start",
+    "start:workers": "pnpm -C workers start",
+    
+    "test": "pnpm --parallel test",
+    "test:client": "pnpm -C client test",
+    "test:server": "pnpm -C server test",
+    "test:workers": "pnpm -C workers test",
+    
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "prepare": "husky install"
+    
+    "deploy": "node deploy.js",
+    "deploy:dev": "node deploy.js dev",
+    "deploy:prod": "node deploy.js production"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
@@ -26,10 +52,13 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.4",
     "husky": "^9.1.7",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "only-allow": "^1.2.1"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "husky": {
+    "hooks": {
+      "pre-commit": "pnpm lint && pnpm format:check"
+    }
   },
-  "private": true
+  "license": "MIT"
 }
