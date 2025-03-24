@@ -2,13 +2,9 @@
  * PTCG-Sim-Meta Worker Entry Point
  * 
  * This is the main entry file for the Cloudflare Worker that handles
- * API requests and ensures proper MIME types for static files.
+ * API requests, Socket.IO connections, and ensures proper MIME types for static files.
  * 
- * Enhanced with:
- * - Better error handling and reporting
- * - Improved module path resolution
- * - Proper MIME type handling
- * - Detailed logging
+ * File: workers/index.js
  */
 
 import { Router } from 'itty-router';
@@ -19,6 +15,7 @@ import { errorResponse } from './src/utils/error-handling.js';
 // Import API handlers
 import * as gameStateApi from './src/api/game-state.js';
 import * as healthApi from './src/api/health.js';
+import * as socketIoHandler from './src/socket/socket-handler.js';
 
 /**
  * Create a new router instance for handling API routes
@@ -42,14 +39,23 @@ router.post('/api/storeGameState', gameStateApi.storeGameState);
 router.delete('/api/gameState/:key', gameStateApi.deleteGameState);
 router.get('/api/stats', gameStateApi.getStats);
 
+// Socket.IO emulation endpoints
+router.get('/socket.io/', socketIoHandler.handleSocketHandshake);
+router.post('/socket.io/', socketIoHandler.handleSocketPolling);
+router.get('/socket.io/:id', socketIoHandler.handleSocketPolling);
+
 // Debug route - helps to check if the worker is serving JS files correctly
 router.get('/api/debug', (request) => {
+  const timestamp = new Date().toISOString();
+  
   return new Response(
     JSON.stringify({
       success: true,
       message: 'Worker is running correctly',
-      timestamp: new Date().toISOString(),
-      environment: request.env.ENVIRONMENT || 'production',
+      timestamp,
+      environment: request.env?.ENVIRONMENT || 'production',
+      version: request.env?.WORKER_VERSION || '1.5.1',
+      buildTimestamp: request.env?.BUILD_TIMESTAMP || timestamp,
       headers: Object.fromEntries([...request.headers.entries()])
     }),
     { 
@@ -74,29 +80,36 @@ router.all('/api/*', () => {
  * @returns {string} Content type
  */
 function getContentType(path) {
-  if (path.endsWith('.js') || path.includes('.module.js') || path.endsWith('.mjs')) {
-    return 'application/javascript; charset=utf-8';
-  } else if (path.endsWith('.css')) {
-    return 'text/css; charset=utf-8';
-  } else if (path.endsWith('.json') || path.endsWith('.map')) {
-    return 'application/json; charset=utf-8';
-  } else if (path.endsWith('.svg')) {
-    return 'image/svg+xml';
-  } else if (path.endsWith('.webmanifest')) {
-    return 'application/manifest+json';
-  } else if (path.endsWith('.wasm')) {
-    return 'application/wasm';
-  } else if (path.endsWith('.woff2')) {
-    return 'font/woff2';
-  } else if (path.endsWith('.woff')) {
-    return 'font/woff';
-  } else if (path.endsWith('.ttf')) {
-    return 'font/ttf';
-  } else if (path.endsWith('.html')) {
-    return 'text/html; charset=utf-8';
-  } else {
-    return 'application/octet-stream';
+  const extensionMap = {
+    '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.map': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.webmanifest': 'application/manifest+json',
+    '.wasm': 'application/wasm',
+    '.woff2': 'font/woff2',
+    '.woff': 'font/woff',
+    '.ttf': 'font/ttf',
+    '.html': 'text/html; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.ico': 'image/x-icon'
+  };
+  
+  // Check if path ends with one of the extensions
+  for (const [extension, contentType] of Object.entries(extensionMap)) {
+    if (path.endsWith(extension)) {
+      return contentType;
+    }
   }
+  
+  // Default content type
+  return 'application/octet-stream';
 }
 
 /**
@@ -119,6 +132,65 @@ function isCriticalJsFile(pathname) {
   ];
   
   return criticalPaths.includes(pathname);
+}
+
+/**
+ * Create stub module content
+ * 
+ * @param {string} moduleName - Module name
+ * @returns {string} Module content
+ */
+function createStubModule(moduleName) {
+  switch (moduleName) {
+    case 'logging':
+      return `
+// Stub logging module
+export const log = (message, level = 'info', context = '') => console[level](\`[\${level.toUpperCase()}]\${context ? \` [\${context}]\` : ''} \${message}\`);
+export const logger = { debug: (m, c) => log(m, 'debug', c), info: (m, c) => log(m, 'info', c), warn: (m, c) => log(m, 'warn', c), error: (m, c) => log(m, 'error', c) };
+export default log;`;
+    
+    case 'cors':
+      return `
+// Stub CORS module
+export const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
+export const handleOptions = () => new Response(null, { status: 204, headers: corsHeaders });
+export default { corsHeaders, handleOptions };`;
+    
+    case 'key-generator':
+      return `
+// Stub key generator module
+export const generateRandomKey = (length = 4) => Array.from({ length }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]).join('');
+export const isValidKey = (key) => typeof key === 'string' && /^[a-zA-Z0-9]+$/.test(key);
+export default { generateRandomKey, isValidKey };`;
+    
+    case 'error-handling':
+      return `
+// Stub error handling module
+export const errorResponse = (status, message, details = {}) => new Response(JSON.stringify({ success: false, error: message, ...details }), { status, headers: { 'Content-Type': 'application/json' } });
+export default { errorResponse };`;
+    
+    default:
+      return `
+// Stub module
+export default {};`;
+  }
+}
+
+/**
+ * Run maintenance tasks periodically
+ * 
+ * @param {Object} env - Worker environment variables
+ */
+async function runMaintenance(env) {
+  try {
+    // Clean up inactive socket connections
+    socketIoHandler.cleanupInactiveConnections();
+    
+    // Log the maintenance run
+    logger.info('Scheduled maintenance completed', 'maintenance');
+  } catch (error) {
+    logger.error(`Error during maintenance: ${error.message}`, 'maintenance');
+  }
 }
 
 /**
@@ -154,8 +226,16 @@ export default {
       // -------------------------------------------------------------------------
       
       // For API requests, use the router
-      if (url.pathname.startsWith('/api/') || url.pathname === '/health') {
+      if (url.pathname.startsWith('/api/') || 
+          url.pathname === '/health' || 
+          url.pathname.startsWith('/socket.io')) {
         logger.debug(`Handling API request: ${url.pathname}`, 'router');
+        
+        // Check if Socket.IO is enabled for socket.io paths
+        if (url.pathname.startsWith('/socket.io') && 
+            env.SOCKET_ENABLED !== 'true') {
+          return errorResponse(503, 'Socket.IO is currently disabled');
+        }
         
         const response = await router.handle(request);
         
@@ -175,49 +255,34 @@ export default {
       if (isCriticalJsFile(url.pathname)) {
         logger.debug(`Handling critical JS file: ${url.pathname}`, 'router');
         
-        // Add specific debugging for logging.js
-        if (url.pathname === '/workers/src/utils/logging.js') {
-          logger.debug('Handling logging.js request', 'router');
-          
-          // For debugging purposes, return the actual code to verify it's working
-          return new Response(
-            `// Logging module
-const logger = {
-  debug: (message) => console.debug('[DEBUG]', message),
-  info: (message) => console.info('[INFO]', message),
-  warn: (message) => console.warn('[WARNING]', message),
-  error: (message) => console.error('[ERROR]', message)
-};
-
-export { logger };
-export default logger;
-`,
-            {
-              status: 200,
-              headers: {
-                'Content-Type': 'application/javascript; charset=utf-8',
-                ...corsHeaders
-              }
+        // Extract module name from path
+        const moduleName = url.pathname.split('/').pop().replace('.js', '');
+        
+        // Return stub content
+        return new Response(
+          createStubModule(moduleName),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/javascript; charset=utf-8',
+              ...corsHeaders
             }
-          );
-        }
+          }
+        );
       }
       
-      // For JavaScript files, ensure correct MIME type
-      if (
-        url.pathname.endsWith('.js') || 
-        url.pathname.endsWith('.mjs') ||
-        url.pathname.includes('.module.js')
-      ) {
+      // For files with extensions, ensure correct MIME type
+      const contentType = getContentType(url.pathname);
+      if (contentType !== 'application/octet-stream') {
         try {
-          logger.debug(`Handling JavaScript file: ${url.pathname}`, 'router');
+          logger.debug(`Handling file with content type: ${contentType}`, 'router');
           
           // Fetch the original resource
           const originalResponse = await fetch(request);
           
           // Check if the response was successful
           if (!originalResponse.ok) {
-            logger.warn(`Failed to fetch JavaScript file: ${url.pathname} (${originalResponse.status})`, 'router');
+            logger.warn(`Failed to fetch file: ${url.pathname} (${originalResponse.status})`, 'router');
             return originalResponse; // Pass through error responses
           }
           
@@ -227,64 +292,12 @@ export default logger;
             statusText: originalResponse.statusText,
             headers: {
               ...Object.fromEntries([...originalResponse.headers.entries()]),
-              'Content-Type': 'application/javascript; charset=utf-8',
+              'Content-Type': contentType,
               ...corsHeaders
             }
           });
         } catch (error) {
-          logger.error(`Error handling JavaScript file: ${error.message}`, 'router');
-          return fetch(request); // Fallback to original request
-        }
-      }
-      
-      // For CSS files, ensure correct MIME type
-      if (url.pathname.endsWith('.css')) {
-        try {
-          logger.debug(`Handling CSS file: ${url.pathname}`, 'router');
-          
-          const originalResponse = await fetch(request);
-          
-          if (!originalResponse.ok) {
-            return originalResponse;
-          }
-          
-          return new Response(originalResponse.body, {
-            status: originalResponse.status,
-            statusText: originalResponse.statusText,
-            headers: {
-              ...Object.fromEntries([...originalResponse.headers.entries()]),
-              'Content-Type': 'text/css; charset=utf-8',
-              ...corsHeaders
-            }
-          });
-        } catch (error) {
-          logger.error(`Error handling CSS file: ${error.message}`, 'router');
-          return fetch(request); // Fallback to original request
-        }
-      }
-      
-      // For JSON and map files, ensure correct MIME type
-      if (url.pathname.endsWith('.json') || url.pathname.endsWith('.map')) {
-        try {
-          logger.debug(`Handling JSON/map file: ${url.pathname}`, 'router');
-          
-          const originalResponse = await fetch(request);
-          
-          if (!originalResponse.ok) {
-            return originalResponse;
-          }
-          
-          return new Response(originalResponse.body, {
-            status: originalResponse.status,
-            statusText: originalResponse.statusText,
-            headers: {
-              ...Object.fromEntries([...originalResponse.headers.entries()]),
-              'Content-Type': 'application/json; charset=utf-8',
-              ...corsHeaders
-            }
-          });
-        } catch (error) {
-          logger.error(`Error handling JSON file: ${error.message}`, 'router');
+          logger.error(`Error handling file: ${error.message}`, 'router');
           return fetch(request); // Fallback to original request
         }
       }
@@ -293,34 +306,8 @@ export default logger;
       // PART 3: PASS-THROUGH FOR OTHER REQUESTS
       // -------------------------------------------------------------------------
       
-      // For all other requests, add appropriate content type and pass through
-      try {
-        logger.debug(`Pass-through request: ${url.pathname}`, 'router');
-        
-        const originalResponse = await fetch(request);
-        
-        // If response is not successful, just pass it through
-        if (!originalResponse.ok) {
-          return originalResponse;
-        }
-        
-        // Determine content type based on path
-        const contentType = getContentType(url.pathname);
-        
-        // Create a new response with the appropriate content type
-        return new Response(originalResponse.body, {
-          status: originalResponse.status,
-          statusText: originalResponse.statusText,
-          headers: {
-            ...Object.fromEntries([...originalResponse.headers.entries()]),
-            'Content-Type': contentType,
-            ...corsHeaders
-          }
-        });
-      } catch (error) {
-        logger.error(`Error in pass-through request: ${error.message}`, 'router');
-        return fetch(request); // Fallback to original request
-      }
+      // For all other requests, pass through
+      return fetch(request);
       
     } catch (error) {
       // -------------------------------------------------------------------------
@@ -350,5 +337,19 @@ export default logger;
         }
       );
     }
+  },
+  
+  /**
+   * Scheduled handler for maintenance tasks
+   * 
+   * @param {Object} event - Scheduled event
+   * @param {Object} env - Environment variables and bindings
+   * @param {Object} ctx - Execution context
+   */
+  async scheduled(event, env, ctx) {
+    logger.info(`Running scheduled maintenance (${event.scheduledTime})`, 'maintenance');
+    
+    // Use waitUntil to keep the worker running until maintenance completes
+    ctx.waitUntil(runMaintenance(env));
   }
 };

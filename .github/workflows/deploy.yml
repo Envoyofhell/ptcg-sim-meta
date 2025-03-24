@@ -1,0 +1,168 @@
+name: Build and Deploy PTCG-Sim-Meta
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.10.0
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint code
+        run: pnpm lint
+
+      - name: Build application
+        run: node build.js
+        env:
+          NODE_ENV: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' && 'development' || 'production' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.10.0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy to Cloudflare Pages
+        run: |
+          # Determine environment from event
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            DEPLOY_ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            DEPLOY_ENV="production"
+          else
+            DEPLOY_ENV="dev"
+          fi
+
+          # Deploy Pages
+          wrangler pages deploy dist/client --project-name=ptcg-sim-meta-${DEPLOY_ENV} \
+            --commit-hash=${{ github.sha }} \
+            --commit-message="${{ github.event.head_commit.message || 'Manual deployment' }}" \
+            --branch=$([ "${DEPLOY_ENV}" = "production" ] && echo "main" || echo "dev")
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy to Cloudflare Workers
+        run: |
+          # Determine environment from event
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            DEPLOY_ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            DEPLOY_ENV="production"
+          else
+            DEPLOY_ENV="dev"
+          fi
+
+          # Copy wrangler.toml to dist/workers
+          cp workers/wrangler.toml dist/workers/
+
+          # Deploy Worker
+          cd dist/workers
+          wrangler deploy --env ${DEPLOY_ENV}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  cleanup-old-deployments:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Cleanup old deployments
+        run: |
+          # Determine environment from event
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            DEPLOY_ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            DEPLOY_ENV="production"
+          else
+            DEPLOY_ENV="dev"
+          fi
+
+          # List deployments and keep only the latest 5
+          DEPLOYMENTS=$(wrangler pages deployment list --project-name=ptcg-sim-meta-${DEPLOY_ENV} --format=json)
+          DEPLOYMENT_COUNT=$(echo "$DEPLOYMENTS" | jq length)
+
+          if [ $DEPLOYMENT_COUNT -gt 5 ]; then
+            echo "Cleaning up old deployments, keeping only the latest 5"
+            # Get IDs of deployments to delete (all except the latest 5)
+            DELETE_IDS=$(echo "$DEPLOYMENTS" | jq '.[5:] | .[].id')
+            
+            # Delete old deployments
+            for ID in $DELETE_IDS; do
+              echo "Deleting deployment $ID"
+              wrangler pages deployment delete $ID --project-name=ptcg-sim-meta-${DEPLOY_ENV}
+            done
+          else
+            echo "Only $DEPLOYMENT_COUNT deployments found, no cleanup needed"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

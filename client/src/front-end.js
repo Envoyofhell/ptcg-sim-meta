@@ -5,10 +5,25 @@
  * It properly initializes the system state and all required components
  * in the correct order to prevent circular dependencies.
  * 
+ * File: client/src/front-end.js
  * Version: 1.5.1.1
  */
 
-// IMPORTANT: Initialize placeholders for global state to prevent errors
+// Import configuration
+import { CONFIG, ENV, currentEnv } from './config/env-config.js';
+
+// Import utilities and services
+import { log } from './utils/logging.js';
+import { socketService } from './services/socket-service.js';
+
+// Import initialization modules
+import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
+import { loadImportData } from './initialization/load-import-data/load-import-data.js';
+import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
+import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
+import * as globalVars from './initialization/global-variables/global-variables.js';
+
+// Define global state objects
 let systemState = null;
 let socket = null;
 let mouseClick = null;
@@ -19,7 +34,8 @@ let mouseClick = null;
  */
 function ensureStateInitialization() {
   if (!systemState) {
-    console.warn('[Initialization] Creating default system state - this should not happen normally');
+    log('Creating default system state - this should not happen normally', 'warn', 'init');
+    
     systemState = {
       version: '1.5.1.1',
       isTwoPlayer: false,
@@ -58,21 +74,19 @@ function ensureStateInitialization() {
     };
   }
   
-  console.log('[App] System state initialized');
+  log('System state initialized', 'info', 'init');
 }
 
-// Now we can safely import dependencies
-import { socketService } from './services/socket-service.js';
-import { initializeDOMEventListeners } from './initialization/document-event-listeners/initialize-document-event-listeners.js';
-import { loadImportData } from './initialization/load-import-data/load-import-data.js';
-import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
-import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
-import * as globalVars from './initialization/global-variables/global-variables.js';
-
-// Initialize system state and other core components
+/**
+ * Initialize system state and other core components
+ */
 function initializeApp() {
   try {
-    console.log('[App] Starting initialization...');
+    log('Starting initialization...', 'info', 'app');
+    
+    // Log environment information
+    log(`Environment: ${currentEnv === ENV.PRODUCTION ? 'Production' : 
+         currentEnv === ENV.DEVELOPMENT ? 'Development' : 'Local'}`, 'info', 'app');
     
     // Initialize system state from global variables
     systemState = globalVars.systemState || {};
@@ -82,7 +96,9 @@ function initializeApp() {
     
     // Set up socket connection
     socket = socketService;
-    socket.initialize();
+    socket.initialize().catch(error => {
+      log(`Socket initialization error: ${error.message}`, 'error', 'app');
+    });
     
     // Ensure state has all required properties
     ensureStateInitialization();
@@ -95,24 +111,18 @@ function initializeApp() {
     // Load any imported data
     loadImportData();
     
-    console.log('[App] Initialization complete');
+    log('Initialization complete', 'info', 'app');
     
     // Update UI connection status
     updateConnectionStatusUI();
     
     // Set up debug tools in development mode
-    if (window.location.hostname.includes('localhost') || 
-        window.location.hostname.includes('dev') || 
-        window.location.search.includes('debug=true')) {
-      window.__ptcg_debug = {
-        getState: () => systemState,
-        getSocket: () => socket,
-        resetState: ensureStateInitialization,
-        diagnostics: () => socket.getDiagnostics()
-      };
+    if (ENV.get('FEATURES.DEBUG_TOOLS', false)) {
+      setupDebugTools();
     }
   } catch (error) {
-    console.error('[App] Initialization failed:', error);
+    log(`Initialization failed: ${error.message}`, 'error', 'app');
+    console.error('Stack trace:', error.stack);
     
     // Attempt recovery by ensuring state
     ensureStateInitialization();
@@ -120,7 +130,25 @@ function initializeApp() {
   }
 }
 
-// Display connection status in UI
+/**
+ * Set up debug tools for development environments
+ */
+function setupDebugTools() {
+  window.__ptcg_debug = {
+    getState: () => systemState,
+    getSocket: () => socket,
+    resetState: ensureStateInitialization,
+    diagnostics: () => socket.getDiagnostics(),
+    env: currentEnv,
+    log: log
+  };
+  
+  log('Debug tools initialized', 'debug', 'app');
+}
+
+/**
+ * Update connection status UI
+ */
 function updateConnectionStatusUI() {
   if (!socket) return;
   
@@ -161,7 +189,10 @@ function updateConnectionStatusUI() {
   }
 }
 
-// Display error notification
+/**
+ * Display error notification to the user
+ * @param {string} message - Error message to display
+ */
 function displayErrorNotification(message) {
   let notification = document.getElementById('error-notification');
   
@@ -189,11 +220,32 @@ function displayErrorNotification(message) {
   }, 10000);
 }
 
+/**
+ * Register global error handlers
+ */
+function registerErrorHandlers() {
+  // Handle uncaught exceptions
+  window.addEventListener('error', (event) => {
+    log(`Uncaught error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`, 'error', 'app');
+    displayErrorNotification(`An error occurred: ${event.message}`);
+  });
+  
+  // Handle unhandled promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    log(`Unhandled promise rejection: ${event.reason}`, 'error', 'app');
+    displayErrorNotification('An error occurred in background processing');
+  });
+}
+
 // Start initialization when DOM is loaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
+  document.addEventListener('DOMContentLoaded', () => {
+    registerErrorHandlers();
+    initializeApp();
+  });
 } else {
   // DOM already loaded, initialize immediately
+  registerErrorHandlers();
   initializeApp();
 }
 

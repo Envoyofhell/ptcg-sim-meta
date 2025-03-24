@@ -1,5 +1,15 @@
-# Redirect only the problematic logging.js file to empty stub
-/workers/src/utils/logging.js    /empty.js    200
+# PTCG-Sim-Meta Cloudflare Pages Redirects Configuration
+# This file controls URL redirects and rewrites
+
+# Redirect problematic worker files to stub versions
+/workers/src/utils/logging.js    /workers/src/utils/logging-stub.js    200
+/workers/src/utils/cors.js       /workers/src/utils/cors-stub.js       200
+/workers/src/utils/key-generator.js /workers/src/utils/key-generator-stub.js 200
+/workers/src/utils/error-handling.js /workers/src/utils/error-handling-stub.js 200
+/workers/src/db/client.js        /workers/src/db/client-stub.js        200
+/workers/src/db/game-state.js    /workers/src/db/game-state-stub.js    200
+/workers/src/api/game-state.js   /workers/src/api/game-state-stub.js   200
+/workers/src/api/health.js       /workers/src/api/health-stub.js       200
 
 # Handle module path redirects
 /src/config/*                 /src/config/:splat                 200
@@ -19,8 +29,18 @@
 /src/actions/general/*        /src/actions/general/:splat        200
 /src/actions/keybinds/*       /src/actions/keybinds/:splat       200
 
+# Make sure static assets are accessible
+/src/assets/*                 /src/assets/:splat                 200
+/src/css/*                    /src/css/:splat                    200
+
+# Handle worker paths with explicit content types
+/workers/src/utils/*          /workers/src/utils/:splat          200
+/workers/src/api/*            /workers/src/api/:splat            200
+/workers/src/db/*             /workers/src/db/:splat             200
+/workers/dist/*               /workers/dist/:splat               200
+
+# Create empty module fallback
+/empty.js                     /empty.js                          200
+
 # SPA fallback - direct all other routes to index.html
 /*                            /index.html                        200
-
-# Explicit redirect for logging.js
-/workers/src/utils/logging.js    /logging.js    200

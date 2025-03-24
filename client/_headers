@@ -1,14 +1,60 @@
+# PTCG-Sim-Meta Cloudflare Pages Headers Configuration
+# This file controls HTTP headers for static files and paths
+
+# Global headers for all files
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self' *.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.socket.io https://ptcg-sim-meta.jasonh1993.workers.dev https://ptcg-sim-meta-dev.jasonh1993.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: https: ws:; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'self'; worker-src 'self' blob:;
+
+# Set correct MIME types for JavaScript files
+*.js
+  Content-Type: application/javascript; charset=utf-8
+
+# Set correct MIME types for JavaScript module files
+*.mjs
+  Content-Type: application/javascript; charset=utf-8
+
+# Set correct MIME types for CSS files
+*.css
+  Content-Type: text/css; charset=utf-8
+
+# Set correct MIME types for JSON files
+*.json
+  Content-Type: application/json; charset=utf-8
+
 # Handle exact path matches for worker resources first to prevent SPA fallback
-/workers/src/utils/logging.js    /workers/src/utils/logging.js    200
-/workers/src/utils/cors.js       /workers/src/utils/cors.js       200
-/workers/src/utils/key-generator.js /workers/src/utils/key-generator.js 200
-/workers/src/utils/error-handling.js /workers/src/utils/error-handling.js 200
-/workers/src/db/client.js        /workers/src/db/client.js        200
-/workers/src/db/game-state.js    /workers/src/db/game-state.js    200
-/workers/src/api/game-state.js   /workers/src/api/game-state.js   200
-/workers/src/api/health.js       /workers/src/api/health.js       200
-/workers/dist/worker.js          /workers/dist/worker.js          200
-/workers/dist/worker.js.map      /workers/dist/worker.js.map      200
+/workers/src/utils/logging.js    
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/utils/cors.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/utils/key-generator.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/utils/error-handling.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/db/client.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/db/game-state.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/api/game-state.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/src/api/health.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/dist/worker.js
+  Content-Type: application/javascript; charset=utf-8
+
+/workers/dist/worker.js.map
+  Content-Type: application/json; charset=utf-8
 
 # Handle module path redirects
 /src/config/*                 /src/config/:splat                 200

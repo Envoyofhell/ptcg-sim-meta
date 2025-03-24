@@ -1,4 +1,11 @@
-// New client/src/services/socket-service.js
+/**
+ * Enhanced Socket.IO Service for PTCG-Sim-Meta
+ * 
+ * This service handles the Socket.IO connection with better error handling,
+ * reconnection logic, and offline mode support.
+ * 
+ * File: client/src/services/socket-service.js
+ */
 import { log } from '../utils/logging.js';
 
 class SocketService {
@@ -12,24 +19,31 @@ class SocketService {
     this.eventHandlers = new Map();
     this.pendingEmits = [];
     
-    this.lastConnectedTime = null;
+    // Metrics for debugging
     this.connectionMetrics = {
       connectCount: 0,
       disconnectCount: 0,
       errorCount: 0,
-      lastErrorMessage: null
+      lastErrorMessage: null,
+      lastConnectedTime: null
     };
+    
+    // Debug log storage
     this.debugLog = [];
     this.debugLogMaxSize = 100;
   }
 
+  /**
+   * Initialize the Socket.IO connection
+   * @returns {Object} Socket.IO connection or offline fallback
+   */
   async initialize() {
     try {
-      log('Initializing Socket.IO connection...', 'info');
+      log('Initializing Socket.IO connection...', 'info', 'socket');
       
       // Detect environment and choose appropriate socket URL
       const socketUrl = this.determineSocketUrl();
-      log(`Using Socket.IO URL: ${socketUrl}`, 'debug');
+      log(`Using Socket.IO URL: ${socketUrl}`, 'debug', 'socket');
       
       // Connection options with increased timeout and reliability settings
       const options = {
@@ -39,13 +53,19 @@ class SocketService {
         timeout: 15000, // Increased timeout 
         transports: ['polling', 'websocket'],
         forceNew: true,
-        autoConnect: true
+        autoConnect: true,
+        query: {
+          version: '1.5.1',
+          client: 'web',
+          timestamp: Date.now()
+        }
       };
       
       // Check if io is available
       if (typeof io === 'undefined') {
+        log('Socket.IO library not available', 'error', 'socket');
         this.switchToOfflineMode('Socket.IO library not available');
-        return;
+        return this.createOfflineModeSocket();
       }
       
       // Create socket with error handling
@@ -57,19 +77,22 @@ class SocketService {
       // Set a connection timeout
       this.connectionTimeout = setTimeout(() => {
         if (!this.connected) {
-          log('Socket.IO connection timeout', 'error');
+          log('Socket.IO connection timeout', 'error', 'socket');
           this.switchToOfflineMode('Connection timeout');
         }
       }, 20000);
       
       return this.socket;
     } catch (error) {
-      log(`Error initializing Socket.IO: ${error.message}`, 'error');
+      log(`Error initializing Socket.IO: ${error.message}`, 'error', 'socket');
       this.switchToOfflineMode(error.message);
       return this.createOfflineModeSocket();
     }
   }
   
+  /**
+   * Set up Socket.IO event handlers
+   */
   setupEventHandlers() {
     if (!this.socket) return;
     
@@ -78,30 +101,43 @@ class SocketService {
       this.connected = true;
       this.reconnectAttempts = 0;
       this.offlineMode = false;
-      log(`Socket.IO connected (ID: ${this.socket.id})`, 'success');
+      
+      // Update metrics
+      this.connectionMetrics.connectCount++;
+      this.connectionMetrics.lastConnectedTime = new Date().toISOString();
+      
+      log(`Socket.IO connected (ID: ${this.socket.id})`, 'info', 'socket');
       
       // Process any pending emits
       this.processPendingEmits();
       
-      // Notify connection success to UI
+      // Update UI to show connected status
       this.displayConnectionStatus(true);
     });
     
     this.socket.on('disconnect', (reason) => {
       this.connected = false;
-      log(`Socket.IO disconnected: ${reason}`, 'warn');
       
-      // Notify connection loss to UI
+      // Update metrics
+      this.connectionMetrics.disconnectCount++;
+      
+      log(`Socket.IO disconnected: ${reason}`, 'warn', 'socket');
+      
+      // Update UI to show disconnected status
       this.displayConnectionStatus(false, reason);
       
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, don't reconnect automatically
-        log('Server initiated disconnect, not attempting to reconnect', 'warn');
+        log('Server initiated disconnect, not attempting to reconnect', 'warn', 'socket');
       }
     });
     
     this.socket.on('connect_error', (error) => {
-      log(`Socket.IO connection error: ${error.message}`, 'error');
+      // Update metrics
+      this.connectionMetrics.errorCount++;
+      this.connectionMetrics.lastErrorMessage = error.message;
+      
+      log(`Socket.IO connection error: ${error.message}`, 'error', 'socket');
       
       // If we've reached max reconnection attempts, switch to offline mode
       if (++this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -117,6 +153,10 @@ class SocketService {
     }, 25000);
   }
   
+  /**
+   * Determine the appropriate Socket.IO URL based on environment
+   * @returns {string} Socket.IO server URL
+   */
   determineSocketUrl() {
     const hostname = window.location.hostname;
     
@@ -132,22 +172,32 @@ class SocketService {
     return urls[hostname] || 'https://ptcg-sim-meta.jasonh1993.workers.dev';
   }
   
+  /**
+   * Switch to offline mode for local play
+   * @param {string} reason - Reason for switching to offline mode
+   */
   switchToOfflineMode(reason) {
     if (this.offlineMode) return; // Already in offline mode
     
     this.offlineMode = true;
-    log(`Switching to offline mode: ${reason}`, 'warn');
+    log(`Switching to offline mode: ${reason}`, 'warn', 'socket');
     
     // Create offline mode socket
     this.socket = this.createOfflineModeSocket();
+    
+    // Update UI to show offline mode
     this.displayConnectionStatus(false, 'Offline Mode');
     
     // Notify the user of offline mode
     this.displayOfflineModeNotification();
   }
   
+  /**
+   * Create an offline mode socket that mimics Socket.IO
+   * @returns {Object} Offline mode socket
+   */
   createOfflineModeSocket() {
-    log('Creating offline mode socket', 'info');
+    log('Creating offline mode socket', 'info', 'socket');
     
     // Create a fake socket that mimics the real one
     const fakeSocket = {
@@ -164,7 +214,7 @@ class SocketService {
       },
       
       emit: (event, ...args) => {
-        log(`[Offline] Emit ${event}`, 'debug');
+        log(`[Offline] Emit ${event}`, 'debug', 'socket');
         
         // Handle special events
         if (event === 'storeGameState') {
@@ -174,9 +224,18 @@ class SocketService {
         return fakeSocket;
       },
       
-      // Add other Socket.IO methods as needed
-      connect: () => fakeSocket,
-      disconnect: () => fakeSocket
+      // Add other Socket.IO methods for compatibility
+      connect: () => {
+        fakeSocket.connected = true;
+        fakeSocket.disconnected = false;
+        return fakeSocket;
+      },
+      
+      disconnect: () => {
+        fakeSocket.connected = false;
+        fakeSocket.disconnected = true;
+        return fakeSocket;
+      }
     };
     
     // Simulate a connection event
@@ -188,65 +247,115 @@ class SocketService {
     return fakeSocket;
   }
   
+  /**
+   * Handle offline game state storage
+   * @param {Object} data - Game state data
+   */
   handleOfflineStoreGameState(data) {
     try {
-      // Store game state in local storage instead of server
-      const key = `game-state-${Date.now()}`;
-      localStorage.setItem(key, JSON.stringify(data));
+      // Generate a unique key
+      const key = this.generateOfflineKey();
       
-      // Trigger success handler
+      // Store in localStorage
+      const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+      localStorage.setItem(`ptcg-gamestate-${key}`, dataStr);
+      
+      // Trigger success handlers
       const handlers = this.eventHandlers.get('exportGameStateSuccessful') || [];
       handlers.forEach(handler => handler(key));
       
-      log(`Game state saved locally with key: ${key}`, 'success');
+      log(`Game state saved locally with key: ${key}`, 'info', 'storage');
     } catch (error) {
-      log(`Error saving game state locally: ${error.message}`, 'error');
+      log(`Error saving game state locally: ${error.message}`, 'error', 'storage');
       
+      // Trigger error handlers
       const handlers = this.eventHandlers.get('exportGameStateFailed') || [];
       handlers.forEach(handler => handler('Error storing game state'));
     }
   }
   
+  /**
+   * Generate a key for offline storage
+   * @returns {string} Random key
+   */
+  generateOfflineKey() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    
+    for (let i = 0; i < 4; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      key += characters.charAt(randomIndex);
+    }
+    
+    return key;
+  }
+  
+  /**
+   * Emit an event through Socket.IO
+   * @param {string} event - Event name
+   * @param  {...any} args - Event arguments
+   */
   emit(event, ...args) {
+    // Track event in debug log
+    this.addToDebugLog('emit', event, args);
+    
     if (!this.socket) {
-      log(`Cannot emit ${event}: Socket not initialized`, 'error');
+      log(`Cannot emit ${event}: Socket not initialized`, 'error', 'socket');
       this.pendingEmits.push({ event, args });
       return;
     }
     
     if (this.connected || this.offlineMode) {
-      log(`Emitting ${event}`, 'debug');
+      log(`Emitting ${event}`, 'debug', 'socket');
       this.socket.emit(event, ...args);
     } else {
-      log(`Queuing emission of ${event} until connected`, 'debug');
+      log(`Queuing emission of ${event} until connected`, 'debug', 'socket');
       this.pendingEmits.push({ event, args });
     }
   }
   
+  /**
+   * Process pending socket emissions
+   */
   processPendingEmits() {
     while (this.pendingEmits.length > 0) {
       const { event, args } = this.pendingEmits.shift();
-      log(`Processing queued event: ${event}`, 'debug');
+      log(`Processing queued event: ${event}`, 'debug', 'socket');
       this.socket.emit(event, ...args);
     }
   }
   
+  /**
+   * Display connection status in the UI
+   * @param {boolean} connected - Whether connected
+   * @param {string} reason - Reason for disconnection
+   */
   displayConnectionStatus(connected, reason = '') {
-    // Update UI to show connection status
-    const statusClass = connected ? 'connected' : 'disconnected';
-    const statusMessage = connected ? 'Connected' : `Disconnected: ${reason}`;
+    // Add to debug log
+    this.addToDebugLog('status', 
+      connected ? 'connected' : `disconnected (${reason})`);
     
     // Find an appropriate element to display the status
     const statusElement = document.getElementById('connectionStatus');
+    
     if (statusElement) {
-      statusElement.className = statusClass;
-      statusElement.textContent = statusMessage;
+      // Update existing status element
+      statusElement.className = connected ? 'connection-status connected' : 
+                              'connection-status disconnected';
+      
+      statusElement.textContent = connected ? 'Connected' : 
+                                 `Disconnected: ${reason}`;
     } else {
-      // Create a status element if it doesn't exist
+      // Create a new status element
       const newStatusElement = document.createElement('div');
       newStatusElement.id = 'connectionStatus';
-      newStatusElement.className = statusClass;
-      newStatusElement.textContent = statusMessage;
+      newStatusElement.className = connected ? 'connection-status connected' : 
+                                  'connection-status disconnected';
+      
+      newStatusElement.textContent = connected ? 'Connected' : 
+                                    `Disconnected: ${reason}`;
+      
+      // Style the status element
       newStatusElement.style.position = 'fixed';
       newStatusElement.style.bottom = '10px';
       newStatusElement.style.right = '10px';
@@ -256,6 +365,7 @@ class SocketService {
       newStatusElement.style.zIndex = '9999';
       newStatusElement.style.color = 'white';
       newStatusElement.style.backgroundColor = connected ? '#2ecc71' : '#e74c3c';
+      
       document.body.appendChild(newStatusElement);
       
       // Auto-hide after 5 seconds
@@ -265,6 +375,9 @@ class SocketService {
     }
   }
   
+  /**
+   * Display offline mode notification to the user
+   */
   displayOfflineModeNotification() {
     const chatbox = document.getElementById('chatbox');
     if (chatbox) {
@@ -290,6 +403,45 @@ class SocketService {
       
       chatbox.prepend(notification);
     }
+  }
+  
+  /**
+   * Add entry to debug log
+   * @param {string} type - Log entry type
+   * @param {string} event - Event name
+   * @param {Array} args - Optional arguments
+   */
+  addToDebugLog(type, event, args = []) {
+    // Create log entry
+    const entry = {
+      timestamp: new Date().toISOString(),
+      type,
+      event,
+      args: args.length > 0 ? [...args] : undefined
+    };
+    
+    // Add to log, maintaining maximum size
+    this.debugLog.unshift(entry);
+    if (this.debugLog.length > this.debugLogMaxSize) {
+      this.debugLog.pop();
+    }
+  }
+  
+  /**
+   * Get diagnostic information for debugging
+   * @returns {Object} Diagnostic data
+   */
+  getDiagnostics() {
+    return {
+      connected: this.connected,
+      offlineMode: this.offlineMode,
+      reconnectAttempts: this.reconnectAttempts,
+      socketId: this.socket?.id,
+      metrics: this.connectionMetrics,
+      pendingEmitsCount: this.pendingEmits.length,
+      debugLog: this.debugLog.slice(0, 20), // Return last 20 entries
+      eventHandlersRegistered: Array.from(this.eventHandlers.keys())
+    };
   }
 }
 
