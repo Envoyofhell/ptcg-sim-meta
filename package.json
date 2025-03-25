@@ -6,7 +6,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
-    "build": "cp -rL client/* ./",
+    "build": "cp -rL client/[^n]* ./ && cp -rL client/[a-mo-z]* ./",
     "pages:deploy": "wrangler pages deploy client"
   },
   "dependencies": {
