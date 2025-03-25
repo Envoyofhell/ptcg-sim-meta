@@ -1,92 +1,106 @@
 # Cloudflare Worker Configuration for PTCG Simulator
+# Comprehensive Development and Deployment Setup
 # Last Updated: 2024-03-25
-# Compatible with Node.js 18.17.1
 
 # Core Worker Configuration
+# This defines the primary worker settings and identifies the project
 name = "test-ptcg-sim-meta"
-compatibility_date = "2025-03-24"
-main = "workers/index.js"
+compatibility_date = "2025-03-24"  # Ensures compatibility with Cloudflare's infrastructure
+main = "workers/index.js"  # Entry point for the worker
 
-# Node.js Compatibility Settings
+# Node.js Compatibility Layer
+# Enables modern JavaScript features and Node.js compatibility
 node_compat = true
 compatibility_flags = ["nodejs_compat"]
 
 # Environment Variables
+# Define global variables accessible across different environments
 [vars]
 ALLOWED_ORIGINS = "https://test.meta-ptcg.org,https://test-ptcg-sim-meta.pages.dev,https://meta-ptcg.org,https://ptcg-sim-meta.pages.dev,http://localhost:3000,http://localhost:8787,http://127.0.0.1:8787"
-NODE_VERSION = "18.17.1"  # Explicit Node.js version declaration
+NODE_VERSION = "18.17.1"  # Explicitly define Node.js version for consistency
+APP_ENV = "development"  # Helps in environment-specific configurations
 
-# Static Assets Configuration
-[site]
-bucket = "./client"
-
-# Development Routes
+# Preview Environment Configuration
+# Separate configuration for preview/staging deployments
+[env.preview]
+name = "test-ptcg-sim-meta-preview"
+pages_build_output_dir = "client/dist"
 routes = [
-  { pattern = "test.meta-ptcg.org", custom_domain = true },
-  { pattern = "test-ptcg-sim-meta.jasonh1993.workers.dev/*", zone_name = "workers.dev" }
+  { pattern = "preview.meta-ptcg.org", custom_domain = true },
+  { pattern = "preview-ptcg-sim-meta.jasonh1993.workers.dev/*", zone_name = "workers.dev" }
 ]
 
-# Development Database
-[[d1_databases]]
-binding = "DB"
-database_name = "ptcg-sim-meta-db-test"
-database_id = "1b70b17d-fa48-4a36-8f02-3698604bdc7f"
-
 # Production Environment Configuration
+# Defines settings for the live production environment
 [env.production]
 name = "ptcg-sim-meta"
+pages_build_output_dir = "client/dist"
 routes = [
   { pattern = "meta-ptcg.org", custom_domain = true },
   { pattern = "ptcg-sim-meta.jasonh1993.workers.dev/*", zone_name = "workers.dev" }
 ]
 
-# Production Database
+# Build Configuration
+# Specifies how the project should be built and what to watch
+[build]
+command = "pnpm run build:worker"  # Build script for workers
+watch_dir = ["workers", "client"]  # Directories to watch for changes
+node_compat = true
+
+# Static Site Assets Configuration
+# Defines how static assets are served
+[site]
+bucket = "./client/dist"  # Location of built static files
+entry_point = "workers/index.js"  # Worker that serves these assets
+
+# Development Database Bindings
+# Connects to different databases for development and production
+[[d1_databases]]
+binding = "DB"  # Name used in worker to access the database
+database_name = "ptcg-sim-meta-db-test"
+database_id = "1b70b17d-fa48-4a36-8f02-3698604bdc7f"
+
+# Production Database Binding
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "ptcg-sim-meta-db"
 database_id = "9da27bfc-4435-44b9-8229-79bc0933e432"
 
 # Durable Objects Configuration
+# Defines stateful serverless objects for real-time functionality
 [durable_objects]
 bindings = [
-  { name = "GAME_ROOM", class_name = "GameRoom" }
+  { name = "GAME_ROOM", class_name = "GameRoom" }  # WebSocket room management
 ]
 
 # Migrations for Durable Objects
+# Tracks and manages changes to Durable Object classes
 [[migrations]]
 tag = "v1"
 new_classes = ["GameRoom"]
 
-# Build Configuration
-[build]
-command = "node build.js"
-watch_dir = ["workers", "client"]
+# Performance Optimization Settings
+# Intelligent placement of worker instances
+[placement]
+mode = "smart"  # Cloudflare optimizes worker placement
 
-# Node.js Compatibility for Different Environments
-[build.environment.development]
-node_compatibility = true
-node_compat = true
-
-[build.environment.production]
-node_compatibility = true
-node_compat = true
-
-# WebSocket and Maintenance Triggers
+# Scheduled Maintenance Triggers
+# Automates routine tasks like cleanup and maintenance
 [triggers]
 crons = [
-  "0 */6 * * *",  # Clean up inactive sessions every 6 hours
-  "0 0 1 * *"     # Monthly database maintenance
+  "0 */6 * * *",   # Clean inactive sessions every 6 hours
+  "0 0 1 * *",     # Monthly database maintenance
+  "0 12 * * *"     # Daily noon check
 ]
 
-# Performance and Optimization Settings
-[placement]
-mode = "smart"
-
-# Logging Configuration
+# Development Server Configuration
+# Local development server settings
 [dev]
-port = 8787
-live_reload = true
+port = 8787  # Port for local development
+live_reload = true  # Automatically reload on file changes
+https = true  # Use HTTPS for local development
 
-# Optional: Rate Limiting (if supported by your plan)
-[limits]
-requests_per_minute = 1000
+# Logging and Observability
+# Configure how logs and performance metrics are handled
+[logging]
+level = "info"  # Log level for development

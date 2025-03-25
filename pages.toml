@@ -1,0 +1,29 @@
+# Cloudflare Pages Configuration for PTCG Simulator
+# Comprehensive Setup for Frontend Deployment
+# Last Updated: 2024-03-25
+
+[build]
+command = "pnpm run build:client"
+output_dir = "client/dist"
+
+[build.environment.production]
+NODE_VERSION = "18.17.1"
+NODE_OPTIONS = "--no-deprecation"
+
+[build.environment.preview]
+NODE_VERSION = "18.17.1"
+
+[env.production]
+VITE_APP_ENV = "production"
+VITE_API_URL = "https://api.meta-ptcg.org"
+
+[env.preview]
+VITE_APP_ENV = "preview"
+VITE_API_URL = "https://test-api.meta-ptcg.org"
+
+[site]
+route_pattern = "meta-ptcg.org/*"
+
+[performance]
+image_compression = true
+caching = true

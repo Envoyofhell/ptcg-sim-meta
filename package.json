@@ -9,39 +9,75 @@
     "node": ">=18.17.1 <19.0.0",
     "pnpm": ">=8.0.0"
   },
+  "workspaces": [
+    "client",
+    "workers",
+    "server"
+  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky install",
-    
+
     "dev": "concurrently \"pnpm:dev:client\" \"pnpm:dev:worker\" \"pnpm:dev:server\"",
-    "dev:client": "wrangler pages dev ./client",
-    "dev:worker": "wrangler dev workers/index.js",
-    "dev:server": "nodemon server/dev-server.js",
-    
-    "start": "node server/dev-server.js",
+    "dev:client": "pnpm --filter client dev",
+    "dev:worker": "pnpm --filter workers dev",
+    "dev:server": "pnpm --filter server dev",
+
+
     "build": "turbo run build",
-    "build:client": "vite build ./client",
+    "build:client": "vite build",
     "build:worker": "wrangler deploy workers/index.js",
+    "build:server": "tsc -p server/tsconfig.json",
+
+
+    "lint": "turbo run lint",
+    "lint:client": "eslint client --ext .js,.jsx,.ts,.tsx",
+    "lint:worker": "eslint workers --ext .js,.ts",
+    "lint:server": "eslint server --ext .js,.ts",
     
+    "lint:fix": "turbo run lint:fix",
+    "lint:client:fix": "eslint client --ext .js,.jsx,.ts,.tsx --fix",
+    "lint:worker:fix": "eslint workers --ext .js,.ts --fix",
+    "lint:server:fix": "eslint server --ext .js,.ts --fix",
+
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
+
+ 
+    "typecheck": "turbo run typecheck",
+    "typecheck:client": "tsc --noEmit -p client/tsconfig.json",
+    "typecheck:worker": "tsc --noEmit -p workers/tsconfig.json",
+    "typecheck:server": "tsc --noEmit -p server/tsconfig.json",
+
+
+    "test": "turbo run test",
+    "test:client": "vitest run --config client/vitest.config.ts",
+    "test:worker": "vitest run --config workers/vitest.config.ts",
+    "test:server": "vitest run --config server/vitest.config.ts",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+
     "deploy": "turbo run deploy",
-    "deploy:production": "wrangler deploy --env production",
+    "deploy:preview": "pnpm deploy:pages:preview && pnpm deploy:worker:preview",
+    "deploy:production": "pnpm deploy:pages:production && pnpm deploy:worker:production",
     
-    "pages:dev": "wrangler pages dev ./client",
-    "pages:deploy": "wrangler pages deploy ./client",
-    
+    "deploy:pages:preview": "wrangler pages deploy ./client --branch=preview",
+    "deploy:pages:production": "wrangler pages deploy ./client --branch=main",
+    "deploy:worker:preview": "wrangler deploy workers/index.js --env preview",
+    "deploy:worker:production": "wrangler deploy workers/index.js --env production",
+
     "db:local": "wrangler d1 execute ptcg-sim-meta-db-test --local --file=migrations/0000_initial.sql",
     "db:migrations": "wrangler d1 execute ptcg-sim-meta-db-test --file=migrations/0000_initial.sql",
     "db:prod-migrations": "wrangler d1 execute ptcg-sim-meta-db --env production --file=migrations/0000_initial.sql",
-    
-    "lint": "eslint . --ext .js,.mjs,.cjs",
-    "lint:fix": "eslint . --ext .js,.mjs,.cjs --fix",
-    "typecheck": "tsc --noEmit",
-    
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    
-    "clean": "rimraf .wrangler dist node_modules/.cache",
-    "format": "prettier --write \"**/*.{js,mjs,cjs,json,md}\""
+
+    "clean": "turbo run clean",
+    "clean:client": "rimraf client/dist client/.turbo",
+    "clean:worker": "rimraf workers/dist workers/.turbo",
+    "clean:server": "rimraf server/dist server/.turbo",
+    "clean:all": "rimraf node_modules .turbo dist",
+
+    "start": "node server/dist/server.js",
+    "prepare:husky": "husky install"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240314.0",

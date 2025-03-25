@@ -1,0 +1,46 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "globalDependencies": [
+      "**/.env*",
+      "**/package.json",
+      "**/tsconfig.json",
+      "**/wrangler.toml"
+    ],
+    "globalEnv": [
+      "CI",
+      "NODE_ENV",
+      "VITE_APP_ENV"
+    ],
+    "pipeline": {
+      "build": {
+        "dependsOn": ["^build"],
+        "outputs": [
+          "dist/**",
+          ".next/**", 
+          "build/**",
+          "client/dist/**",
+          "workers/dist/**"
+        ]
+      },
+      "lint": {
+        "outputs": [],
+        "inputs": ["**/*.{js,jsx,ts,tsx}"]
+      },
+      "test": {
+        "dependsOn": ["build"],
+        "inputs": ["**/*.{test.js,test.ts}"]
+      },
+      "dev": {
+        "cache": false,
+        "persistent": true
+      },
+      "deploy": {
+        "dependsOn": ["build", "lint", "test"]
+      }
+    },
+    "telemetry": {
+      "enabled": false,
+      "lastUpdateCheck": null,
+      "optOut": true
+    }
+  }
