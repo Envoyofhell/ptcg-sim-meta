@@ -25,59 +25,86 @@
     <link rel="stylesheet" href="src/css/index.css">
     <link rel="stylesheet" href="../src/css/glow.css">
     
-    <!-- External Libraries -->
+    <!-- Socket.IO Interceptor -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-<script>
-  // Socket.io interceptor - redirect connections to WebSocket client
-  const originalIO = io;
-  window.io = function(url, options) {
-    console.log('Intercepting Socket.IO connection to:', url || 'default');
-    
-    // If trying to connect to onrender.com or any other domain
-    if (!url || url.includes('onrender.com')) {
-      console.log('Redirecting to WebSocket client');
-      // Return empty object with basic Socket.io API
-      return {
-        on: function(event, callback) {
-          console.log('Socket.io event registered:', event);
-          // Register with your WebSocket client
-          if (window.socket && window.socket.on) {
-            window.socket.on(event, callback);
-          }
-        },
-        emit: function(event, data) {
-          console.log('Socket.io emit:', event);
-          // Forward to your WebSocket client
-          if (window.socket && window.socket.emit) {
-            window.socket.emit(event, data);
-          }
-        },
-        connect: function() {
-          console.log('Socket.io connect redirected');
-          // Connect your WebSocket client
-          if (window.socket && window.socket.connect) {
-            window.socket.connect();
-          }
-        }
+    <script>
+      // Save original io function
+      const originalIO = io;
+      
+      // Override Socket.IO with our interceptor
+      window.io = function(url, options) {
+        console.log('Intercepting Socket.IO connection attempt to:', url || 'default');
+        
+        // Use current host instead of onrender.com
+        const host = window.location.host;
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsUrl = `${protocol}${host}/websocket`;
+        
+        console.log('Redirecting to WebSocket at:', wsUrl);
+        
+        // Create a Socket.IO-compatible object that uses our WebSocket client
+        return {
+          on: function(event, callback) {
+            console.log('Socket.IO event registered:', event);
+            // When our websocket client is ready, register the event
+            if (window.socket) {
+              window.socket.on(event, callback);
+            } else {
+              console.warn('WebSocket client not initialized yet');
+              // Add event to queue to be registered when socket is available
+              document.addEventListener('socketReady', function() {
+                if (window.socket) {
+                  window.socket.on(event, callback);
+                }
+              });
+            }
+          },
+          emit: function(event, data) {
+            console.log('Socket.IO emit:', event);
+            if (window.socket && window.socket.emit) {
+              window.socket.emit(event, data);
+            } else {
+              console.warn('Cannot emit - WebSocket not connected');
+            }
+          },
+          connect: function() {
+            console.log('Socket.IO connect called - using WebSocket instead');
+            // Socket connection will be handled by the join room button
+          },
+          disconnect: function() {
+            console.log('Socket.IO disconnect called');
+            if (window.socket && window.socket.disconnect) {
+              window.socket.disconnect();
+            }
+          },
+          // Mock Socket.IO properties
+          connected: window.socket ? window.socket.isConnected : false,
+          id: window.socket ? window.socket.id : null
+        };
       };
-    }
+      
+      // Create custom event to signal when socket is ready
+      window.dispatchSocketReady = function() {
+        document.dispatchEvent(new CustomEvent('socketReady'));
+      };
+    </script>
     
-    // Allow connections to other domains
-    return originalIO(url, options);
-  };
-</script>
     <!-- Main Application Script -->
     <script type="module" src="/src/front-end.js"></script>
     
     <!-- Mobile Detection Script -->
     <script>
-        window.onload = () => {
+        window.onload = function() {
             var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             if (isMobile) {
                 alert("PTCG-sim & Meta is still in mobile development. Please use a desktop for full functionality.");
-            };
+            }
+            
+            // Dispatch socket ready event when window loads
+            if (window.socket) {
+                window.dispatchSocketReady();
+            }
         };
     </script>
 </head>

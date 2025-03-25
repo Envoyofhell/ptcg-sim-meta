@@ -12,29 +12,32 @@ import { loadImportData } from './initialization/load-import-data/load-import-da
 import { initializeMutationObservers } from './initialization/mutation-observers/initialize-mutation-observers.js';
 import { initializeSocketEventListeners } from './initialization/socket-event-listeners/socket-event-listeners.js';
 
-// Initialize connection only when needed (to avoid premature connections)
-const joinRoomButton = document.getElementById('joinRoomButton');
-if (joinRoomButton) {
-  joinRoomButton.addEventListener('click', () => {
-    const roomIdInput = document.getElementById('roomIdInput');
-    const nameInput = document.getElementById('nameInput');
-    const spectatorModeCheckbox = document.getElementById('spectatorModeCheckbox');
-    
-    if (roomIdInput && nameInput) {
-      const roomId = roomIdInput.value.trim();
-      const username = nameInput.value.trim();
-      const isSpectator = spectatorModeCheckbox && spectatorModeCheckbox.checked;
-      
-      if (roomId && username) {
-        // Connect the WebSocket client when joining a room
-        socket.connect(roomId, username, isSpectator);
-      }
-    }
-  });
-}
-
-// Initialize socket event listeners before other functionality
+// Initialize socket event listeners first to ensure they're ready
 initializeSocketEventListeners();
+
+// Initialize join room button click handler
+document.addEventListener('DOMContentLoaded', () => {
+  const joinRoomButton = document.getElementById('joinRoomButton');
+  if (joinRoomButton) {
+    joinRoomButton.addEventListener('click', () => {
+      const roomIdInput = document.getElementById('roomIdInput');
+      const nameInput = document.getElementById('nameInput');
+      const spectatorModeCheckbox = document.getElementById('spectatorModeCheckbox');
+      
+      if (roomIdInput && nameInput) {
+        const roomId = roomIdInput.value.trim();
+        const username = nameInput.value.trim();
+        const isSpectator = spectatorModeCheckbox && spectatorModeCheckbox.checked;
+        
+        if (roomId && username) {
+          console.log(`Connecting to room: ${roomId} as ${username} (spectator: ${isSpectator})`);
+          // Connect the WebSocket client when joining a room
+          socket.connect(roomId, username, isSpectator);
+        }
+      }
+    });
+  }
+});
 
 // Initialize other components
 initializeDOMEventListeners();
@@ -55,3 +58,27 @@ export function getEnvironmentInfo() {
 
 // Log environment info for debugging
 console.log('Environment:', getEnvironmentInfo());
+
+// Prevent Socket.IO from trying to connect automatically
+if (window.io) {
+  const originalIO = window.io;
+  window.io = function(url, options) {
+    console.log('Front-end.js: Intercepting Socket.IO connection to:', url || 'default');
+    
+    // Redirect all Socket.IO connections to our WebSocket client
+    return {
+      on: function(event, callback) {
+        socket.on(event, callback);
+      },
+      emit: function(event, data) {
+        socket.emit(event, data);
+      },
+      connect: function() {
+        // Don't automatically connect - use the join room button instead
+      },
+      disconnect: function() {
+        socket.disconnect();
+      }
+    };
+  };
+}
