@@ -23,17 +23,20 @@ PTCG-Sim-Meta allows players and creators to test and play with custom Pokémon 
 ### Setup
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/YourUsername/PTCG-Sim-Meta.git
 cd PTCG-Sim-Meta
 ```
 
 2. Install dependencies
+
 ```bash
 npm install
 ```
 
 3. Start the development server
+
 ```bash
 npm start
 ```
@@ -43,6 +46,7 @@ The application will be available at `http://localhost:4000`
 ## Deployment
 
 The application is currently optimized to run on:
+
 - render.com for the main application
 - Cloudflare for supporting scripts and resources
 
@@ -80,8 +84,7 @@ This project builds upon the work of the original developer. Their contributions
 
 [Original Developer Information]
 xxmichaellong/ptcg-sim:main
+
 - [GitHub](https://github.com/xxmichaellong)
 - [Twitter](https://twitter.com/xxmichaellong)
 - [Discord](https://discord.gg/jMfhQa38mh)
-
-

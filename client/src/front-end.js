@@ -6,7 +6,7 @@ window.socket = socket;
 
 // Register any Socket.IO event handlers that were stored by the mock
 if (window._socketEvents && Array.isArray(window._socketEvents)) {
-  window._socketEvents.forEach(({event, callback}) => {
+  window._socketEvents.forEach(({ event, callback }) => {
     if (window.socket && window.socket.on) {
       console.log('Transferring event handler from mock to WebSocket:', event);
       window.socket.on(event, callback);
@@ -32,15 +32,20 @@ document.addEventListener('DOMContentLoaded', () => {
     joinRoomButton.addEventListener('click', () => {
       const roomIdInput = document.getElementById('roomIdInput');
       const nameInput = document.getElementById('nameInput');
-      const spectatorModeCheckbox = document.getElementById('spectatorModeCheckbox');
-      
+      const spectatorModeCheckbox = document.getElementById(
+        'spectatorModeCheckbox'
+      );
+
       if (roomIdInput && nameInput) {
         const roomId = roomIdInput.value.trim();
         const username = nameInput.value.trim();
-        const isSpectator = spectatorModeCheckbox && spectatorModeCheckbox.checked;
-        
+        const isSpectator =
+          spectatorModeCheckbox && spectatorModeCheckbox.checked;
+
         if (roomId && username) {
-          console.log(`Connecting to room: ${roomId} as ${username} (spectator: ${isSpectator})`);
+          console.log(
+            `Connecting to room: ${roomId} as ${username} (spectator: ${isSpectator})`
+          );
           // Connect the WebSocket client when joining a room
           socket.connect(roomId, username, isSpectator);
         }
@@ -59,10 +64,13 @@ export function getEnvironmentInfo() {
   return {
     host: window.location.host,
     protocol: window.location.protocol,
-    isDevelopment: window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1'),
-    isCloudflare: window.location.hostname.includes('.pages.dev') || 
-                 window.location.hostname.includes('meta-ptcg.org') ||
-                 window.location.hostname.includes('.workers.dev')
+    isDevelopment:
+      window.location.hostname === 'localhost' ||
+      window.location.hostname.includes('127.0.0.1'),
+    isCloudflare:
+      window.location.hostname.includes('.pages.dev') ||
+      window.location.hostname.includes('meta-ptcg.org') ||
+      window.location.hostname.includes('.workers.dev'),
   };
 }
 

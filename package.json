@@ -1,39 +1,88 @@
 {
   "name": "ptcg-sim-meta",
-  "version": "1.0.0",
+  "version": "1.5.1",
   "description": "Pokémon TCG Tabletop Simulator with Meta features",
   "private": true,
+  "packageManager": "pnpm@9.10.0",
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "husky install",
+    "dev": "concurrently \"pnpm:dev:client\" \"pnpm:dev:worker\" \"pnpm:dev:server\"",
+    "dev:client": "wrangler pages dev ./client",
+    "dev:worker": "wrangler dev workers/index.js",
+    "dev:server": "nodemon server/dev-server.js",
     "start": "node server/dev-server.js",
-    "build": "node build.js",
-    "deploy": "wrangler deploy",
-    "deploy:production": "wrangler deploy --env production",
+    "build": "turbo run build",
+    "build:client": "vite build ./client",
+    "build:worker": "wrangler deploy workers/index.js",
+    "deploy": "turbo run deploy",
+    "deploy:production": "turbo run deploy:production",
     "pages:dev": "wrangler pages dev ./client",
     "pages:deploy": "wrangler pages deploy ./client",
     "db:local": "wrangler d1 execute ptcg-sim-meta-db-test --local --file=migrations/0000_initial.sql",
     "db:migrations": "wrangler d1 execute ptcg-sim-meta-db-test --file=migrations/0000_initial.sql",
     "db:prod-migrations": "wrangler d1 execute ptcg-sim-meta-db --env production --file=migrations/0000_initial.sql",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "clean": "rm -rf .wrangler"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "clean": "rimraf .wrangler dist node_modules/.cache",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "dependencies": {
-    "itty-router": "^4.0.23",
-    "ws": "^8.16.0",
-    "express": "^4.18.2",
+    "@cloudflare/workers-types": "^4.20240314.0",
     "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "itty-router": "^4.0.23",
+    "socket.io": "^4.7.4",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
-    "wrangler": "^4.4.0",
-    "@cloudflare/workers-types": "^4.20240314.0",
+    "@commitlint/cli": "^19.2.1",
+    "@commitlint/config-conventional": "^19.1.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
-    "nodemon": "^3.0.3"
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-unused-imports": "^3.1.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "turbo": "^1.13.0",
+    "typescript": "^5.4.3",
+    "vite": "^5.2.6",
+    "vitest": "^1.4.0",
+    "wrangler": "^4.4.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   },
   "repository": {
     "type": "git",

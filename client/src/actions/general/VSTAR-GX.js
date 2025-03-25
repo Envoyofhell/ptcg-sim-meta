@@ -20,7 +20,7 @@ export const VSTARGXFunction = (user, type, emit = true) => {
   const oppForteButton = oppContainerDocument.getElementById('ForteButton');
   const oppVSTARButton = oppContainerDocument.getElementById('VSTARButton');
 
-   let button;
+  let button;
   if (user === 'self') {
     if (type === 'GX') {
       button = selfGXButton;

@@ -38,11 +38,7 @@ export const changeType = (
   }
   appendMessage(
     initiator,
-    determineUsername(initiator) +
-      ' changed ' +
-      cardName +
-      ' into ' +
-      typeName,
+    determineUsername(initiator) + ' changed ' + cardName + ' into ' + typeName,
     'player',
     false
   );

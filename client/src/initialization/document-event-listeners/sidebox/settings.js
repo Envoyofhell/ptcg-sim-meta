@@ -38,7 +38,9 @@ export const initializeSettings = () => {
     }
   });
 
-  const changeBackgroundButton = document.getElementById('changeBackgroundButton');
+  const changeBackgroundButton = document.getElementById(
+    'changeBackgroundButton'
+  );
   changeBackgroundButton.addEventListener('click', () => {
     changeBackground();
   });

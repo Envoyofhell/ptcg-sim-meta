@@ -8,7 +8,7 @@ try {
 
   // Render it with empty data
   const html = ejs.render(template, {
-    importDataJSON: null
+    importDataJSON: null,
   });
 
   // Write to dist/index.html

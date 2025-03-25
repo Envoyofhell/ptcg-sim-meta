@@ -54,9 +54,9 @@ const metaChangelogContent = `
 
 // Export the content so it can be used in other scripts
 if (typeof module !== 'undefined') {
-    module.exports = { metaChangelogContent };
+  module.exports = { metaChangelogContent };
 } else {
-    // For browser environment
-    window.metaChangelogContent = metaChangelogContent;
-    console.log("Meta Changelog Content Assigned:", window.metaChangelogContent);
+  // For browser environment
+  window.metaChangelogContent = metaChangelogContent;
+  console.log('Meta Changelog Content Assigned:', window.metaChangelogContent);
 }

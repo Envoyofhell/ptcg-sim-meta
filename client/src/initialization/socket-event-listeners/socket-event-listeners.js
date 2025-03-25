@@ -33,7 +33,7 @@ export const removeSyncIntervals = () => {
 export const initializeSocketEventListeners = () => {
   // Initialize WebSocket connection when needed - not on page load
   // This will happen when user joins a room
-  
+
   socket.on('joinGame', () => {
     const connectedRoom = document.getElementById('connectedRoom');
     const lobby = document.getElementById('lobby');
@@ -88,11 +88,11 @@ export const initializeSocketEventListeners = () => {
       }
     }, 1000);
   });
-  
+
   socket.on('spectatorJoin', () => {
     spectatorJoin();
   });
-  
+
   socket.on('roomReject', () => {
     let overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -123,7 +123,7 @@ export const initializeSocketEventListeners = () => {
       document.body.removeChild(overlay);
     });
   });
-  
+
   socket.on('connect', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -146,15 +146,15 @@ export const initializeSocketEventListeners = () => {
       }
     }
   });
-  
+
   socket.on('userReconnected', (data) => {
     appendMessage('', data.username + ' reconnected!', 'announcement', false);
   });
-  
+
   socket.on('userDisconnected', (username) => {
     appendMessage('', username + ' disconnected', 'announcement', false);
   });
-  
+
   socket.on('disconnect', () => {
     if (systemState.isTwoPlayer) {
       const isSpectator =
@@ -166,21 +166,21 @@ export const initializeSocketEventListeners = () => {
       appendMessage('', username + ' disconnected', 'announcement', false);
     }
   });
-  
+
   socket.on('leaveRoom', (data) => {
     if (!data.isSpectator) {
       cleanActionData('opp');
     }
     appendMessage('', data.username + ' left the room', 'announcement', false);
   });
-  
+
   socket.on('appendMessage', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
     }
     appendMessage(data.user, data.message, data.type, data.emit);
   });
-  
+
   socket.on('requestAction', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -194,7 +194,7 @@ export const initializeSocketEventListeners = () => {
       acceptAction('self', data.action, data.parameters);
     }
   });
-  
+
   // reset counter when importing game state
   socket.on('initiateImport', () => {
     systemState.spectatorCounter = 0; //reset spectator counter to make sure it catches all of the actions
@@ -202,11 +202,11 @@ export const initializeSocketEventListeners = () => {
     cleanActionData('self');
     cleanActionData('opp');
   });
-  
+
   socket.on('endImport', () => {
     isImporting = false;
   });
-  
+
   socket.on('pushAction', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -238,7 +238,7 @@ export const initializeSocketEventListeners = () => {
       }
     }
   });
-  
+
   socket.on('resyncActions', () => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -248,7 +248,7 @@ export const initializeSocketEventListeners = () => {
       resyncActions();
     }
   });
-  
+
   socket.on('catchUpActions', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -258,7 +258,7 @@ export const initializeSocketEventListeners = () => {
       catchUpActions(data.actionData);
     }
   });
-  
+
   socket.on('syncCheck', (data) => {
     const notSpectator = !(
       document.getElementById('spectatorModeCheckbox').checked &&
@@ -272,7 +272,7 @@ export const initializeSocketEventListeners = () => {
       socket.emit('resyncActions', data);
     }
   });
-  
+
   socket.on('lookAtCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -286,7 +286,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  
+
   socket.on('stopLookingAtCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -300,7 +300,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  
+
   socket.on('revealCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -308,7 +308,7 @@ export const initializeSocketEventListeners = () => {
     }
     revealCards(data.user, data.initiator, data.zoneId, data.emit);
   });
-  
+
   socket.on('hideCards', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -316,7 +316,7 @@ export const initializeSocketEventListeners = () => {
     }
     hideCards(data.user, data.initiator, data.zoneId, data.emit);
   });
-  
+
   socket.on('revealShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -331,7 +331,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  
+
   socket.on('hideShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -346,7 +346,7 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  
+
   socket.on('lookShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -354,7 +354,7 @@ export const initializeSocketEventListeners = () => {
     }
     lookShortcut(data.user, data.initiator, data.zoneId, data.index, data.emit);
   });
-  
+
   socket.on('stopLookingShortcut', (data) => {
     if (data.socketId === systemState.spectatorId) {
       data.user = data.user === 'self' ? 'opp' : 'self';
@@ -368,13 +368,13 @@ export const initializeSocketEventListeners = () => {
       data.emit
     );
   });
-  
+
   socket.on('exportGameStateSuccessful', (key) => {
     // Update URL from render.com to your Cloudflare domain
     const url = `https://test.meta-ptcg.org/import?key=${key}`;
     appendMessage('self', url, 'announcement', false);
   });
-  
+
   socket.on('exportGameStateFailed', (message) => {
     appendMessage('self', message, 'announcement', false);
   });

@@ -78,5 +78,5 @@ if (typeof module !== 'undefined') {
 } else {
   // For browser environment
   window.mainChangelogContent = mainChangelogContent;
-  console.log("Main Changelog Content Assigned:", window.mainChangelogContent);
+  console.log('Main Changelog Content Assigned:', window.mainChangelogContent);
 }

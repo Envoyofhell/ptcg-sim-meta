@@ -51,7 +51,7 @@ export const initializeBoardButtons = () => {
       // Remove any existing listeners first
       const clonedButton = selfVSTARButton.cloneNode(true);
       selfVSTARButton.parentNode.replaceChild(clonedButton, selfVSTARButton);
-      
+
       clonedButton.addEventListener('click', () => {
         if (
           !(
@@ -71,7 +71,7 @@ export const initializeBoardButtons = () => {
       // Remove any existing listeners first
       const clonedButton = selfGXButton.cloneNode(true);
       selfGXButton.parentNode.replaceChild(clonedButton, selfGXButton);
-      
+
       clonedButton.addEventListener('click', () => {
         if (
           !(
@@ -90,7 +90,7 @@ export const initializeBoardButtons = () => {
       // Remove any existing listeners first
       const clonedButton = selfForteButton.cloneNode(true);
       selfForteButton.parentNode.replaceChild(clonedButton, selfForteButton);
-      
+
       clonedButton.addEventListener('click', () => {
         if (
           !(
@@ -109,7 +109,7 @@ export const initializeBoardButtons = () => {
       // Remove any existing listeners first
       const clonedButton = oppVSTARButton.cloneNode(true);
       oppVSTARButton.parentNode.replaceChild(clonedButton, oppVSTARButton);
-      
+
       clonedButton.addEventListener('click', () => {
         if (
           !(
@@ -129,7 +129,7 @@ export const initializeBoardButtons = () => {
       // Remove any existing listeners first
       const clonedButton = oppGXButton.cloneNode(true);
       oppGXButton.parentNode.replaceChild(clonedButton, oppGXButton);
-      
+
       clonedButton.addEventListener('click', () => {
         if (
           !(
@@ -142,26 +142,26 @@ export const initializeBoardButtons = () => {
         }
       });
     }
-  // Opponent Forte Button
-  const oppForteButton = oppContainerDocument.getElementById('ForteButton');
-  if (oppForteButton) {
-    // Remove any existing listeners first
-    const clonedButton = oppForteButton.cloneNode(true);
-    oppForteButton.parentNode.replaceChild(clonedButton, oppForteButton);
-    
-    clonedButton.addEventListener('click', () => {
-      if (
-        !(
-          systemState.isTwoPlayer &&
-          document.getElementById('spectatorModeCheckbox').checked
-        ) &&
-        !systemState.isReplay
-      ) {
-        VSTARGXFunction('opp', 'Forte');
-      }
-    });
-  }
-};
+    // Opponent Forte Button
+    const oppForteButton = oppContainerDocument.getElementById('ForteButton');
+    if (oppForteButton) {
+      // Remove any existing listeners first
+      const clonedButton = oppForteButton.cloneNode(true);
+      oppForteButton.parentNode.replaceChild(clonedButton, oppForteButton);
+
+      clonedButton.addEventListener('click', () => {
+        if (
+          !(
+            systemState.isTwoPlayer &&
+            document.getElementById('spectatorModeCheckbox').checked
+          ) &&
+          !systemState.isReplay
+        ) {
+          VSTARGXFunction('opp', 'Forte');
+        }
+      });
+    }
+  };
 
   // Ensure buttons are initialized
   initializeIframeButtons();

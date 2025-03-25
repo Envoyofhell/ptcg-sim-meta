@@ -38,7 +38,11 @@ async function main() {
   const io = new Server(server, {
     connectionStateRecovery: {},
     cors: {
-      origin: ['https://admin.socket.io', 'https://ptcg-sim-meta.pages.dev', 'http://localhost:3000'],
+      origin: [
+        'https://admin.socket.io',
+        'https://ptcg-sim-meta.pages.dev',
+        'http://localhost:3000',
+      ],
       credentials: true,
     },
   });
@@ -90,44 +94,46 @@ async function main() {
   });
 
   app.use(cors());
-app.use(express.static(clientDir));
+  app.use(express.static(clientDir));
 
-app.get('/', (req, res) => {
+  app.get('/', (req, res) => {
     res.sendFile(path.join(clientDir, 'index.html'));
-});
+  });
 
-app.get('/import', (req, res) => {
+  app.get('/import', (req, res) => {
     const key = req.query.key;
     if (!key) {
-        return res.status(400).json({ error: 'Key parameter is missing' });
+      return res.status(400).json({ error: 'Key parameter is missing' });
     }
     res.sendFile(path.join(clientDir, 'import.html'));
-});
+  });
 
-app.get('/api/importData', (req, res) => {
+  app.get('/api/importData', (req, res) => {
     const key = req.query.key;
     if (!key) {
-        return res.status(400).json({ error: 'Key parameter is missing' });
+      return res.status(400).json({ error: 'Key parameter is missing' });
     }
 
-    db.get('SELECT value FROM KeyValuePairs WHERE key = ?', [key], (err, row) => {
+    db.get(
+      'SELECT value FROM KeyValuePairs WHERE key = ?',
+      [key],
+      (err, row) => {
         if (err) {
-            return res.status(500).json({ error: 'Internal server error' });
+          return res.status(500).json({ error: 'Internal server error' });
         }
         if (row) {
-            try {
-                const jsonData = JSON.parse(row.value);
-                res.json(jsonData);
-            } catch (parseError) {
-                return res.status(500).json({ error: 'Error parsing JSON data' });
-            }
-
+          try {
+            const jsonData = JSON.parse(row.value);
+            res.json(jsonData);
+          } catch (parseError) {
+            return res.status(500).json({ error: 'Error parsing JSON data' });
+          }
         } else {
-            res.status(404).json({ error: 'Key not found' });
+          res.status(404).json({ error: 'Key not found' });
         }
-    });
-});
-
+      }
+    );
+  });
 
   const roomInfo = new Map();
   // Function to periodically clean up empty rooms

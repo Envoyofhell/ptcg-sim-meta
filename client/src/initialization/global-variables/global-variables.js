@@ -55,7 +55,9 @@ export const systemState = {
 export { socket };
 
 // Update preload image URL to use dynamic URL instead of hardcoded domain
-preloadImage(`${window.location.protocol}//${window.location.host}/src/assets/ccb.png`);
+preloadImage(
+  `${window.location.protocol}//${window.location.host}/src/assets/ccb.png`
+);
 
 // Set background image with dynamic URL
 document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('${window.location.protocol}//${window.location.host}/src/assets/background1.jpg')`;

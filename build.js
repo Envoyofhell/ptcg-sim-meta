@@ -5,7 +5,7 @@ console.log('Starting build process...');
 
 // Create necessary directories
 const dirs = ['src', 'assets', 'css'];
-dirs.forEach(dir => {
+dirs.forEach((dir) => {
   if (!fs.existsSync(dir)) {
     console.log(`Creating directory: ${dir}`);
     fs.mkdirSync(dir, { recursive: true });
@@ -33,7 +33,11 @@ function copyDir(src, dest, exclude = []) {
     const destPath = path.join(dest, entry.name);
 
     // Skip excluded directories/files
-    if (exclude.some(pattern => entry.name === pattern || srcPath.includes(pattern))) {
+    if (
+      exclude.some(
+        (pattern) => entry.name === pattern || srcPath.includes(pattern)
+      )
+    ) {
       console.log(`Skipping excluded path: ${srcPath}`);
       continue;
     }
@@ -45,8 +49,10 @@ function copyDir(src, dest, exclude = []) {
       // Copy file if it doesn't exist or is newer
       try {
         // Only copy if file doesn't exist or is newer
-        if (!fs.existsSync(destPath) || 
-            fs.statSync(srcPath).mtime > fs.statSync(destPath).mtime) {
+        if (
+          !fs.existsSync(destPath) ||
+          fs.statSync(srcPath).mtime > fs.statSync(destPath).mtime
+        ) {
           fs.copyFileSync(srcPath, destPath);
           console.log(`Copied: ${srcPath} -> ${destPath}`);
         }
@@ -61,18 +67,18 @@ try {
   // Copy files from client directory to root, excluding node_modules
   console.log('Copying files from client directory...');
   copyDir('client', './', ['node_modules', '.git', '.github']);
-  
+
   // Ensure the index.html has the WebSocket blocker script at the top
   console.log('Checking index.html for WebSocket blocker...');
   const indexPath = path.join(__dirname, 'index.html');
-  
+
   if (fs.existsSync(indexPath)) {
     let indexContent = fs.readFileSync(indexPath, 'utf8');
-    
+
     // Check if the blocker script is already there
     if (!indexContent.includes('Block connections to Render.com servers')) {
       console.log('Adding WebSocket/XHR blocker to index.html...');
-      
+
       // WebSocket blocker script
       const blockerScript = `<script>
   // Block connections to Render.com servers
@@ -127,15 +133,15 @@ try {
     };
   })();
 </script>`;
-      
+
       // Insert the blocker script after the opening <head> tag
       indexContent = indexContent.replace('<head>', '<head>\n' + blockerScript);
-      
+
       // Write the modified content back
       fs.writeFileSync(indexPath, indexContent, 'utf8');
     }
   }
-  
+
   console.log('Build completed successfully!');
 } catch (error) {
   console.error('Build failed:', error);
