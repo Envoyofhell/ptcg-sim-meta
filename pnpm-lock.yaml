@@ -75,16 +75,6 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
 
-  workers:
-    dependencies:
-      itty-router:
-        specifier: ^5.0.18
-        version: 5.0.18
-    devDependencies:
-      wrangler:
-        specifier: ^4.4.0
-        version: 4.4.0
-
 packages:
 
   '@cloudflare/kv-asset-handler@0.4.0':
@@ -1125,9 +1115,6 @@ packages:
 
   itty-router@4.2.2:
     resolution: {integrity: sha512-KegPW0l9SNPadProoFT07AB84uOqLUwzlXQ7HsqkS31WUrxkjdhcemRpTDUuetbMJ89uBtWeQSVoiEmUAu31uw==}
-
-  itty-router@5.0.18:
-    resolution: {integrity: sha512-mK3ReOt4ARAGy0V0J7uHmArG2USN2x0zprZ+u+YgmeRjXTDbaowDy3kPcsmQY6tH+uHhDgpWit9Vqmv/4rTXwA==}
 
   jake@10.9.2:
     resolution: {integrity: sha512-2P4SQ0HrLQ+fw6llpLnOaGAvN2Zu6778SJMrCUwns4fOoG9ayrTiZk3VV8sCPkVZF8ab0zksVpS8FDY5pRCNBA==}
@@ -2775,8 +2762,6 @@ snapshots:
   isexe@2.0.0: {}
 
   itty-router@4.2.2: {}
-
-  itty-router@5.0.18: {}
 
   jake@10.9.2:
     dependencies:
