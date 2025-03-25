@@ -18,7 +18,7 @@ class WebSocketClient {
         this.socket.close();
       }
       
-      // Determine WebSocket URL based on environment
+      // Use the current host for WebSocket connection instead of hardcoded onrender.com domain
       const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
       const host = window.location.host;
       const url = `${protocol}${host}/websocket?roomId=${roomId}`;
@@ -151,3 +151,4 @@ class WebSocketClient {
   
   // Export singleton instance
   export const socket = new WebSocketClient();
+  window.socket = socket;
