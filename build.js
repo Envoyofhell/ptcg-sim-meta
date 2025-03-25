@@ -1,4 +1,3 @@
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,13 +12,55 @@ dirs.forEach(dir => {
   }
 });
 
+// Function to copy directory recursively
+function copyDir(src, dest, exclude = []) {
+  // Check if source exists
+  if (!fs.existsSync(src)) {
+    console.log(`Source directory doesn't exist: ${src}`);
+    return;
+  }
+
+  // Create destination if it doesn't exist
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  // Get all files and directories in source
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    // Skip excluded directories/files
+    if (exclude.some(pattern => entry.name === pattern || srcPath.includes(pattern))) {
+      console.log(`Skipping excluded path: ${srcPath}`);
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      // Recursively copy directory
+      copyDir(srcPath, destPath, exclude);
+    } else {
+      // Copy file if it doesn't exist or is newer
+      try {
+        // Only copy if file doesn't exist or is newer
+        if (!fs.existsSync(destPath) || 
+            fs.statSync(srcPath).mtime > fs.statSync(destPath).mtime) {
+          fs.copyFileSync(srcPath, destPath);
+          console.log(`Copied: ${srcPath} -> ${destPath}`);
+        }
+      } catch (err) {
+        console.error(`Error copying ${srcPath}: ${err.message}`);
+      }
+    }
+  }
+}
+
 try {
-  // Copy files using rsync, excluding node_modules and other unwanted directories
+  // Copy files from client directory to root, excluding node_modules
   console.log('Copying files from client directory...');
-  execSync(
-    'rsync -av --exclude="node_modules" --exclude=".git" --exclude=".github" client/ ./',
-    { stdio: 'inherit' }
-  );
+  copyDir('client', './', ['node_modules', '.git', '.github']);
   
   // Ensure the index.html has the WebSocket blocker script at the top
   console.log('Checking index.html for WebSocket blocker...');
