@@ -1,18 +1,44 @@
 {
   "name": "ptcg-sim-meta",
   "version": "1.0.0",
+  "description": "Pokémon TCG Tabletop Simulator with Meta features",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "build": "node build.js",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
-    "build": "cp -rL client/[^n]* ./ && cp -rL client/[a-mo-z]* ./",
-    "pages:deploy": "wrangler pages deploy client"
+    "pages:dev": "wrangler pages dev ./client",
+    "pages:deploy": "wrangler pages deploy ./client",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf .wrangler"
   },
   "dependencies": {
     "itty-router": "^4.0.23"
   },
   "devDependencies": {
     "wrangler": "^4.4.0"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Envoyofhell/ptcg-sim-meta.git"
+  },
+  "keywords": [
+    "ptcg",
+    "pokemon",
+    "trading-card-game",
+    "simulator",
+    "cloudflare-workers"
+  ],
+  "author": "Envoyofhell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Envoyofhell/ptcg-sim-meta/issues"
+  },
+  "homepage": "https://meta-ptcg.org"
 }
