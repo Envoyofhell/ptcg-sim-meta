@@ -10,90 +10,111 @@ class WebSocketClient {
       this.maxReconnectAttempts = 5;
       this.reconnectTimeout = null;
       this.id = crypto.randomUUID(); // Generate a client ID to replace socket.io's id
+      console.log('WebSocketClient constructed with ID:', this.id);
     }
     
     connect(roomId, username, isSpectator = false) {
       // Close any existing connection
       if (this.socket) {
+        console.log('Closing existing WebSocket connection');
         this.socket.close();
       }
       
-      // Use the current host for WebSocket connection instead of hardcoded onrender.com domain
+      // Use the current host for WebSocket connection
       const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
       const host = window.location.host;
       const url = `${protocol}${host}/websocket?roomId=${roomId}`;
       
-      console.log(`Connecting to WebSocket: ${url}`);
+      console.log(`Connecting WebSocket to: ${url} as ${username} (spectator: ${isSpectator})`);
       
-      this.socket = new WebSocket(url);
-      this.roomId = roomId;
-      this.username = username;
-      this.isSpectator = isSpectator;
-      
-      this.socket.onopen = () => {
-        console.log('WebSocket connection established');
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
+      try {
+        this.socket = new WebSocket(url);
+        this.roomId = roomId;
+        this.username = username;
+        this.isSpectator = isSpectator;
         
-        // Send join message automatically
-        if (roomId) {
-          this.emit('joinGame', { roomId, username, isSpectator });
-        }
-        
-        // Trigger connect event handlers
-        this._triggerEvent('connect', {});
-      };
-      
-      this.socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const { type, ...payload } = data;
+        this.socket.onopen = () => {
+          console.log('WebSocket connection established successfully');
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
           
-          // Trigger event handlers
-          this._triggerEvent(type, payload);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-      
-      this.socket.onclose = () => {
-        console.log('WebSocket connection closed');
-        this.isConnected = false;
+          // Send join message automatically
+          if (roomId) {
+            console.log(`Emitting joinGame event for room: ${roomId}`);
+            this.emit('joinGame', { roomId, username, isSpectator });
+          }
+          
+          // Trigger connect event handlers
+          this._triggerEvent('connect', {});
+        };
         
-        // Attempt to reconnect if not manually closed
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnectTimeout = setTimeout(() => {
-            this.reconnectAttempts++;
-            this.connect(this.roomId, this.username, this.isSpectator);
-          }, 1000 * Math.pow(2, this.reconnectAttempts)); // Exponential backoff
-        }
+        this.socket.onmessage = (event) => {
+          try {
+            console.log('WebSocket message received:', event.data.slice(0, 100) + '...');
+            const data = JSON.parse(event.data);
+            const { type, ...payload } = data;
+            
+            // Trigger event handlers
+            this._triggerEvent(type, payload);
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+          }
+        };
         
-        // Trigger disconnect event handlers
-        this._triggerEvent('disconnect', {});
-      };
-      
-      this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        // Trigger error event handlers
-        this._triggerEvent('error', { error });
-      };
+        this.socket.onclose = (event) => {
+          console.log(`WebSocket connection closed: code=${event.code}, reason=${event.reason}`);
+          this.isConnected = false;
+          
+          // Attempt to reconnect if not manually closed
+          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            const delay = 1000 * Math.pow(2, this.reconnectAttempts);
+            console.log(`Scheduling reconnect attempt ${this.reconnectAttempts+1} in ${delay}ms`);
+            
+            this.reconnectTimeout = setTimeout(() => {
+              this.reconnectAttempts++;
+              console.log(`Attempting reconnect #${this.reconnectAttempts}`);
+              this.connect(this.roomId, this.username, this.isSpectator);
+            }, delay); // Exponential backoff
+          } else {
+            console.log('Maximum reconnect attempts reached');
+          }
+          
+          // Trigger disconnect event handlers
+          this._triggerEvent('disconnect', {});
+        };
+        
+        this.socket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          // Trigger error event handlers
+          this._triggerEvent('error', { error });
+        };
+      } catch (error) {
+        console.error('Error creating WebSocket:', error);
+      }
     }
     
     // Socket.io-compatible emit method
     emit(eventType, data = {}) {
       if (!this.isConnected) {
-        console.warn('WebSocket not connected, message not sent');
+        console.warn('WebSocket not connected, message not sent:', eventType);
         return;
       }
       
-      this.socket.send(JSON.stringify({
-        type: eventType,
-        ...data
-      }));
+      try {
+        const message = JSON.stringify({
+          type: eventType,
+          ...data
+        });
+        console.log(`Emitting WebSocket message: ${eventType}`);
+        this.socket.send(message);
+      } catch (error) {
+        console.error('Error sending WebSocket message:', error);
+      }
     }
     
     // Socket.io-compatible on method
     on(eventType, callback) {
+      console.log('Registering event handler for:', eventType);
       if (!this.eventHandlers[eventType]) {
         this.eventHandlers[eventType] = [];
       }
@@ -102,6 +123,7 @@ class WebSocketClient {
     
     // Socket.io-compatible off method
     off(eventType, callback) {
+      console.log('Removing event handler for:', eventType);
       if (!this.eventHandlers[eventType]) return;
       
       if (callback) {
@@ -116,6 +138,7 @@ class WebSocketClient {
     _triggerEvent(eventType, data) {
       if (!this.eventHandlers[eventType]) return;
       
+      console.log(`Triggering ${this.eventHandlers[eventType].length} handlers for event:`, eventType);
       for (const handler of this.eventHandlers[eventType]) {
         try {
           handler(data);
@@ -127,6 +150,7 @@ class WebSocketClient {
     
     // Close connection
     disconnect() {
+      console.log('Disconnecting WebSocket');
       if (this.socket) {
         this.socket.close();
       }
@@ -151,4 +175,8 @@ class WebSocketClient {
   
   // Export singleton instance
   export const socket = new WebSocketClient();
+  // Make it globally available
   window.socket = socket;
+  
+  // Log that the WebSocket client is ready
+  console.log('WebSocket client exported and ready to use');

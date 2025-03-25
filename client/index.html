@@ -25,71 +25,46 @@
     <link rel="stylesheet" href="src/css/index.css">
     <link rel="stylesheet" href="../src/css/glow.css">
     
-    <!-- Socket.IO Interceptor -->
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <!-- Dummy Socket.IO - Prevents external connections -->
     <script>
-      // Save original io function
-      const originalIO = io;
-      
-      // Override Socket.IO with our interceptor
+      // Mock Socket.IO library completely before it loads
       window.io = function(url, options) {
         console.log('Intercepting Socket.IO connection attempt to:', url || 'default');
         
-        // Use current host instead of onrender.com
-        const host = window.location.host;
-        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const wsUrl = `${protocol}${host}/websocket`;
-        
-        console.log('Redirecting to WebSocket at:', wsUrl);
-        
-        // Create a Socket.IO-compatible object that uses our WebSocket client
+        // Return mock Socket.IO object
         return {
           on: function(event, callback) {
-            console.log('Socket.IO event registered:', event);
-            // When our websocket client is ready, register the event
-            if (window.socket) {
-              window.socket.on(event, callback);
-            } else {
-              console.warn('WebSocket client not initialized yet');
-              // Add event to queue to be registered when socket is available
-              document.addEventListener('socketReady', function() {
-                if (window.socket) {
-                  window.socket.on(event, callback);
-                }
-              });
-            }
+            console.log('Mock Socket.IO event registered:', event);
+            // Store event handlers to transfer to real WebSocket later
+            if (!window._socketEvents) window._socketEvents = [];
+            window._socketEvents.push({event, callback});
           },
           emit: function(event, data) {
-            console.log('Socket.IO emit:', event);
+            console.log('Mock Socket.IO emit:', event);
+            // Forward to WebSocket client if available
             if (window.socket && window.socket.emit) {
               window.socket.emit(event, data);
-            } else {
-              console.warn('Cannot emit - WebSocket not connected');
             }
           },
           connect: function() {
-            console.log('Socket.IO connect called - using WebSocket instead');
-            // Socket connection will be handled by the join room button
+            console.log('Mock Socket.IO connect called');
           },
           disconnect: function() {
-            console.log('Socket.IO disconnect called');
+            console.log('Mock Socket.IO disconnect called');
             if (window.socket && window.socket.disconnect) {
               window.socket.disconnect();
             }
           },
-          // Mock Socket.IO properties
-          connected: window.socket ? window.socket.isConnected : false,
-          id: window.socket ? window.socket.id : null
+          connected: false,
+          id: null
         };
-      };
-      
-      // Create custom event to signal when socket is ready
-      window.dispatchSocketReady = function() {
-        document.dispatchEvent(new CustomEvent('socketReady'));
       };
     </script>
     
-    <!-- Main Application Script -->
+    <!-- Load actual Socket.IO but now it will use our mock version -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    
+    <!-- Main Application Script - Load after our mocked Socket.IO -->
     <script type="module" src="/src/front-end.js"></script>
     
     <!-- Mobile Detection Script -->
@@ -99,11 +74,6 @@
             
             if (isMobile) {
                 alert("PTCG-sim & Meta is still in mobile development. Please use a desktop for full functionality.");
-            }
-            
-            // Dispatch socket ready event when window loads
-            if (window.socket) {
-                window.dispatchSocketReady();
             }
         };
     </script>
