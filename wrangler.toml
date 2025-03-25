@@ -1,4 +1,4 @@
-name = "ptcg-sim-meta"
+name = "test-ptcg-sim-meta"
 compatibility_date = "2025-03-24"
 main = "workers/index.js"
 
