@@ -5,15 +5,11 @@ main = "workers/index.js"
 
 # Environment Variables
 [vars]
-ALLOWED_ORIGINS = "https://test.meta-ptcg.org,https://test-ptcg-sim-meta.pages.dev,https://meta-ptcg.org,https://ptcg-sim-meta.pages.dev"
+ALLOWED_ORIGINS = "https://test.meta-ptcg.org,https://test-ptcg-sim-meta.pages.dev,https://meta-ptcg.org,https://ptcg-sim-meta.pages.dev,http://localhost:3000,http://localhost:8787,http://127.0.0.1:8787"
 
 # Static Assets Configuration
 [site]
 bucket = "./client"
-
-# Pages Configuration
-[pages]
-pages_build_output_dir = "./client"
 
 # Development Environment (default)
 # Custom Domain Routes
@@ -54,16 +50,10 @@ tag = "v1"
 new_classes = ["GameRoom"]
 
 # Assets Binding
-# This allows your worker to access static assets
-[triggers]
-crons = []
-
 [build]
-command = "pnpm run build"
-watch_dir = "workers"
+command = "node build.js"
+watch_dir = ["workers", "client"]
 
-# Miniflare Development Config
-[miniflare]
-kv_persist = true
-cache_persist = true
-durable_objects_persist = true
+# WebSocket session cleaning
+[triggers]
+crons = ["0 */6 * * *"] # Run every 6 hours to clean up inactive sessions

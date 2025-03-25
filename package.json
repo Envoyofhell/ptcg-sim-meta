@@ -5,21 +5,32 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "start": "wrangler dev",
+    "start": "node server/dev-server.js",
     "build": "node build.js",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "pages:dev": "wrangler pages dev ./client",
     "pages:deploy": "wrangler pages deploy ./client",
+    "db:local": "wrangler d1 execute ptcg-sim-meta-db-test --local --file=migrations/0000_initial.sql",
+    "db:migrations": "wrangler d1 execute ptcg-sim-meta-db-test --file=migrations/0000_initial.sql",
+    "db:prod-migrations": "wrangler d1 execute ptcg-sim-meta-db --env production --file=migrations/0000_initial.sql",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "clean": "rm -rf .wrangler"
   },
   "dependencies": {
-    "itty-router": "^4.0.23"
+    "itty-router": "^4.0.23",
+    "ws": "^8.16.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "wrangler": "^4.4.0"
+    "wrangler": "^4.4.0",
+    "@cloudflare/workers-types": "^4.20240314.0",
+    "eslint": "^8.57.0",
+    "nodemon": "^3.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
