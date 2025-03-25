@@ -27,7 +27,46 @@
     
     <!-- External Libraries -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script>
+  // Socket.io interceptor - redirect connections to WebSocket client
+  const originalIO = io;
+  window.io = function(url, options) {
+    console.log('Intercepting Socket.IO connection to:', url || 'default');
     
+    // If trying to connect to onrender.com or any other domain
+    if (!url || url.includes('onrender.com')) {
+      console.log('Redirecting to WebSocket client');
+      // Return empty object with basic Socket.io API
+      return {
+        on: function(event, callback) {
+          console.log('Socket.io event registered:', event);
+          // Register with your WebSocket client
+          if (window.socket && window.socket.on) {
+            window.socket.on(event, callback);
+          }
+        },
+        emit: function(event, data) {
+          console.log('Socket.io emit:', event);
+          // Forward to your WebSocket client
+          if (window.socket && window.socket.emit) {
+            window.socket.emit(event, data);
+          }
+        },
+        connect: function() {
+          console.log('Socket.io connect redirected');
+          // Connect your WebSocket client
+          if (window.socket && window.socket.connect) {
+            window.socket.connect();
+          }
+        }
+      };
+    }
+    
+    // Allow connections to other domains
+    return originalIO(url, options);
+  };
+</script>
     <!-- Main Application Script -->
     <script type="module" src="/src/front-end.js"></script>
     
