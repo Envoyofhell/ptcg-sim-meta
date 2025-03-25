@@ -24,7 +24,63 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="src/css/index.css">
     <link rel="stylesheet" href="../src/css/glow.css">
-    
+    <script>
+        // Block connections to Render.com servers
+        (function() {
+          // Store original XMLHttpRequest
+          var originalXHR = window.XMLHttpRequest;
+          
+          // Override XMLHttpRequest to block requests to render.com
+          window.XMLHttpRequest = function() {
+            var xhr = new originalXHR();
+            var originalOpen = xhr.open;
+            
+            xhr.open = function(method, url, async, user, password) {
+              // Block requests to render.com
+              if (url && typeof url === 'string' && url.includes('onrender.com')) {
+                console.warn('Blocked request to:', url);
+                // Create a fake successful response
+                Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                Object.defineProperty(this, 'status', { value: 200, writable: false });
+                Object.defineProperty(this, 'responseText', { value: '{}', writable: false });
+                
+                // Schedule fake load event
+                setTimeout(() => {
+                  if (this.onload) this.onload();
+                  if (this.onreadystatechange) this.onreadystatechange();
+                }, 0);
+                
+                return;
+              }
+              
+              // Allow all other requests
+              return originalOpen.apply(this, arguments);
+            };
+            
+            return xhr;
+          };
+          
+          // Mock Socket.IO before it loads
+          window.io = function() {
+            console.warn('Intercepted Socket.IO connection, redirecting to WebSocket client');
+            // Return Socket.IO compatible object that uses our WebSocket client
+            return {
+              on: function(event, callback) {
+                if (window.socket) window.socket.on(event, callback);
+              },
+              emit: function(event, data) {
+                if (window.socket) window.socket.emit(event, data);
+              },
+              connect: function() {
+                console.log('Socket.IO connect redirected to WebSocket client');
+              },
+              disconnect: function() {
+                if (window.socket) window.socket.disconnect();
+              }
+            };
+          };
+        })();
+      </script>
     <!-- Dummy Socket.IO - Prevents external connections -->
     <script>
       // Mock Socket.IO library completely before it loads
