@@ -1,18 +1,26 @@
+# Cloudflare Worker Configuration for PTCG Simulator
+# Last Updated: 2024-03-25
+# Compatible with Node.js 18.17.1
+
 # Core Worker Configuration
 name = "test-ptcg-sim-meta"
 compatibility_date = "2025-03-24"
 main = "workers/index.js"
 
+# Node.js Compatibility Settings
+node_compat = true
+compatibility_flags = ["nodejs_compat"]
+
 # Environment Variables
 [vars]
 ALLOWED_ORIGINS = "https://test.meta-ptcg.org,https://test-ptcg-sim-meta.pages.dev,https://meta-ptcg.org,https://ptcg-sim-meta.pages.dev,http://localhost:3000,http://localhost:8787,http://127.0.0.1:8787"
+NODE_VERSION = "18.17.1"  # Explicit Node.js version declaration
 
 # Static Assets Configuration
 [site]
 bucket = "./client"
 
-# Development Environment (default)
-# Custom Domain Routes
+# Development Routes
 routes = [
   { pattern = "test.meta-ptcg.org", custom_domain = true },
   { pattern = "test-ptcg-sim-meta.jasonh1993.workers.dev/*", zone_name = "workers.dev" }
@@ -49,11 +57,36 @@ bindings = [
 tag = "v1"
 new_classes = ["GameRoom"]
 
-# Assets Binding
+# Build Configuration
 [build]
 command = "node build.js"
 watch_dir = ["workers", "client"]
 
-# WebSocket session cleaning
+# Node.js Compatibility for Different Environments
+[build.environment.development]
+node_compatibility = true
+node_compat = true
+
+[build.environment.production]
+node_compatibility = true
+node_compat = true
+
+# WebSocket and Maintenance Triggers
 [triggers]
-crons = ["0 */6 * * *"] # Run every 6 hours to clean up inactive sessions
+crons = [
+  "0 */6 * * *",  # Clean up inactive sessions every 6 hours
+  "0 0 1 * *"     # Monthly database maintenance
+]
+
+# Performance and Optimization Settings
+[placement]
+mode = "smart"
+
+# Logging Configuration
+[dev]
+port = 8787
+live_reload = true
+
+# Optional: Rate Limiting (if supported by your plan)
+[limits]
+requests_per_minute = 1000
