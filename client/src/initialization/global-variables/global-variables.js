@@ -39,20 +39,26 @@ export const systemState = {
   selfDeckData: '',
   p1OppDeckData: '',
   p2OppDeckData: '',
-  // Update URLs to use the new domain
-  cardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
-  p1OppCardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
-  p2OppCardBackSrc: 'https://test.meta-ptcg.org/src/assets/ccb.png',
+  // Use dynamic URLs based on current domain instead of hardcoded URLs
+  get cardBackSrc() {
+    return `${window.location.protocol}//${window.location.host}/src/assets/ccb.png`;
+  },
+  get p1OppCardBackSrc() {
+    return `${window.location.protocol}//${window.location.host}/src/assets/ccb.png`;
+  },
+  get p2OppCardBackSrc() {
+    return `${window.location.protocol}//${window.location.host}/src/assets/ccb.png`;
+  },
 };
 
 // Export socket for use throughout the application
 export { socket };
 
-// Update preload image URL
-preloadImage('https://test.meta-ptcg.org/src/assets/ccb.png');
+// Update preload image URL to use dynamic URL instead of hardcoded domain
+preloadImage(`${window.location.protocol}//${window.location.host}/src/assets/ccb.png`);
 
-// Set background image
-document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('https://test.meta-ptcg.org/src/assets/background1.jpg')`;
+// Set background image with dynamic URL
+document.body.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url('${window.location.protocol}//${window.location.host}/src/assets/background1.jpg')`;
 document.body.style.backgroundPosition = '-200px 0';
 
 // create global variable that holds the information of a selected card

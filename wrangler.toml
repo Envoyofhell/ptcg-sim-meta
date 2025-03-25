@@ -6,6 +6,11 @@ main = "workers/index.js"
 [site]
 bucket = "./client"
 
+# Add custom routes for test domain
+routes = [
+  { pattern = "test.meta-ptcg.org", custom_domain = true }
+]
+
 # Test environment database (default)
 [[d1_databases]]
 binding = "DB"
@@ -15,7 +20,7 @@ database_id = "1b70b17d-fa48-4a36-8f02-3698604bdc7f"
 # Production environment configuration
 [env.production]
 routes = [
-  { pattern = "test.meta-ptcg.org", custom_domain = true }
+  { pattern = "meta-ptcg.org", custom_domain = true }
 ]
 
 [[env.production.d1_databases]]
@@ -23,7 +28,7 @@ binding = "DB"
 database_name = "ptcg-sim-meta-db"
 database_id = "9da27bfc-4435-44b9-8229-79bc0933e432"
 
-# Add this to your wrangler.toml
+# Durable Objects for WebSocket support
 [durable_objects]
 bindings = [
   { name = "GAME_ROOM", class_name = "GameRoom" }
