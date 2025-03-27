@@ -1,3 +1,60 @@
-node_modules/
-server/database/db.sqlite
-/client/dist
+# Cloudflare Worker Project .gitignore
+
+# Dependencies
+/node_modules/
+/.pnp
+.pnp.js
+.yarn/
+
+# Environment Variables
+.env
+.dev.vars
+.env.*
+!.env.example
+
+# Wrangler local files
+.wrangler/
+
+# Build output
+/dist/
+/build/
+/workers-site/
+/.svelte-kit/
+/.cloudflare/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.project
+.classpath
+.settings/
+*.sublime-workspace
+
+# Database files
+*.sqlite
+*.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
