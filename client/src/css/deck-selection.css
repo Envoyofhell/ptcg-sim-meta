@@ -1,0 +1,592 @@
+/* filename: client/src/css/deck-selection.css */
+/**
+ * Deck Selection Styles
+ * Purpose: Styling for enhanced deck selection UI
+ * @author: [Your Name]
+ * @created: April 28, 2025
+ */
+
+/* Modal overlay */
+.deck-selection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Modal content */
+  .deck-selection-modal {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Dark mode styles */
+  .dark-mode-1 .deck-selection-modal {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+  }
+  
+  /* Header styling */
+  .deck-selection-header {
+    padding: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dark-mode-1 .deck-selection-header {
+    border-bottom-color: #444;
+  }
+  
+  .deck-selection-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  
+  .deck-selection-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .deck-selection-close:hover {
+    color: #000;
+  }
+  
+  .dark-mode-1 .deck-selection-close {
+    color: #aaa;
+  }
+  
+  .dark-mode-1 .deck-selection-close:hover {
+    color: #fff;
+  }
+  
+  /* Content container */
+  .deck-selection-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  /* Sidebar */
+  .deck-selection-sidebar {
+    width: 250px;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+  
+  .dark-mode-1 .deck-selection-sidebar {
+    border-right-color: #444;
+  }
+  
+  /* Categories */
+  .deck-category {
+    margin-bottom: 8px;
+  }
+  
+  .deck-category-header {
+    padding: 8px 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .deck-category-header::after {
+    content: '▼';
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+  }
+  
+  .deck-category.expanded .deck-category-header::after {
+    transform: rotate(180deg);
+  }
+  
+  .deck-category-header:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .dark-mode-1 .deck-category-header:hover {
+    background-color: #3d3d3d;
+  }
+  
+  /* Subcategories */
+  .deck-subcategories {
+    display: none;
+    padding-left: 16px;
+  }
+  
+  .deck-category.expanded .deck-subcategories {
+    display: block;
+  }
+  
+  .deck-subcategory {
+    padding: 6px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  
+  .deck-subcategory:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .dark-mode-1 .deck-subcategory:hover {
+    background-color: #3a3a3a;
+  }
+  
+  .deck-subcategory.active {
+    border-left-color: #0078d7;
+    background-color: #e6f2ff;
+    font-weight: bold;
+  }
+  
+  .dark-mode-1 .deck-subcategory.active {
+    border-left-color: #2995ff;
+    background-color: #253a4e;
+  }
+  
+  /* Deck list container */
+  .deck-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    border-right: 1px solid #e0e0e0;
+  }
+  
+  .dark-mode-1 .deck-list-container {
+    border-right-color: #444;
+  }
+  
+  /* Deck items */
+  .deck-item {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+  }
+  
+  .deck-item:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+  }
+  
+  .dark-mode-1 .deck-item {
+    border-color: #444;
+  }
+  
+  .dark-mode-1 .deck-item:hover {
+    background-color: #3d3d3d;
+    border-color: #555;
+  }
+  
+  .deck-item.active {
+    border-color: #0078d7;
+    background-color: #e6f2ff;
+  }
+  
+  .dark-mode-1 .deck-item.active {
+    border-color: #2995ff;
+    background-color: #253a4e;
+  }
+  
+  .deck-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .deck-meta {
+    font-size: 0.8rem;
+    color: #666;
+  }
+  
+  .dark-mode-1 .deck-meta {
+    color: #aaa;
+  }
+  
+  /* Deck details panel */
+  .deck-details-panel {
+    width: 350px;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  
+  .deck-details-placeholder {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    margin-top: 40px;
+  }
+  
+  .dark-mode-1 .deck-details-placeholder {
+    color: #777;
+  }
+  
+  .deck-detail-header {
+    margin-bottom: 16px;
+  }
+  
+  .deck-detail-header h3 {
+    margin: 0 0 8px 0;
+  }
+  
+  .deck-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  
+  .dark-mode-1 .deck-description {
+    color: #aaa;
+  }
+  
+  /* Card type sections */
+  .card-type-section {
+    margin-bottom: 16px;
+  }
+  
+  .card-type-section h4 {
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .dark-mode-1 .card-type-section h4 {
+    border-bottom-color: #444;
+  }
+  
+  .type-cards {
+    padding-left: 8px;
+  }
+  
+  .deck-card-item {
+    padding: 4px 0;
+    cursor: pointer;
+  }
+  
+  .deck-card-item:hover {
+    color: #0078d7;
+  }
+  
+  .dark-mode-1 .deck-card-item:hover {
+    color: #2995ff;
+  }
+  
+  /* Card preview */
+  .card-preview {
+    position: absolute;
+    z-index: 1010;
+    background-color: transparent;
+    pointer-events: none;
+  }
+  
+  .card-preview img {
+    max-height: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+  }
+  
+  /* Action buttons */
+  .deck-selection-actions {
+    padding: 16px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  
+  .dark-mode-1 .deck-selection-actions {
+    border-top-color: #444;
+  }
+  
+  .deck-selection-actions button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .deck-select-button {
+    background-color: #0078d7;
+    color: white;
+    border: none;
+  }
+  
+  .deck-select-button:hover {
+    background-color: #0062b1;
+  }
+  
+  .deck-select-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .dark-mode-1 .deck-select-button:disabled {
+    background-color: #555;
+  }
+  
+  .deck-import-button, .deck-refresh-button {
+    background-color: transparent;
+    border: 1px solid #0078d7;
+    color: #0078d7;
+  }
+  
+  .deck-import-button:hover, .deck-refresh-button:hover {
+    background-color: #f0f8ff;
+  }
+  
+  .dark-mode-1 .deck-import-button, .dark-mode-1 .deck-refresh-button {
+    border-color: #2995ff;
+    color: #2995ff;
+  }
+  
+  .dark-mode-1 .deck-import-button:hover, .dark-mode-1 .deck-refresh-button:hover {
+    background-color: #253a4e;
+  }
+  
+  /* Loading and error states */
+  .deck-loading, .deck-error, .no-decks-message {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+  }
+  
+  .dark-mode-1 .deck-loading, .dark-mode-1 .deck-error, .dark-mode-1 .no-decks-message {
+    color: #aaa;
+  }
+  
+  .deck-error {
+    color: #d32f2f;
+  }
+  
+  .dark-mode-1 .deck-error {
+    color: #ff6b6b;
+  }
+  
+  /* Import options modal */
+  .import-options-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .import-options-modal {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .dark-mode-1 .import-options-modal {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+  }
+  
+  /* Import options header */
+  .import-options-header {
+    padding: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dark-mode-1 .import-options-header {
+    border-bottom-color: #444;
+  }
+  
+  .import-options-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  
+  .import-options-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .import-options-close:hover {
+    color: #000;
+  }
+  
+  .dark-mode-1 .import-options-close {
+    color: #aaa;
+  }
+  
+  .dark-mode-1 .import-options-close:hover {
+    color: #fff;
+  }
+  
+  /* Format selector */
+  .format-selector {
+    padding: 16px;
+  }
+  
+  .format-label {
+    font-weight: bold;
+    margin-bottom: 12px;
+  }
+  
+  .format-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+  
+  .format-option {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .format-option:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+  }
+  
+  .dark-mode-1 .format-option {
+    border-color: #444;
+  }
+  
+  .dark-mode-1 .format-option:hover {
+    background-color: #3d3d3d;
+    border-color: #555;
+  }
+  
+  .format-option.selected {
+    border-color: #0078d7;
+    background-color: #e6f2ff;
+  }
+  
+  .dark-mode-1 .format-option.selected {
+    border-color: #2995ff;
+    background-color: #253a4e;
+  }
+  
+  .format-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  
+  .format-description {
+    font-size: 0.8rem;
+    color: #666;
+  }
+  
+  .dark-mode-1 .format-description {
+    color: #aaa;
+  }
+  
+  /* Text area */
+  .deck-import-textarea {
+    margin: 0 16px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    min-height: 200px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+  }
+  
+  .dark-mode-1 .deck-import-textarea {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #444;
+  }
+  
+  /* File input */
+  .file-input-container {
+    margin: 16px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .file-input-label {
+    margin-right: 12px;
+  }
+  
+  /* Action buttons */
+  .import-options-actions {
+    padding: 16px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  
+  .dark-mode-1 .import-options-actions {
+    border-top-color: #444;
+  }
+  
+  .import-options-actions button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .import-confirm-button {
+    background-color: #0078d7;
+    color: white;
+    border: none;
+  }
+  
+  .import-confirm-button:hover {
+    background-color: #0062b1;
+  }
+  
+  .import-cancel-button {
+    background-color: transparent;
+    border: 1px solid #666;
+    color: #666;
+  }
+  
+  .import-cancel-button:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .dark-mode-1 .import-cancel-button {
+    border-color: #aaa;
+    color: #aaa;
+  }
+  
+  .dark-mode-1 .import-cancel-button:hover {
+    background-color: #3d3d3d;
+  }

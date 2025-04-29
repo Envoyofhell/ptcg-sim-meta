@@ -1,0 +1,23 @@
+# filename: wrangler.toml
+name = "ptcg-simulator"
+main = "server/workers.js"
+compatibility_date = "2025-04-28"
+
+[site]
+bucket = "./client"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ptcg-simulator-db"
+database_id = "a6dbcbe7-7eff-4f02-bd7e-60b960674e04"
+
+[env.production]
+routes = [
+  { pattern = "ptcgsim.online", custom_domain = true },
+  { pattern = "meta-ptcg.org", custom_domain = true }
+]
+
+[env.test]
+routes = [
+  { pattern = "test.meta-ptcg.org", custom_domain = true }
+]
