@@ -1,330 +1,125 @@
-import express from 'express';
-import cors from 'cors';
-import http from 'http';
-import { Server } from 'socket.io';
-import { instrument } from '@socket.io/admin-ui';
-import bcrypt from 'bcryptjs';
-import path from 'path';
-import dotenv from 'dotenv';
-import sqlite3 from 'sqlite3';
+// ===== REPLACE THIS IN YOUR server/server.js =====
+
+// OLD CODE (remove/comment out):
+// import sqlite3 from 'sqlite3';
+// const db = new sqlite3.Database(dbFilePath);
+
+// NEW CODE (replace with this):
+import Database from 'better-sqlite3';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 
-// Handle __dirname in ES modules and adjust for client folder
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const clientDir = path.join(__dirname, '../client');
-
-const envFilePath = path.join(__dirname, 'socket-admin-password.env');
-dotenv.config({ path: envFilePath });
-
-function generateRandomKey(length) {
-  const characters =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let key = '';
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    key += characters.charAt(randomIndex);
-  }
-  return key;
+// Ensure database directory exists
+const dbDir = './database';
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
 }
 
-async function main() {
-  const app = express();
-  // HTTP Server Setup
-  const server = http.createServer(app);
+const dbFilePath = './database/db.sqlite';
+const db = new Database(dbFilePath);
 
-  // Socket.IO Server Setup
-  const io = new Server(server, {
-    connectionStateRecovery: {},
-    cors: {
-      origin: [
-        'https://admin.socket.io',
-        'https://ptcg-sim-meta.pages.dev',
-        'http://localhost:3000',
-        'https://meta-ptcg.org',
-        'https://test.meta-ptcg.org',
-        'https://*.onrender.com', // This will allow any subdomain on onrender.com
-      ],
-      credentials: true,
-    },
-  });
-  // Create a new SQLite database
-  const dbFilePath = 'database/db.sqlite';
-  const maxSizeGB = 15;
-  const db = new sqlite3.Database(dbFilePath);
-  let isDatabaseCapacityReached = false;
+// Enable WAL mode for better performance
+db.pragma('journal_mode = WAL');
 
-  // Check database size
-  const checkDatabaseSizeGB = () => {
-    const stats = fs.statSync(dbFilePath);
-    const fileSizeInBytes = stats.size;
-    const fileSizeInGB = fileSizeInBytes / (1024 * 1024 * 1024); // Convert bytes to gigabytes
-    return fileSizeInGB;
-  };
+// Replace your db.serialize() section with this:
+// (better-sqlite3 doesn't need serialize, it's synchronous)
 
-  // Perform size check periodically
-  setInterval(
-    () => {
-      const currentSize = checkDatabaseSizeGB();
-      if (currentSize > maxSizeGB) {
-        isDatabaseCapacityReached = true;
-      }
-    },
-    1000 * 60 * 60
-  );
-
-  // Create a table to store key-value pairs
-  db.serialize(() => {
-    db.run(
-      'CREATE TABLE IF NOT EXISTS KeyValuePairs (key TEXT PRIMARY KEY, value TEXT)'
+try {
+  // Create your existing tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS KeyValuePairs (
+      key TEXT PRIMARY KEY, 
+      value TEXT
     );
-  });
-
-  // Bcrypt Configuration
-  const saltRounds = 10;
-  const plainPassword = process.env.ADMIN_PASSWORD || 'defaultPassword';
-  const hashedPassword = bcrypt.hashSync(plainPassword, saltRounds);
-
-  // Socket.IO Admin Instrumentation
-  instrument(io, {
-    auth: {
-      type: 'basic',
-      username: 'admin',
-      password: hashedPassword,
-    },
-    mode: 'development',
-  });
-
-  app.use(cors());
-  app.use(express.static(clientDir));
-
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(clientDir, 'index.html'));
-  });
-
-  app.get('/import', (req, res) => {
-    const key = req.query.key;
-    if (!key) {
-      return res.status(400).json({ error: 'Key parameter is missing' });
-    }
-    res.sendFile(path.join(clientDir, 'import.html'));
-  });
-
-  app.get('/api/importData', (req, res) => {
-    const key = req.query.key;
-    if (!key) {
-      return res.status(400).json({ error: 'Key parameter is missing' });
-    }
-
-    db.get(
-      'SELECT value FROM KeyValuePairs WHERE key = ?',
-      [key],
-      (err, row) => {
-        if (err) {
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (row) {
-          try {
-            const jsonData = JSON.parse(row.value);
-            res.json(jsonData);
-          } catch (parseError) {
-            return res.status(500).json({ error: 'Error parsing JSON data' });
-          }
-        } else {
-          res.status(404).json({ error: 'Key not found' });
-        }
-      }
+    
+    CREATE TABLE IF NOT EXISTS raid_instances (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      config TEXT NOT NULL,
+      state TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      started_at DATETIME,
+      ended_at DATETIME
     );
-  });
 
-  const roomInfo = new Map();
-  // Function to periodically clean up empty rooms
-  const cleanUpEmptyRooms = () => {
-    roomInfo.forEach((room, roomId) => {
-      if (room.players.size === 0 && room.spectators.size === 0) {
-        roomInfo.delete(roomId);
-      }
-    });
-  };
-  // Set up a timer to clean up empty rooms every 5 minutes (adjust as needed)
-  setInterval(cleanUpEmptyRooms, 5 * 60 * 1000);
-  //Socket.IO Connection Handling
-  io.on('connection', async (socket) => {
-    // Function to handle disconnections (unintended)
-    const disconnectHandler = (roomId, username) => {
-      if (!socket.data.leaveRoom) {
-        socket.to(roomId).emit('userDisconnected', username);
-      }
-      // Remove the disconnected user from the roomInfo map
-      if (roomInfo.has(roomId)) {
-        const room = roomInfo.get(roomId);
+    CREATE TABLE IF NOT EXISTS raid_participants (
+      raid_id TEXT,
+      player_id TEXT,
+      socket_id TEXT,
+      username TEXT,
+      position_angle REAL,
+      position_x REAL,
+      position_y REAL,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (raid_id) REFERENCES raid_instances(id)
+    );
 
-        if (room.players.has(username)) {
-          room.players.delete(username);
-        } else if (room.spectators.has(username)) {
-          room.spectators.delete(username);
-        }
-
-        // If both players and spectators are empty, remove the roomInfo entry
-        if (room.players.size === 0 && room.spectators.size === 0) {
-          roomInfo.delete(roomId);
-        }
-      }
-    };
-    // Function to handle event emission
-    const emitToRoom = (eventName, data) => {
-      socket.broadcast.to(data.roomId).emit(eventName, data);
-      if (eventName === 'leaveRoom') {
-        socket.leave(data.roomId);
-        if (socket.data.disconnectListener) {
-          socket.data.leaveRoom = true;
-          socket.data.disconnectListener();
-          socket.removeListener('disconnect', socket.data.disconnectListener);
-          socket.data.leaveRoom = false;
-        }
-      }
-    };
-    socket.on('storeGameState', (exportData) => {
-      if (isDatabaseCapacityReached) {
-        socket.emit(
-          'exportGameStateFailed',
-          'No more storage for game states! You should probably tell Michael/Xiao Xiao.'
-        );
-      } else {
-        const key = generateRandomKey(4);
-        db.run(
-          'INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)',
-          [key, exportData],
-          (err) => {
-            if (err) {
-              socket.emit(
-                'exportGameStateFailed',
-                'Error exporting game! Please try again or save as a file.'
-              );
-            } else {
-              socket.emit('exportGameStateSuccessful', key);
-            }
-          }
-        );
-      }
-    });
-    socket.on('joinGame', (roomId, username, isSpectator) => {
-      if (!roomInfo.has(roomId)) {
-        roomInfo.set(roomId, { players: new Set(), spectators: new Set() });
-      }
-      const room = roomInfo.get(roomId);
-
-      if (room.players.size < 2 || isSpectator) {
-        socket.join(roomId);
-        // Check if the user is a spectator or there are fewer than 2 players
-        if (isSpectator) {
-          room.spectators.add(username);
-          socket.emit('spectatorJoin');
-        } else {
-          room.players.add(username);
-          socket.emit('joinGame');
-          socket.data.disconnectListener = () =>
-            disconnectHandler(roomId, username);
-          socket.on('disconnect', socket.data.disconnectListener);
-        }
-      } else {
-        socket.emit('roomReject');
-      }
-    });
-
-    socket.on('userReconnected', (data) => {
-      if (!roomInfo.has(data.roomId)) {
-        roomInfo.set(data.roomId, {
-          players: new Set(),
-          spectators: new Set(),
-        });
-      }
-      const room = roomInfo.get(data.roomId);
-      socket.join(data.roomId);
-      if (!data.notSpectator) {
-        room.spectators.add(data.username);
-      } else {
-        room.players.add(data.username);
-        socket.data.disconnectListener = () =>
-          disconnectHandler(data.roomId, data.username);
-        socket.on('disconnect', socket.data.disconnectListener);
-        io.to(data.roomId).emit('userReconnected', data);
-      }
-    });
-
-    // List of socket events
-    const events = [
-      'leaveRoom',
-      'requestAction',
-      'pushAction',
-      'resyncActions',
-      'catchUpActions',
-      'syncCheck',
-      'appendMessage',
-      'spectatorActionData',
-      'initiateImport',
-      'endImport',
-      // 'exchangeData',
-      // 'loadDeckData',
-      // 'reset',
-      // 'setup',
-      // 'takeTurn',
-      // 'draw',
-      // 'moveCardBundle',
-      // 'shuffleIntoDeck',
-      // 'moveToDeckTop',
-      // 'switchWithDeckTop',
-      // 'viewDeck',
-      // 'shuffleAll',
-      // 'discardAll',
-      // 'lostZoneAll',
-      // 'handAll',
-      // 'leaveAll',
-      // 'discardAndDraw',
-      // 'shuffleAndDraw',
-      // 'shuffleBottomAndDraw',
-      // 'shuffleZone',
-      // 'useAbility',
-      // 'removeAbilityCounter',
-      // 'addDamageCounter',
-      // 'updateDamageCounter',
-      // 'removeDamageCounter',
-      // 'addSpecialCondition',
-      // 'updateSpecialCondition',
-      // 'removeSpecialCondition',
-      // 'discardBoard',
-      // 'handBoard',
-      // 'shuffleBoard',
-      // 'lostZoneBoard',
-      'lookAtCards',
-      'stopLookingAtCards',
-      'revealCards',
-      'hideCards',
-      'revealShortcut',
-      'hideShortcut',
-      'lookShortcut',
-      'stopLookingShortcut',
-      // 'playRandomCardFaceDown',
-      // 'rotateCard',
-      // 'changeType',
-      // 'attack',
-      // 'pass',
-      // 'VSTARGXFunction',
-    ];
-
-    // Register event listeners using the common function
-    for (const event of events) {
-      socket.on(event, (data) => {
-        emitToRoom(event, data);
-      });
-    }
-  });
-
-  const port = 4000;
-  server.listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Server is running at http://localhost:${port}`);
-  });
+    CREATE TABLE IF NOT EXISTS raid_actions (
+      id INTEGER PRIMARY KEY,
+      raid_id TEXT,
+      player_id TEXT,
+      action_type TEXT,
+      action_data TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (raid_id) REFERENCES raid_instances(id)
+    );
+  `);
+  
+  console.log('✅ Database initialized at:', dbFilePath);
+} catch (err) {
+  console.error('❌ Database setup error:', err);
 }
-main();
+
+// ===== UPDATE YOUR DATABASE CALLS =====
+
+// CHANGE database operations from callback style to synchronous:
+
+// OLD sqlite3 style:
+// db.run('INSERT INTO...', [params], (err) => { ... });
+
+// NEW better-sqlite3 style:
+// const stmt = db.prepare('INSERT INTO...');
+// stmt.run(params);
+
+// For your existing code, update these patterns:
+
+// OLD:
+// db.run('INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)', [key, value], (err) => {
+//   if (err) { ... } else { ... }
+// });
+
+// NEW:
+// try {
+//   const stmt = db.prepare('INSERT OR REPLACE INTO KeyValuePairs (key, value) VALUES (?, ?)');
+//   stmt.run(key, value);
+//   // success
+// } catch (err) {
+//   // error
+// }
+
+// OLD:
+// db.get('SELECT value FROM KeyValuePairs WHERE key = ?', [key], (err, row) => {
+//   if (err) { ... } else { ... }
+// });
+
+// NEW:
+// try {
+//   const stmt = db.prepare('SELECT value FROM KeyValuePairs WHERE key = ?');
+//   const row = stmt.get(key);
+//   // use row
+// } catch (err) {
+//   // error
+// }
+
+// ===== RAID MANAGER UPDATES =====
+// If you're using the RaidManager, update the database calls there too:
+
+// In RaidManager.js, change:
+// this.db.run('INSERT INTO raid_instances...', [...], (err) => {});
+
+// To:
+// try {
+//   const stmt = this.db.prepare('INSERT INTO raid_instances (id, type, config, state) VALUES (?, ?, ?, ?)');
+//   stmt.run(raidId, config.type, JSON.stringify(config), 'lobby');
+// } catch (err) {
+//   console.error('Database error:', err);
+// }

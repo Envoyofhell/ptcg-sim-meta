@@ -81,7 +81,22 @@
         <button id="settingsButton" class="not-selected-page">Settings</button>
     </div>
     <div id="greyFiller"></div>
-
+    <button id="raidTestButton" style="
+    position: fixed; 
+    top: 10px; 
+    left: 10px; 
+    z-index: 9999; 
+    padding: 10px 20px; 
+    background: linear-gradient(45deg, #e74c3c, #c0392b); 
+    color: white; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  ">
+    🏴‍☠️ Test Raid Battle
+  </button>
     <!-- Player 1 Interface Box -->
     <div id="p1Box" class="sidebox">
         <div id="chatbox">
@@ -480,6 +495,55 @@
     <script src="src/changelogs/main-changelog.js"></script>
     <script src="src/changelogs/meta-changelog.js"></script>
     <script src="src/changelogs/changelog.js"></script>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const raidButton = document.getElementById('raidTestButton');
+          if (raidButton) {
+            raidButton.addEventListener('click', () => {
+              console.log('🚀 Testing raid system...');
+              
+              // Create a raid
+              window.raidClient.createRaid({
+                raidType: 'tcg-official',
+                maxPlayers: 4,
+                layout: 'versus'
+              });
+              
+              // Auto-join after creation
+              setTimeout(() => {
+                if (window.raidClient.currentRaid?.id) {
+                  const playerName = 'Player ' + Math.floor(Math.random() * 1000);
+                  console.log('🎮 Joining raid as:', playerName);
+                  window.raidClient.joinRaid(window.raidClient.currentRaid.id, playerName);
+                }
+              }, 1000);
+            });
+          }
+        });
+        
+        // Debug helper - add to global scope
+        window.raidDebug = {
+          showState: () => {
+            console.log('🎯 Current Raid State:');
+            console.log('Raid:', window.raidClient.currentRaid);
+            console.log('Position:', window.raidClient.playerPosition);
+            console.log('All Positions:', window.raidClient.allPositions);
+          },
+          
+          createTestRaid: () => {
+            window.raidClient.createRaid();
+          },
+          
+          joinExisting: (raidId, playerName = 'Test Player') => {
+            window.raidClient.joinRaid(raidId, playerName);
+          },
+          
+          toggleLayout: () => {
+            window.raidClient.toggleLayout();
+          }
+        };
+        
+        console.log('🔧 Raid debug tools available: window.raidDebug');
+        </script>
 </body>
 </html>
