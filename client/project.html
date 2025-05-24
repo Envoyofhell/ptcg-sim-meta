@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTCG Simulator - Project Integration v6 (3D Wrapper with Shims)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+    <style>
+        /* --- Base and General Styles (Inspired by index.css) --- */
+        * { user-select: none; box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a202c; color: #e2e8f0; }
+        #gameContainer { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; cursor: grab; }
+        #gameContainer:active { cursor: grabbing; }
+        body { background-image: linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), url('https://placehold.co/1920x1080/2d3748/1a202c?text=Game+Background+Placeholder'); background-size: cover; background-position: center; }
+        
+        /* --- Overlay & Modal Styles --- */
+        .overlay-panel { position: fixed; z-index: 10; padding: 1rem; border-radius: 0.5rem; background-color: rgba(26, 32, 44, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(74, 85, 104, 0.7); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .modal-content { background-color: #2d3748; padding: 1.5rem; border-radius: 0.5rem; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid #4a5568; color: #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-content h2 { font-size: 1.6rem; margin-bottom: 1.2rem; padding-bottom: 0.75rem; border-bottom: 1px solid #4a5568; color: #a0aec0; }
+        .modal-close-button { position: absolute; top: 0.75rem; right: 0.75rem; background: transparent; color: #a0aec0; border: none; font-size: 1.75rem; cursor: pointer; line-height: 1; transition: color 0.2s; }
+        .modal-close-button:hover { color: #e2e8f0; }
+
+        /* --- Button Styles (Inspired by index.css and common patterns) --- */
+        .button { padding: 0.6rem 1.2rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease-in-out; border: none; font-size: 0.9rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .button-primary { background: linear-gradient(to bottom, #4299e1, #3182ce); color: white; } 
+        .button-primary:hover:not(:disabled) { background: linear-gradient(to bottom, #3182ce, #2b6cb0); }
+        .button-secondary { background: linear-gradient(to bottom, #4a5568, #2d3748); color: white; }
+        .button-secondary:hover:not(:disabled) { background: linear-gradient(to bottom, #2d3748, #1a202c); }
+        .button-neutral { background: linear-gradient(to bottom, #a0aec0, #718096); color: #1a202c; }
+        .button-neutral:hover:not(:disabled) { background: linear-gradient(to bottom, #718096, #4a5568); }
+        .button-danger { background: linear-gradient(to bottom, #e53e3e, #c53030); color: white; } 
+        .button-danger:hover:not(:disabled) { background: linear-gradient(to bottom, #c53030, #9b2c2c); }
+        .button-success { background: linear-gradient(to bottom, #48bb78, #38a169); color: white; } 
+        .button-success:hover:not(:disabled) { background: linear-gradient(to bottom, #38a169, #2f855a); }
+        .button-warning { background: linear-gradient(to bottom, #ecc94b, #d69e2e); color: #1a202c; } 
+        .button-warning:hover:not(:disabled) { background: linear-gradient(to bottom, #d69e2e, #b7791f); }
+        /* Specific button styles from index.css (adapted) */
+        .self-color { background: linear-gradient(to bottom, rgba(90, 110, 188, 0.9), rgba(60, 80, 158, 0.9)); color: white; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); }
+        .self-color:hover:not(:disabled) { background: linear-gradient(to bottom, rgba(80, 100, 178, 0.9), rgba(50, 70, 148, 0.9));}
+        .opp-color { background: linear-gradient(to bottom, rgba(188, 90, 113, 0.9), rgba(158, 60, 83, 0.9)); color: white; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); }
+        .opp-color:hover:not(:disabled) { background: linear-gradient(to bottom, rgba(178, 80, 103, 0.9), rgba(148, 50, 73, 0.9));}
+
+
+        /* --- Glow Effects (from glow.css, applied to HTML overlays) --- */
+        .glow-self-html { animation: faintNeonPulseSelfHTML 3s infinite; border: 1px solid rgba(0, 123, 255, 0.3); }
+        .glow-opp-html { animation: faintNeonPulseOppHTML 3s infinite; border: 1px solid rgba(255, 85, 100, 0.3); }
+        .glow-stadium-html { animation: faintNeonPulseStadiumHTML 3s infinite; border: 1px solid rgba(128, 0, 128, 0.3); }
+        @keyframes faintNeonPulseSelfHTML { 0%, 100% { box-shadow: 0 0 6px rgba(0,123,255,0.6), 0 0 12px rgba(0,123,255,0.4), inset 0 0 3px rgba(0,123,255,0.3); } 50% { box-shadow: 0 0 10px rgba(0,123,255,0.8), 0 0 20px rgba(0,123,255,0.6), inset 0 0 5px rgba(0,123,255,0.4); } }
+        @keyframes faintNeonPulseOppHTML { 0%, 100% { box-shadow: 0 0 6px rgba(255,85,100,0.6), 0 0 12px rgba(255,85,100,0.4), inset 0 0 3px rgba(255,85,100,0.3); } 50% { box-shadow: 0 0 10px rgba(255,85,100,0.8), 0 0 20px rgba(255,85,100,0.6), inset 0 0 5px rgba(255,85,100,0.4); } }
+        @keyframes faintNeonPulseStadiumHTML { 0%, 100% { box-shadow: 0 0 6px rgba(128,0,128,0.6), 0 0 12px rgba(128,0,128,0.4), inset 0 0 3px rgba(128,0,128,0.3); } 50% { box-shadow: 0 0 10px rgba(128,0,128,0.8), 0 0 20px rgba(128,0,128,0.6), inset 0 0 5px rgba(128,0,128,0.4); } }
+        
+        /* --- Specific UI Elements --- */
+        /* Chat Overlay */
+        #chatOverlay { bottom: 20px; left: 20px; width: 400px; height: 300px; display: flex; flex-direction: column; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+        #chatOverlay.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+        #chatTabs button { padding: 0.5rem 0.8rem; background-color: rgba(255,255,255,0.05); color: #a0aec0; margin-right: 0.25rem; border-top-left-radius: 0.25rem; border-top-right-radius: 0.25rem; border: none; font-size: 0.75rem; white-space: nowrap;}
+        #chatTabs button.active { background-color: rgba(74, 85, 104, 0.5); color: white; font-weight: 600; }
+        #chatMessages { flex-grow: 1; overflow-y: auto; padding: 0.75rem; border: 1px solid rgba(74,85,104,0.3); border-radius: 0.25rem; margin-bottom: 0.5rem; font-size: 0.875rem; background-color: rgba(0,0,0,0.25); }
+        #chatMessages p { margin-bottom: 0.35rem; line-height: 1.45; word-break: break-word; }
+        #chatMessages strong { color: #63b3ed; }
+        #chatMessages .chat-error strong { color: #fc8181; } 
+        #chatMessages .chat-init strong { color: #f6e05e; } 
+        #chatInput { flex-grow: 1; padding: 0.6rem; border-radius: 0.25rem; background-color: rgba(255,255,255,0.05); border: 1px solid rgba(74,85,104,0.4); color: #e2e8f0; margin-right: 0.5rem;}
+        #chatSendButton { padding: 0.6rem 1rem; }
+        #toggleChatButton { position: fixed; bottom: 20px; left: calc(20px + 400px + 10px); z-index: 11; background-color: #2d3748; color: white; padding: 0.6rem 0.8rem; border-radius: 0.25rem; cursor: pointer; border: 1px solid #4a5568; }
+
+        /* Main Menu */
+        #menuContainer { top: 20px; left: 20px; width: 300px; display: none; max-height: calc(100vh - 40px); overflow-y: auto; }
+        #menuContainer.visible { display: block; }
+        #menuContainer h2 { font-size: 1.3rem; margin-bottom: 1rem; border-bottom: 1px solid #4a5568; padding-bottom: 0.5rem; color: #cbd5e0;}
+        #menuContainer ul { list-style: none; padding: 0; margin: 0; }
+        #menuContainer ul li button { display: block; width: 100%; text-align: left; padding: 0.8rem 1rem; background-color: transparent; color: #e2e8f0; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; border:none; font-size: 0.9rem; }
+        #menuContainer ul li button:hover { background-color: rgba(255,255,255,0.08); }
+        #menuToggleButton { position: fixed; top: 20px; left: 20px; z-index: 12; background-color: #2d3748; color: white; padding: 0.6rem 0.8rem; border-radius: 0.25rem; cursor: pointer; font-size: 1.25rem; border: 1px solid #4a5568;}
+        #closeMenuButton { position: absolute; top: 0.75rem; right: 0.75rem; background: transparent; color: #a0aec0; border: none; font-size: 1.5rem; cursor: pointer; }
+        #menuContainer.visible + #menuToggleButton { display: none; }
+
+        /* Game Action Bar (inspired by boardButtonContainer) */
+        #gameActionControls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background-color: rgba(26, 32, 44, 0.9); backdrop-filter: blur(5px); padding: 0.6rem 0.8rem; border-radius: 0.5rem; display: flex; gap: 0.5rem; border: 1px solid #4a5568; }
+        #gameActionControls .button { padding: 0.5rem 0.75rem; font-size: 0.8rem; background: linear-gradient(to bottom, #4a5568, #2d3748); color:white; }
+        #gameActionControls .button:hover:not(:disabled) { background: linear-gradient(to bottom, #2d3748, #1a202c); }
+        #gameActionControls .button#actionTurnButton { background: linear-gradient(to bottom, #48bb78, #38a169); }
+        #gameActionControls .button#actionTurnButton:hover:not(:disabled) { background: linear-gradient(to bottom, #38a169, #2f855a); }
+        
+        /* Player Info Displays & Side Panels (Conceptual) */
+        .player-panel { position: fixed; z-index: 8; width: 220px; /* Similar to original sidebox width */ display: flex; flex-direction: column; background-color: rgba(30,41,59, 0.9); /* Tailwind slate-800 */ border: 1px solid #475569; /* slate-600 */ border-radius: 0.5rem; padding: 0.75rem; }
+        #player1Panel { bottom: calc(180px + 30px); /* Above hand */ right: 20px; height: 250px; }
+        #player2Panel { top: 20px; right: 20px; height: 250px; }
+        .player-panel h3 { font-size: 1rem; color: #94a3b8; /* slate-400 */ border-bottom: 1px solid #475569; padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+        .player-panel .info-item { font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .player-panel .info-item strong { color: #cbd5e1; /* slate-300 */ }
+        .player-panel .action-buttons button { font-size: 0.8rem; padding: 0.4rem 0.6rem; margin-top: 0.3rem; width: 100%; }
+
+        /* Tooltip for 3D game zones */
+        .zone-tooltip { position: absolute; background-color: rgba(10,10,20,0.9); color: white; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; pointer-events: none; display: none; white-space: nowrap; z-index: 1000; border: 1px solid #4a5568; }
+
+        /* Deck Import & Changelog Modals */
+        #deckImportModalContent textarea { width: 100%; min-height: 180px; background-color: #1a202c; color: #e2e8f0; border: 1px solid #4a5568; border-radius: 0.25rem; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.9rem; }
+        #deckImportModalContent .deck-tabs button { flex-grow: 1; margin-right: 0.5rem; }
+        #deckImportModalContent .deck-tabs button:last-child { margin-right: 0; }
+        #deckImportModalContent .deck-tabs { display: flex; margin-bottom: 1rem; }
+        #deckImportModalContent .deck-tabs button.active { background-color: #3182ce; font-weight: bold; }
+        #changelogModalContent { font-size: 0.9rem; line-height: 1.6; }
+        #changelogModalContent h2, #changelogModalContent h3 { color: #90cdf4; margin-top: 1rem; margin-bottom: 0.5rem; }
+        #changelogModalContent hr { border-color: #4a5568; margin: 1.5rem 0; }
+        #changelogModalContent ul { list-style-type: disc; padding-left: 1.5rem; }
+        #changelogModalContent li { margin-bottom: 0.5rem; }
+
+        /* Settings Modal */
+        #settingsModalContent .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #4a5568; }
+        #settingsModalContent .setting-item:last-child { border-bottom: none; }
+        #settingsModalContent label { font-size: 0.95rem; }
+        #settingsModalContent input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: #3182ce; }
+        #settingsModalContent select, #settingsModalContent input[type="text"] { background-color: #1a202c; color: #e2e8f0; border: 1px solid #4a5568; padding: 0.5rem; border-radius: 0.25rem; }
+
+        /* Keybind Modal */
+        #keybindModalContent .keybind-section { margin-bottom: 1.2rem; }
+        #keybindModalContent .keybind-section h3 { font-size: 1.2rem; color: #90cdf4; margin-bottom: 0.6rem; border-bottom: 1px solid #4a5568; padding-bottom: 0.3rem; }
+        #keybindModalContent ul { list-style: none; padding-left: 0; }
+        #keybindModalContent li { margin-bottom: 0.3rem; font-size: 0.9rem; display: flex; justify-content: space-between; }
+        #keybindModalContent code { background-color: #4a5568; padding: 0.15rem 0.4rem; border-radius: 0.2rem; font-family: monospace; color: #e2e8f0; }
+
+        /* Lobby Modal */
+        #lobbyModalContent input[type="text"] { background-color: #1a202c; color: #e2e8f0; border: 1px solid #4a5568; padding: 0.6rem; border-radius: 0.25rem; margin-bottom: 0.75rem; width: 100%; }
+        #lobbyModalContent .checkbox-group { display: flex; align-items: center; margin-bottom: 0.75rem; }
+        #lobbyModalContent .checkbox-group input[type="checkbox"] { width: auto; margin-right: 0.5rem; accent-color: #3182ce; transform: scale(1.1); }
+        #lobbyModalContent label { margin-left: 0.5rem; font-size: 0.9rem; }
+
+        /* Player Hand Overlay */
+        #playerHandOverlay { position: fixed; bottom: 0; left: 0; width: 100%; height: 190px; /* Increased height */ background-color: rgba(26, 32, 44, 0.9); backdrop-filter: blur(8px); border-top: 2px solid #4a5568; z-index: 5; display: flex; align-items: center; padding: 10px 20px; /* Added horizontal padding */ overflow-x: auto; gap: 12px; /* Increased gap */ }
+        #playerHandOverlay .card-display { width: 105px; /* Slightly wider */ height: 145px; border-radius: 8px; background-size: cover; background-position: center; box-shadow: 0 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15); position: relative; }
+        #playerHandOverlay .card-display:hover { transform: translateY(-10px) scale(1.1); box-shadow: 0 10px 25px rgba(0,123,255,0.5); z-index: 10; } /* Enhanced hover */
+        #playerHandOverlay .card-display img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        #playerHandOverlay .card-display .card-name-tooltip { display: none; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.8); color: white; padding: 3px 7px; border-radius: 3px; font-size: 0.75rem; white-space: nowrap; z-index: 20; }
+        #playerHandOverlay .card-display:hover .card-name-tooltip { display: block; }
+
+        /* Loading Indicator */
+        #loadingIndicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: none; flex-direction: column; align-items: center; background-color: rgba(0,0,0,0.75); padding: 2rem; border-radius: 0.5rem; }
+        #loadingSpinner { width: 40px; height: 40px; border: 5px solid #4a5568; border-top: 5px solid #63b3ed; border-radius: 50%; animation: spin 1s linear infinite; }
+        #loadingText { margin-top: 1rem; color: white; font-size: 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+    <div id="zoneTooltip" class="zone-tooltip"></div>
+
+    <button id="menuToggleButton" class="button">&#9776;</button>
+
+    <div id="menuContainer" class="overlay-panel">
+        <button id="closeMenuButton">&times;</button>
+        <h2>Game Menu</h2>
+        <ul>
+            <li><button id="menuNew1PGame" class="button-primary w-full text-left mb-2">New 1P Game</button></li>
+            <li><button id="menuNew2PGame" class="button-primary w-full text-left mb-2">New 2P Game (Lobby)</button></li>
+            <li><button id="menuNewRaid" class="button-primary w-full text-left mb-2">New Raid (2v2)</button></li>
+            <hr class="border-gray-700 my-2">
+            <li><button id="menuDeckImport" class="button-secondary w-full text-left mb-2">Deck Import / Builder</button></li>
+            <li><button id="menuLoadGame" class="button-secondary w-full text-left mb-2">Load Game State</button></li>
+            <li><button id="menuSaveGame" class="button-secondary w-full text-left mb-2">Save Game State</button></li>
+            <hr class="border-gray-700 my-2">
+            <li><button id="menuOpenSettings" class="button-neutral w-full text-left mb-2">Settings</button></li>
+            <li><button id="menuOpenKeybinds" class="button-neutral w-full text-left mb-2">View Keybinds</button></li>
+            <li><button id="menuToggleFullscreen" class="button-neutral w-full text-left mb-2">Toggle Fullscreen</button></li>
+            <hr class="border-gray-700 my-2">
+            <li><button id="menuViewChangelog" class="button-neutral w-full text-left mb-2">View Changelog</button></li>
+            <li><button id="menuViewTutorial" class="button-neutral w-full text-left mb-2">Watch Tutorial</button></li>
+            <li><button id="menuDonations" class="button-neutral w-full text-left">Sponsors & Donations</button></li>
+        </ul>
+    </div>
+
+    <div id="chatOverlay" class="overlay-panel">
+        <div id="chatTabs" class="flex mb-2">
+            <button class="active" data-tab="general">General</button>
+            <button data-tab="system">System</button>
+            <button data-tab="combat">Combat</button>
+            <button data-tab="init">Initialize</button>
+            <button data-tab="dev">Dev</button>
+        </div>
+        <div id="chatMessages"></div>
+        <div class="flex mt-2">
+            <input type="text" id="chatInput" placeholder="Type message...">
+            <button id="chatSendButton" class="button button-primary">Send</button>
+        </div>
+    </div>
+    <button id="toggleChatButton" class="button">💬</button>
+
+    <div id="gameActionControls">
+        <button id="actionTurnButton" class="button" title="Start Turn">+Turn</button>
+        <button id="actionAttackButton" class="button self-color" title="Declare Attack">Attack</button>
+        <button id="actionPassButton" class="button self-color" title="Pass Turn">Pass</button>
+        <button id="actionUndoButton" class="button self-color" title="Undo Last Action">Undo</button>
+        <button id="actionFlipCoinButton" class="button button-neutral" title="Flip Coin">Coin</button>
+        <button id="actionFlipBoardButton" class="button button-neutral" title="Flip Board View">⇅ Board</button>
+        <button id="actionRefreshImagesButton" class="button button-neutral" title="Refresh Card Images">↻ Images</button>
+    </div>
+    
+    <div id="player1Panel" class="player-panel glow-self-html">
+        <h3>Player 1 (You)</h3>
+        <div class="info-item">Deck: <strong id="p1DeckCount">0</strong></div>
+        <div class="info-item">Discard: <strong id="p1DiscardCount">0</strong></div>
+        <div class="info-item">Lost Zone: <strong id="p1LostZoneCount">0</strong></div>
+        <div class="info-item">Prizes: <strong id="p1PrizeCount">0</strong></div>
+        <div class="mt-auto action-buttons">
+            <button id="p1ViewDeckButton" class="button button-secondary text-sm">View Deck</button>
+            <button id="p1ViewDiscardButton" class="button button-secondary text-sm">View Discard</button>
+        </div>
+    </div>
+    <div id="player2Panel" class="player-panel glow-opp-html">
+        <h3>Player 2 (Opponent)</h3>
+        <div class="info-item">Deck: <strong id="p2DeckCount">0</strong></div>
+        <div class="info-item">Discard: <strong id="p2DiscardCount">0</strong></div>
+        <div class="info-item">Lost Zone: <strong id="p2LostZoneCount">0</strong></div>
+        <div class="info-item">Prizes: <strong id="p2PrizeCount">0</strong></div>
+         <div class="mt-auto action-buttons">
+            <button id="p2ViewDeckButton" class="button button-secondary text-sm">View Deck (Opp)</button>
+            <button id="p2ViewDiscardButton" class="button button-secondary text-sm">View Discard (Opp)</button>
+        </div>
+    </div>
+
+
+    <div id="playerHandOverlay"></div>
+
+    <div id="deckImportModal" class="modal-backdrop">
+        <div id="deckImportModalContent" class="modal-content">
+            <button class="modal-close-button">&times;</button>
+            <h2>Deck Import / Management</h2>
+            <div class="deck-tabs">
+                <button class="button button-secondary active" data-deck-tab="main">Main Deck</button>
+                <button class="button button-secondary" data-deck-tab="alt">Alt Deck (1P)</button>
+            </div>
+            <textarea id="mainDeckImportArea" placeholder="Paste your main decklist here..."></textarea>
+            <textarea id="altDeckImportArea" placeholder="Paste your alt decklist here..." style="display:none;"></textarea>
+            <div class="flex justify-between items-center mt-4">
+                <div>
+                    <label for="deckImportFileInput" class="button button-neutral mr-2 cursor-pointer">Upload File</label>
+                    <input type="file" id="deckImportFileInput" class="hidden" accept=".txt,.ptcgo,.csv">
+                    <button id="deckBrowseButton" class="button button-neutral mr-2">Browse Decks</button>
+                    <button id="deckSaveCurrentButton" class="button button-neutral">Save Current</button>
+                </div>
+                <div>
+                    <button id="deckImportConfirmButton" class="button button-success">Import & Confirm</button>
+                </div>
+            </div>
+             <p class="text-xs text-gray-400 mt-2">Tip: Use popular decklist formats. Custom image uploads will be handled by card name matching.</p>
+        </div>
+    </div>
+    
+    <div id="decklistsBrowseModal" class="modal-backdrop">
+        <div class="modal-content">
+            <button class="modal-close-button">&times;</button>
+            <h2>Browse Stored Decklists</h2>
+            <div id="decklistsContainer" class="max-h-96 overflow-y-auto">
+                <p class="text-gray-400">No decklists loaded yet. Implement decklist loading.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="changelogModal" class="modal-backdrop">
+        <div id="changelogModalContent" class="modal-content">
+             <button class="modal-close-button">&times;</button>
+            <h2>Changelog</h2>
+            <div class="flex mb-4 border-b border-gray-700">
+                <button id="mainChangelogTabButton" class="button button-secondary active mr-2" data-changelog="main">PTCG-Sim</button>
+                <button id="metaChangelogTabButton" class="button button-secondary" data-changelog="meta">Meta-PTCG</button>
+            </div>
+            <div id="changelogContentArea" class="prose prose-invert max-w-none"></div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal-backdrop">
+        <div id="settingsModalContent" class="modal-content">
+            <button class="modal-close-button">&times;</button>
+            <h2>Settings</h2>
+            <div class="setting-item">
+                <label for="settingDarkMode">Dark Mode (UI Overlays)</label>
+                <input type="checkbox" id="settingDarkMode" checked>
+            </div>
+            <div class="setting-item">
+                <label for="settingHideContainers">Hide 3D Zone Containers (Transparent)</label>
+                <input type="checkbox" id="settingHideContainers">
+            </div>
+            <div class="setting-item">
+                <label for="settingHideOppHand">Hide Opponent's Hand (1P)</label>
+                <input type="checkbox" id="settingHideOppHand">
+            </div>
+            <div class="setting-item">
+                <label for="settingChangeBackground">Change 3D Background URL</label>
+                <input type="text" id="inputBackgroundUrl" placeholder="Enter Background Image URL" class="flex-grow mr-2">
+                <button id="buttonChangeBackground" class="button button-secondary text-sm">Apply BG</button>
+            </div>
+            <div class="setting-item">
+                <label for="settingChangeCardBack">Change Card Back URL</label>
+                <input type="text" id="inputCardBackUrl" placeholder="Enter Card Back Image URL" class="flex-grow mr-2">
+                <button id="buttonChangeCardBack" class="button button-secondary text-sm">Apply Back</button>
+            </div>
+             <div class="setting-item">
+                <label for="settingLanguage">Language</label>
+                <select id="settingLanguage" class="bg-gray-700 text-white p-2 rounded">
+                    <option>English</option>
+                    <option>French</option>
+                    <option>German</option>
+                    <option>Italian</option>
+                    <option>Portuguese</option>
+                    <option>Spanish</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label for="settingSpectatorModeToggle">Spectator Mode (Conceptual)</label>
+                <input type="checkbox" id="settingSpectatorModeToggle">
+            </div>
+        </div>
+    </div>
+
+    <div id="keybindModal" class="modal-backdrop">
+        <div id="keybindModalContent" class="modal-content">
+            <button class="modal-close-button">&times;</button>
+            <h2>Keybinds</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="keybind-section">
+                    <h3>Card Movement</h3>
+                    <ul>
+                        <li>Move to Hand: <code>H</code></li>
+                        <li>Move to Discard: <code>D</code></li>
+                        <li>Move to Bench: <code>B</code></li>
+                        <li>Move to Active: <code>A</code></li>
+                        <li>Move to Stadium: <code>G</code></li>
+                        <li>Move to Lost Zone: <code>L</code></li>
+                        <li>Move to Prizes: <code>P</code></li>
+                        <li>Move to Board (Temp): <code>Space</code></li>
+                        <li>To Deck (Top): <code>ArrowUp</code></li>
+                        <li>To Deck (Bottom): <code>ArrowDown</code></li>
+                        <li>To Deck (Switch): <code>ArrowRight</code></li>
+                        <li>To Deck (Shuffle): <code>S</code> (when card selected)</li>
+                    </ul>
+                </div>
+                <div class="keybind-section">
+                    <h3>Deck / Hand / Board</h3>
+                    <ul>
+                        <li>Shuffle Deck: <code>S</code> (deck selected)</li>
+                        <li>Draw Card(s): <code>1-9</code></li>
+                        <li>View Top Card(s): <code>Alt + 1-9</code></li>
+                        <li>View Bottom Card(s): <code>Ctrl + 1-9</code></li>
+                        <li>Discard Hand: <code>Alt + D</code></li>
+                        <li>Shuffle Hand into Deck: <code>Alt + S</code></li>
+                        <li>Discard All (Board): <code>Enter</code></li>
+                    </ul>
+                </div>
+                <div class="keybind-section">
+                    <h3>Card Actions</h3>
+                    <ul>
+                        <li>Attach: <code>Q</code></li>
+                        <li>Evolve: <code>E</code></li>
+                        <li>View Card: <code>V</code></li>
+                        <li>Toggle Ability/Effect: <code>W</code></li>
+                        <li>Damage +: <code>Shift + 1-9</code></li>
+                        <li>Damage -: <code>Shift + Alt + 1-9</code></li>
+                        <li>Rotate Card: <code>R</code></li>
+                        <li>Look/Cover (Self): <code>C</code></li>
+                        <li>Hide/Reveal (Both): <code>Z</code> / <code>Alt + Z</code></li>
+                    </ul>
+                </div>
+                 <div class="keybind-section">
+                    <h3>General</h3>
+                    <ul>
+                        <li>Set Up Game: <code>Alt + N</code></li>
+                        <li>Reset Game: <code>Alt + R</code> (careful!)</li>
+                        <li>Start Turn: <code>T</code> (or +Turn button)</li>
+                        <li>Flip Coin: <code>F</code></li>
+                        <li>Flip Board View: <code>Alt + F</code></li>
+                        <li>Undo: <code>U</code></li>
+                        <li>Close Popups: <code>Escape</code></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-3">Note: For MacOS, use <code>Option</code> instead of <code>Alt</code>. Some keybinds are context-dependent.</p>
+        </div>
+    </div>
+
+    <div id="lobbyModal" class="modal-backdrop">
+        <div id="lobbyModalContent" class="modal-content">
+            <button class="modal-close-button">&times;</button>
+            <h2>Multiplayer Lobby</h2>
+            <input type="text" id="lobbyPlayerName" placeholder="Your Name">
+            <div class="flex items-center mb-3">
+                <input type="text" id="lobbyRoomId" placeholder="Room ID (leave empty to create)" class="flex-grow mr-2">
+                <button id="lobbyCopyRoomId" class="button button-neutral text-sm p-2">Copy</button>
+                <button id="lobbyGenerateRoomId" class="button button-neutral text-sm p-2 ml-1">Gen</button>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="lobbyCoachingMode">
+                <label for="lobbyCoachingMode">Enable Board Flip (Coaching)</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="lobbySpectatorMode">
+                <label for="lobbySpectatorMode">Join as Spectator</label>
+            </div>
+            <button id="lobbyJoinRoomButton" class="button button-success w-full mt-2">Join / Create Room</button>
+            <div id="lobbyStatus" class="mt-3 text-sm text-center h-4"></div>
+        </div>
+    </div>
+
+    <div id="loadingIndicator">
+        <div id="loadingSpinner"></div>
+        <p id="loadingText">Loading...</p>
+    </div>
+
+    <script>
+        // --- Global Error Handler ---
+        window.onerror = function(message, source, lineno, colno, error) {
+            if (typeof ChatModule !== 'undefined' && ChatModule.addMessage) {
+                ChatModule.addMessage('dev', 'JavaScript Error', `${message} at ${source.split('/').pop()}:${lineno}:${colno}`, 'error');
+            } else {
+                console.error("Early JS Error (ChatModule not ready):", message, source, lineno, colno, error);
+            }
+            return true; 
+        };
+
+        // --- Global Variables & State ---
+        const gameState = {
+            isDarkMode: true,
+            currentViewMode: '1v1', // '1v1', '2v2'
+            isPlayerTurn: true, // true for self, false for opponent
+            roomId: null,
+            playerName: 'Player1',
+            isZoneContainersHidden: false,
+            socketId: null,
+            cardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png', 
+            p1OppCardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png', // Card back P1's opponent sees for P1's deck/hand
+            p2OppCardBackSrc: 'https://ptcg-sim-meta.pages.dev/src/assets/ccb.png', // Card back P2's opponent (P1) sees for P2's deck/hand
+            
+            // Card definitions should include id, name, imageUrl, type, and any other relevant data from your 2D version
+            player1Hand: [ 
+                { id: 'card1', name: 'Pikachu', imageUrl: 'https://images.pokemontcg.io/sv3pt5/160.png', type: 'Pokémon' },
+                { id: 'card2', name: 'Charizard', imageUrl: 'https://images.pokemontcg.io/sv3pt5/183.png', type: 'Pokémon' },
+                { id: 'card3', name: 'Ultra Ball', imageUrl: 'https://images.pokemontcg.io/sv1/196.png', type: 'Trainer' },
+                { id: 'card4', name: 'Rare Candy', imageUrl: 'https://images.pokemontcg.io/sv1/191.png', type: 'Trainer' },
+                { id: 'card5', name: 'Boss\'s Orders', imageUrl: 'https://images.pokemontcg.io/pal/172.png', type: 'Trainer' },
+            ],
+            // Zone arrays for each player and neutral zones
+            // 'self' refers to the current browser's player
+            // 'opp' refers to the opponent
+            selfZoneArrays: { deck: [], lostZone: [], discard: [], prizes: [], active: [], bench: [[], [], [], [], []], hand: [], attachedCards: [], viewCards: [], board: [] },
+            oppZoneArrays: { deck: [], lostZone: [], discard: [], prizes: [], active: [], bench: [[], [], [], [], []], hand: [], attachedCards: [], viewCards: [], board: [] },
+            neutralZoneArrays: { stadium: [] },
+            // Add other game state properties as needed from your 2D version
+            // e.g., turnNumber, activePlayer ('self' or 'opp'), etc.
+            activePlayer: 'self', // Who's turn is it
+            turnNumber: 0,
+            gamePhase: 'setup', // e.g., 'setup', 'playing', 'ended'
+            selectedCard: null, // Stores data of the currently selected card object if any
+            initiator: 'self', // Who initiated the current action (for multiplayer context)
+        };
+        // Populate initial hand for gameState from player1Hand sample data
+        gameState.selfZoneArrays.hand = [...gameState.player1Hand];
+
+        // --- System State Shim (for compatibility with 2D functions) ---
+        // This object attempts to provide an interface similar to what your 2D script's `systemState` might have expected.
+        // You'll need to adapt this based on the actual properties your 2D functions use.
+        const systemStateShim = {
+            // Direct access to player zones (arrays of card objects)
+            get self() { return gameState.selfZoneArrays; },
+            get opp() { return gameState.oppZoneArrays; },
+            get neutral() { return gameState.neutralZoneArrays; },
+
+            // Game flow and player turn
+            get isPlayerTurn() { return gameState.activePlayer === gameState.initiator; /* Or however your 2D logic determined this */ },
+            get turn() { return gameState.turnNumber; },
+            
+            // Potentially map specific DOM elements if your 2D logic heavily relied on them
+            // This is harder to shim perfectly without seeing the 2D code.
+            // Example: if 2D code did `systemState.self.deck.element.classList.add('highlight')`
+            // you'd need a more complex shim or refactor that 2D code.
+            // For now, we assume 2D logic primarily manipulates card arrays and game state data.
+
+            // Add other getters or methods as needed to bridge `gameState` to what 2D functions expect.
+            // For example, if your 2D code used `systemState.selfDeckCount`, you could add:
+            // get selfDeckCount() { return gameState.selfZoneArrays.deck.length; }
+
+            // This function would be called by your adapted 2D functions to signal a state change
+            // that requires a UI update in the 3D environment.
+            notifyStateChange: function() {
+                console.log("systemStateShim.notifyStateChange called");
+                renderPlayerHand();
+                updatePlayerPanelCounts();
+                ThreeJSModule.updateAllZoneVisualsFromGameState(); 
+                // Add any other UI update calls needed
+            }
+        };
+
+
+        // --- Socket.IO Setup ---
+        let socket; 
+
+        // --- UI Modules (Defined early) ---
+        const ChatModule = (() => { 
+            const chatOverlay = document.getElementById('chatOverlay');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInput = document.getElementById('chatInput');
+            const chatSendButton = document.getElementById('chatSendButton');
+            const chatTabs = document.getElementById('chatTabs');
+            const toggleChatButton = document.getElementById('toggleChatButton');
+            let currentTab = 'general';
+
+            function addMessage(tab, sender, message, type = 'normal') {
+                if (!chatMessages) { 
+                    console.warn("ChatMessages element not ready for message:", tab, sender, message);
+                    return;
+                }
+                const p = document.createElement('p');
+                let senderPrefix = `<strong>${sender}:</strong> `;
+                if (type === 'system') senderPrefix = `<strong style="color: #90cdf4;">${sender}:</strong> `;
+                else if (type === 'error') senderPrefix = `<strong class="chat-error" style="color: #fc8181;">${sender}:</strong> `;
+                else if (type === 'success') senderPrefix = `<strong style="color: #68d391;">${sender}:</strong> `;
+                else if (type === 'init') senderPrefix = `<strong class="chat-init" style="color: #f6e05e;">${sender}:</strong> `;
+                
+                p.innerHTML = senderPrefix + message;
+                p.dataset.tab = tab;
+                if (tab !== currentTab && tab !== 'all') {
+                    p.style.display = 'none';
+                }
+                chatMessages.appendChild(p);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            if (chatSendButton) chatSendButton.addEventListener('click', () => {
+                const message = chatInput.value.trim();
+                if (message) {
+                    addMessage(currentTab, gameState.playerName || 'You', message);
+                    if (socket && socket.connected) {
+                         // Conceptual: Your 2D version might have specific message structures
+                        socket.emit('chatMessage', { 
+                            roomId: gameState.roomId, 
+                            sender: gameState.playerName, 
+                            message: message, 
+                            tab: currentTab 
+                        });
+                    } else {
+                        addMessage('system', 'System', 'Socket not connected. Message not sent.', 'error');
+                    }
+                    chatInput.value = '';
+                }
+            });
+            if (chatInput) chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') chatSendButton.click(); });
+            if (chatTabs) chatTabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const newTab = e.target.dataset.tab;
+                    if (newTab !== currentTab) {
+                        const currentActiveTab = chatTabs.querySelector(`button[data-tab="${currentTab}"]`);
+                        if(currentActiveTab) currentActiveTab.classList.remove('active');
+                        e.target.classList.add('active');
+                        currentTab = newTab;
+                        Array.from(chatMessages.children).forEach(msg => {
+                            msg.style.display = (msg.dataset.tab === currentTab || msg.dataset.tab === 'all') ? 'block' : 'none';
+                        });
+                    }
+                }
+            });
+            if (toggleChatButton) toggleChatButton.addEventListener('click', () => {
+                chatOverlay.classList.toggle('hidden');
+                toggleChatButton.textContent = chatOverlay.classList.contains('hidden') ? '💬' : '✖️';
+            });
+            return { addMessage };
+        })();
+
+        const UIManager = (() => { 
+            const modals = {};
+            ['deckImportModal', 'settingsModal', 'keybindModal', 'lobbyModal', 'decklistsBrowseModal', 'changelogModal'].forEach(id => {
+                modals[id] = document.getElementById(id);
+                if (modals[id]) { 
+                    const closeButton = modals[id].querySelector('.modal-close-button');
+                    if (closeButton) closeButton.addEventListener('click', () => hideModal(id));
+                    modals[id].addEventListener('click', (e) => { if (e.target === modals[id]) hideModal(id); });
+                } else {
+                     // This might log too early if ChatModule isn't ready, handled by DOMContentLoaded
+                }
+            });
+
+            function showModal(modalId) {
+                if (modals[modalId]) {
+                    modals[modalId].style.display = 'flex';
+                    if (ChatModule) ChatModule.addMessage('system', 'UI', `${modalId.replace('Modal','')} panel opened.`);
+                } else {
+                     if (ChatModule) ChatModule.addMessage('dev', 'UIManager Error', `Cannot show modal: ${modalId} not found.`, 'error');
+                }
+            }
+            function hideModal(modalId) {
+                if (modals[modalId]) {
+                    modals[modalId].style.display = 'none';
+                }
+            }
+            
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const loadingTextElement = document.getElementById('loadingText');
+            function showLoading(text = "Loading...") {
+                loadingTextElement.textContent = text;
+                loadingIndicator.style.display = 'flex';
+            }
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+            }
+            return { showModal, hideModal, showLoading, hideLoading };
+        })();
+        
+        const MenuModule = (() => { 
+            const menuContainer = document.getElementById('menuContainer');
+            const menuToggleButton = document.getElementById('menuToggleButton');
+            const closeMenuButton = document.getElementById('closeMenuButton');
+
+            if (menuToggleButton) menuToggleButton.addEventListener('click', () => { menuContainer.classList.add('visible'); menuToggleButton.style.display = 'none'; });
+            if (closeMenuButton) closeMenuButton.addEventListener('click', () => { menuContainer.classList.remove('visible'); menuToggleButton.style.display = 'block'; });
+            
+            function closeMenu() {
+                if (menuContainer) menuContainer.classList.remove('visible');
+                if (menuToggleButton) menuToggleButton.style.display = 'block';
+            }
+
+            const addClickListener = (id, handler) => {
+                const btn = document.getElementById(id);
+                if (btn) btn.addEventListener('click', handler);
+                else if (ChatModule) ChatModule.addMessage('dev', 'Menu Error', `Menu button ${id} not found.`, 'error');
+            };
+
+            addClickListener('menuNew1PGame', () => { 
+                ChatModule.addMessage('system', 'Game', 'Starting New 1P Game...', 'system'); 
+                gameState.currentViewMode = '1v1';
+                // Conceptual: Call your 2D game setup function
+                // e.g., originalSetup1PGame(systemStateShim, () => systemStateShim.notifyStateChange());
+                ThreeJSModule.setupPlayerLayout('1v1'); 
+                systemStateShim.notifyStateChange(); // Update UI based on new state
+                closeMenu(); 
+            });
+            addClickListener('menuNew2PGame', () => { 
+                ChatModule.addMessage('system', 'Game', 'Opening Multiplayer Lobby...', 'system'); 
+                UIManager.showModal('lobbyModal'); 
+                closeMenu(); 
+            });
+            addClickListener('menuNewRaid', () => { 
+                ChatModule.addMessage('system', 'Game', 'Starting New Raid (2v2 mode)...', 'system'); 
+                gameState.currentViewMode = '2v2';
+                // Conceptual: Call your 2D game setup function for raid
+                // e.g., originalSetupRaidGame(systemStateShim, () => systemStateShim.notifyStateChange());
+                ThreeJSModule.setupPlayerLayout('2v2'); 
+                ChatModule.addMessage('system', 'Raid', 'Conceptual raid created.'); 
+                systemStateShim.notifyStateChange();
+                closeMenu(); 
+            });
+            addClickListener('menuDeckImport', () => { UIManager.showModal('deckImportModal'); closeMenu(); });
+            addClickListener('menuLoadGame', () => { 
+                ChatModule.addMessage('system', 'Game', 'Load Game State (Not Implemented).'); 
+                // Conceptual: originalLoadGameState(systemStateShim, (loadedData) => { Object.assign(gameState, loadedData); systemStateShim.notifyStateChange(); });
+                closeMenu(); 
+            });
+            addClickListener('menuSaveGame', () => { 
+                ChatModule.addMessage('system', 'Game', 'Save Game State (Not Implemented).'); 
+                // Conceptual: originalSaveGameState(gameState); // Pass current 3D gameState
+                closeMenu(); 
+            });
+            addClickListener('menuOpenSettings', () => { UIManager.showModal('settingsModal'); closeMenu(); });
+            addClickListener('menuOpenKeybinds', () => { UIManager.showModal('keybindModal'); closeMenu(); });
+            addClickListener('menuToggleFullscreen', () => {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err => ChatModule.addMessage('dev', 'Fullscreen Error', `${err.message}`, 'error'));
+                else if (document.exitFullscreen) document.exitFullscreen();
+                closeMenu();
+            });
+            addClickListener('menuViewChangelog', () => { ChangelogModule.showChangelog(); closeMenu(); });
+            addClickListener('menuViewTutorial', () => { ChatModule.addMessage('system', 'UI', 'Watch Tutorial (Not Implemented).'); closeMenu(); });
+            addClickListener('menuDonations', () => { ChatModule.addMessage('system', 'UI', 'Sponsors & Donations (Not Implemented).'); closeMenu(); });
+            
+            return { closeMenu };
+        })();
+
+        // --- Game Logic Shims & Helpers ---
+        /**
+         * Retrieves zone data. This is a shim to provide a somewhat compatible interface
+         * for 2D functions that might have expected direct DOM element access.
+         * @param {string} user - 'self' or 'opp'
+         * @param {string} zoneId - e.g., 'deck', 'hand', 'active', 'bench1', 'stadium'
+         * @returns {object} An object with `array` (the card array), `element` (relevant HTML element if any), and `getCount`.
+         */
+        function getZone(user, zoneId) {
+            let zoneArrays;
+            let isNeutral = false;
+            const cleanedZoneId = zoneId.replace('Cover', '').toLowerCase(); // Handle 'Cover' variants and ensure lowercase
+
+            let baseZoneId = cleanedZoneId;
+            let benchIndex = -1;
+
+            if (cleanedZoneId.startsWith('bench')) {
+                benchIndex = parseInt(cleanedZoneId.replace('bench', ''), 10) - 1;
+                baseZoneId = 'bench';
+            }
+            
+            if (baseZoneId === 'stadium') {
+                zoneArrays = gameState.neutralZoneArrays;
+                isNeutral = true;
+            } else {
+                zoneArrays = user === 'self' ? gameState.selfZoneArrays : gameState.oppZoneArrays;
+            }
+
+            if (!zoneArrays) {
+                ChatModule.addMessage('dev', 'getZone Error', `Zone array not found for user: ${user}, zoneId: ${zoneId}`, 'error');
+                return { array: [], element: null, getCount: () => 0, name: zoneId };
+            }
+
+            const array = (baseZoneId === 'bench' && benchIndex >= 0 && benchIndex < 5) 
+                ? (zoneArrays.bench[benchIndex] || []) 
+                : (zoneArrays[baseZoneId] || []);
+
+            let element = null; 
+            // Map to new UI elements where applicable
+            if (user === 'self') {
+                if (baseZoneId === 'hand') element = document.getElementById('playerHandOverlay');
+                else if (baseZoneId === 'deck') element = document.getElementById('p1DeckCount');
+                else if (baseZoneId === 'discard') element = document.getElementById('p1DiscardCount');
+                else if (baseZoneId === 'lostzone') element = document.getElementById('p1LostZoneCount');
+                else if (baseZoneId === 'prizes') element = document.getElementById('p1PrizeCount');
+            } else if (user === 'opp') {
+                if (baseZoneId === 'deck') element = document.getElementById('p2DeckCount');
+                else if (baseZoneId === 'discard') element = document.getElementById('p2DiscardCount');
+                // Add more for opponent if direct HTML elements are used for their counts/zones
+            }
+            
+            return {
+                array: array, 
+                element: element, // This is a rough mapping. 2D logic relying heavily on specific DOM structure of zones will need more adaptation.
+                elementCover: null, // Covers are mostly 3D now, or handled by card data (isFaceDown)
+                getCount: () => array.length,
+                name: zoneId, // Original zoneId for reference
+                user: user,
+                baseZoneId: baseZoneId, // e.g. 'deck', 'bench'
+                benchIndex: benchIndex // 0-4 if it's a bench zone
+            };
+        }
+
+        // Function to update player panel counts
+        function updatePlayerPanelCounts() {
+            // Player 1 (Self)
+            if (gameState.selfZoneArrays) {
+                document.getElementById('p1DeckCount').textContent = gameState.selfZoneArrays.deck?.length || 0;
+                document.getElementById('p1DiscardCount').textContent = gameState.selfZoneArrays.discard?.length || 0;
+                document.getElementById('p1LostZoneCount').textContent = gameState.selfZoneArrays.lostZone?.length || 0;
+                document.getElementById('p1PrizeCount').textContent = gameState.selfZoneArrays.prizes?.length || 0;
+            }
+            // Player 2 (Opponent)
+            if (gameState.oppZoneArrays) {
+                document.getElementById('p2DeckCount').textContent = gameState.oppZoneArrays.deck?.length || 0;
+                document.getElementById('p2DiscardCount').textContent = gameState.oppZoneArrays.discard?.length || 0;
+                document.getElementById('p2LostZoneCount').textContent = gameState.oppZoneArrays.lostZone?.length || 0;
+                document.getElementById('p2PrizeCount').textContent = gameState.oppZoneArrays.prizes?.length || 0;
+            }
+        }
+
+
+        // --- Three.js Module ---
+        const ThreeJSModule = (() => {
+            let scene, camera, renderer, controls_three;
+            let raycaster, mouse_three;
+            const gameZones = []; 
+            const specialActionMeshes = {}; 
+            const textureLoader = new THREE.TextureLoader();
+            let defaultCardBackTexture = null;
+            let p1DeckTexture = null, p2DeckTexture = null; // For deck top textures
+            const opponentHandCardMeshes = []; // To manage 3D card backs for opponent's hand
+            const cardMeshesInPlay = { self: {}, opp: {} }; // To store 3D card meshes on field { zoneName: [meshes] }
+
+            function loadPlayerDeckTextures() {
+                const defaultOnError = (err, player) => {
+                    ChatModule.addMessage('dev', '3D Assets Error', `Failed to load ${player} Deck texture. Using default. ${err?.message || ''}`, 'error');
+                    // Fallback to a generic card back if specific one fails
+                    if (player === 'P1' && !p1DeckTexture) p1DeckTexture = textureLoader.load(gameState.cardBackSrc);
+                    if (player === 'P2' && !p2DeckTexture) p2DeckTexture = textureLoader.load(gameState.cardBackSrc); // Or a different default for P2
+                    updateDeckZoneTexture(player === 'P1' ? 'P1 Deck' : 'P2 Deck', player === 'P1' ? p1DeckTexture : p2DeckTexture);
+                };
+
+                p1DeckTexture = textureLoader.load(
+                    gameState.cardBackSrc,
+                    () => { ChatModule.addMessage('init', '3D Assets', 'P1 Deck card back texture loaded.', 'init'); updateDeckZoneTexture('P1 Deck', p1DeckTexture); },
+                    undefined,
+                    (err) => defaultOnError(err, 'P1')
+                );
+                p2DeckTexture = textureLoader.load(
+                    gameState.p2OppCardBackSrc, 
+                    () => { ChatModule.addMessage('init', '3D Assets', 'P2 Deck card back texture loaded.', 'init'); updateDeckZoneTexture('P2 Deck', p2DeckTexture);},
+                    undefined,
+                    (err) => defaultOnError(err, 'P2')
+                );
+            }
+            
+            function updateDeckZoneTexture(zoneName, texture) {
+                const deckZone = gameZones.find(zone => zone.userData.name === zoneName);
+                if (deckZone && texture) {
+                    if (deckZone.material.map !== undefined) { 
+                        deckZone.material.map = texture;
+                        deckZone.material.needsUpdate = true;
+                    } else if (Array.isArray(deckZone.material)) { 
+                        // For BoxGeometry, top face is often index 2 (positive Y) or 4/5 for Z-up.
+                        // This depends on how the box is oriented and UV mapped.
+                        // Assuming top face is material index 2 for a standard Y-up box.
+                        if(deckZone.material[2]) {
+                             deckZone.material[2].map = texture;
+                             deckZone.material[2].needsUpdate = true;
+                        } else { // if it's a plane, it's simpler
+                            const planeMaterial = deckZone.material.find(m => m.map !== undefined);
+                            if (planeMaterial) {
+                                planeMaterial.map = texture;
+                                planeMaterial.needsUpdate = true;
+                            }
+                        }
+                    }
+                    ChatModule.addMessage('init', '3D Assets', `Texture updated for ${zoneName}.`, 'init');
+                }
+            }
+
+
+            function init() {
+                loadPlayerDeckTextures(); 
+                const container = document.getElementById('gameContainer');
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x1a202c);
+                scene.fog = new THREE.FogExp2(0x1a202c, 0.0035); 
+
+                camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+                camera.position.set(0, 90, 110); 
+                
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                container.appendChild(renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0x708090, 1.2); 
+                scene.add(ambientLight);
+                const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4a5568, 0.9);
+                hemiLight.position.set(0, 200, 0);
+                scene.add(hemiLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+                dirLight.position.set(-100, 180, 120); 
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 4096; 
+                dirLight.shadow.mapSize.height = 4096;
+                dirLight.shadow.camera.near = 10;
+                dirLight.shadow.camera.far = 500;
+                dirLight.shadow.camera.left = -180; 
+                dirLight.shadow.camera.right = 180;
+                dirLight.shadow.camera.top = 180;
+                dirLight.shadow.camera.bottom = -180;
+                scene.add(dirLight);
+
+                controls_three = new THREE.OrbitControls(camera, renderer.domElement);
+                controls_three.enableDamping = true;
+                controls_three.dampingFactor = 0.03;
+                controls_three.screenSpacePanning = false;
+                controls_three.minDistance = 40;
+                controls_three.maxDistance = 400;
+                controls_three.maxPolarAngle = Math.PI / 2 - 0.02; 
+                controls_three.target.set(0, -20, 0); 
+                controls_three.update();
+
+                raycaster = new THREE.Raycaster();
+                mouse_three = new THREE.Vector2();
+                window.addEventListener('mousemove', onMouseMove, false);
+                window.addEventListener('click', onMouseClick, false);
+
+                createGameBoard();
+                setupPlayerLayout(gameState.currentViewMode); 
+                animate();
+                window.addEventListener('resize', onWindowResize, false);
+            }
+
+            function createGameBoard() { 
+                const playmatGeometry = new THREE.PlaneGeometry(220, 170); 
+                const playmatMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.85, metalness: 0.15 });
+                const playmat = new THREE.Mesh(playmatGeometry, playmatMaterial);
+                playmat.rotation.x = -Math.PI / 2;
+                playmat.position.y = -0.2; 
+                playmat.receiveShadow = true;
+                playmat.name = "Playmat";
+                scene.add(playmat);
+            }
+
+            function createZone(name, width, height, depth, colorHex, position, rotationY = 0, isSpecialAction = false, owner = 'neutral') {
+                const zoneGeometry = new THREE.BoxGeometry(width, height, depth);
+                let emissiveColor = 0x000000;
+                let baseColor = colorHex;
+
+                if (owner === 'self') { emissiveColor = 0x1c3d5a; baseColor = 0x3b82f6; } // Tailwind blue-500
+                else if (owner === 'opp') { emissiveColor = 0x5a1c1c; baseColor = 0xef4444; } // Tailwind red-500
+                else if (owner === 'stadium') { emissiveColor = 0x3b0764; baseColor = 0x8b5cf6; } // Tailwind violet-500
+                else if (isSpecialAction) { baseColor = 0x6b7280; emissiveColor = 0x374151; } // Tailwind gray-500 / gray-700
+
+                const zoneMaterial = new THREE.MeshStandardMaterial({ 
+                    color: baseColor, 
+                    transparent: true, 
+                    opacity: isSpecialAction ? 0.85 : (gameState.isZoneContainersHidden ? 0.15 : 0.8), // Increased opacity
+                    roughness: 0.45, 
+                    metalness: 0.2,
+                    emissive: emissiveColor,
+                    emissiveIntensity: isSpecialAction ? 0.5 : 0.25 // Slightly more emissive
+                });
+                const zoneMesh = new THREE.Mesh(zoneGeometry, zoneMaterial);
+                zoneMesh.position.set(position.x, position.y + height / 2, position.z);
+                zoneMesh.rotation.y = rotationY;
+                zoneMesh.castShadow = !isSpecialAction; 
+                zoneMesh.receiveShadow = true;
+                zoneMesh.userData = { name: name, type: isSpecialAction ? 'specialActionButton' : 'gameZone', baseColor: baseColor, originalOpacity: zoneMaterial.opacity, isUsed: false, owner: owner, cards: [] }; // Add cards array
+                scene.add(zoneMesh);
+                if (isSpecialAction) {
+                    specialActionMeshes[name] = zoneMesh;
+                } else {
+                    gameZones.push(zoneMesh);
+                }
+                return zoneMesh;
+            }
+            
+            function clearBoardElements() { 
+                [...gameZones, ...Object.values(specialActionMeshes)].forEach(obj => {
+                    if (obj && obj.parent) { 
+                        scene.remove(obj);
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) {
+                                obj.material.forEach(m => m.dispose());
+                            } else {
+                                obj.material.dispose();
+                            }
+                        }
+                    }
+                });
+                gameZones.length = 0;
+                for (const key in specialActionMeshes) delete specialActionMeshes[key];
+                
+                opponentHandCardMeshes.forEach(mesh => scene.remove(mesh));
+                opponentHandCardMeshes.length = 0;
+
+                // Clear card meshes in play
+                for (const player in cardMeshesInPlay) {
+                    for (const zone in cardMeshesInPlay[player]) {
+                        cardMeshesInPlay[player][zone].forEach(mesh => scene.remove(mesh));
+                        cardMeshesInPlay[player][zone] = [];
+                    }
+                }
+            }
+
+            function setupPlayerLayout(mode) { 
+                clearBoardElements();
+                gameState.currentViewMode = mode;
+                const cardW = 6.5, cardD = 9, cardHBase = 0.3; // cardHBase is thickness of one card
+                const p1Z = 48; const p2Z = -48; 
+
+                // Player 1 Zones
+                createZone('P1 Deck', cardW, cardHBase * (gameState.selfZoneArrays.deck?.length || 1), cardD, 0x005c99, { x: 55, y: 0, z: p1Z }, 0, false, 'self');
+                if (p1DeckTexture) updateDeckZoneTexture('P1 Deck', p1DeckTexture);
+                createZone('P1 Discard', cardW, cardHBase * (gameState.selfZoneArrays.discard?.length || 1), cardD, 0xb32424, { x: 42, y: 0, z: p1Z }, 0, false, 'self');
+                createZone('P1 Active', cardW, cardHBase * 1.5, cardD, 0x1f7a37, { x: 0, y: 0, z: p1Z - 22 }, 0, false, 'self');
+                for (let i = 0; i < 5; i++) createZone(`P1 Bench ${i+1}`, cardW, cardHBase, cardD, 0xcc9900, { x: -40 + i * (cardW + 3), y: 0, z: p1Z }, 0, false, 'self');
+                createZone('P1 Prizes', cardW, cardHBase * (gameState.selfZoneArrays.prizes?.length || 1), cardD, 0x117a8b, {x: -55, y: 0, z: p1Z}, 0, false, 'self');
+                createZone('P1 Hand Zone (3D Backs)', cardW * 5.5, 0.1, cardD, 0x333344, { x: 0, y:0, z: p1Z + 12}, 0, false, 'self');
+                renderOpponentHand3D('self', 'P1 Hand Zone (3D Backs)');
+
+
+                // Player 2 Zones
+                createZone('P2 Deck', cardW, cardHBase * (gameState.oppZoneArrays.deck?.length || 1), cardD, 0x005c99, { x: -55, y: 0, z: p2Z }, Math.PI, false, 'opp');
+                if (p2DeckTexture) updateDeckZoneTexture('P2 Deck', p2DeckTexture);
+                createZone('P2 Discard', cardW, cardHBase * (gameState.oppZoneArrays.discard?.length || 1), cardD, 0xb32424, { x: -42, y: 0, z: p2Z }, Math.PI, false, 'opp');
+                createZone('P2 Active', cardW, cardHBase*1.5, cardD, 0x1f7a37, { x: 0, y: 0, z: p2Z + 22 }, Math.PI, false, 'opp');
+                for (let i = 0; i < 5; i++) createZone(`P2 Bench ${i+1}`, cardW, cardHBase, cardD, 0xcc9900, { x: 40 - i * (cardW + 3), y: 0, z: p2Z }, Math.PI, false, 'opp');
+                createZone('P2 Prizes', cardW, cardHBase * (gameState.oppZoneArrays.prizes?.length || 1), cardD, 0x117a8b, {x: 55, y: 0, z: p2Z}, Math.PI, false, 'opp');
+                createZone('P2 Hand Zone (3D Backs)', cardW * 5.5, 0.1, cardD, 0x333344, { x: 0, y:0, z: p2Z - 12}, Math.PI, false, 'opp');
+                renderOpponentHand3D('opp', 'P2 Hand Zone (3D Backs)');
+
+
+                createZone('Stadium', cardD, cardHBase, cardW, 0x593595, { x: 0, y: 0, z: 0 }, 0, false, 'stadium');
+
+                const specialButtonSize = 4.5; const specialButtonHeight = 0.6; const specialButtonDepth = 3;
+                const p1SpecialXOffset = -25; 
+                const p1SpecialZ = p1Z - cardD - specialButtonDepth / 2 - 3; 
+
+                createZone('P1 VSTAR', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p1SpecialXOffset, y:0, z: p1SpecialZ}, 0, true, 'self');
+                createZone('P1 GX', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p1SpecialXOffset + specialButtonSize + 2, y:0, z: p1SpecialZ}, 0, true, 'self');
+                createZone('P1 Forte', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p1SpecialXOffset + 2*(specialButtonSize + 2), y:0, z: p1SpecialZ}, 0, true, 'self');
+
+                const p2SpecialXOffset = 25; 
+                const p2SpecialZ = p2Z + cardD + specialButtonDepth / 2 + 3; 
+
+                createZone('P2 VSTAR', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p2SpecialXOffset, y:0, z: p2SpecialZ}, Math.PI, true, 'opp');
+                createZone('P2 GX', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p2SpecialXOffset - (specialButtonSize + 2), y:0, z: p2SpecialZ}, Math.PI, true, 'opp');
+                createZone('P2 Forte', specialButtonSize, specialButtonHeight, specialButtonDepth, 0x707070, {x: p2SpecialXOffset - 2*(specialButtonSize + 2), y:0, z: p2SpecialZ}, Math.PI, true, 'opp');
+
+
+                document.getElementById('player1Panel').classList.remove('glow-opp-html');
+                document.getElementById('player1Panel').classList.add('glow-self-html');
+                document.getElementById('player2Panel').classList.remove('glow-self-html');
+                document.getElementById('player2Panel').classList.add('glow-opp-html');
+
+
+                document.getElementById('player1Panel').style.display = 'flex';
+                document.getElementById('player2Panel').style.display = 'flex';
+                
+                if (mode === '2v2') { /* ... 2v2 layout ... */ }
+                ChatModule.addMessage('init', 'Layout', `${mode.toUpperCase()} board configured.`, 'init');
+                updateZoneOpacities(); 
+                updateAllZoneVisualsFromGameState(); // Initial population of 3D cards
+            }
+            
+            function renderOpponentHand3D(player, handZoneName) {
+                const handZone = gameZones.find(zone => zone.userData.name === handZoneName);
+                if (!handZone) return;
+
+                // Clear existing opponent hand meshes for this player
+                opponentHandCardMeshes.filter(mesh => mesh.userData.player === player).forEach(mesh => scene.remove(mesh));
+                opponentHandCardMeshes = opponentHandCardMeshes.filter(mesh => mesh.userData.player !== player);
+
+
+                const handArray = player === 'self' ? gameState.selfZoneArrays.hand : gameState.oppZoneArrays.hand;
+                const numCards = handArray?.length || 0;
+                const cardBackTextureToUse = player === 'self' ? p1DeckTexture : p2DeckTexture; 
+
+                if (!cardBackTextureToUse) {
+                    ChatModule.addMessage('dev', '3D Hand Error', `Card back texture not loaded for ${player}.`, 'error');
+                    return;
+                }
+
+                const cardWidth3D = 6.3;
+                const cardHeight3D = 0.1; // Thickness
+                const cardDepth3D = 8.8;
+                const spacing = 0.5;
+                const totalWidth = numCards * cardWidth3D + (numCards - 1) * spacing;
+                
+                for (let i = 0; i < numCards; i++) {
+                    const cardGeo = new THREE.BoxGeometry(cardWidth3D, cardHeight3D, cardDepth3D);
+                    const cardMat = new THREE.MeshStandardMaterial({ map: cardBackTextureToUse, roughness: 0.7, metalness: 0.1 });
+                    const cardMesh = new THREE.Mesh(cardGeo, cardMat);
+                    cardMesh.userData.player = player; // Tag the mesh
+                    
+                    const xPos = -totalWidth / 2 + cardWidth3D / 2 + i * (cardWidth3D + spacing);
+                    cardMesh.position.set(handZone.position.x + xPos, handZone.position.y + cardHeight3D / 2 + 0.1, handZone.position.z); // Slightly elevated
+                    if (player === 'opp' || handZoneName.startsWith('P1 Hand Zone')) { // P1's 3D hand is for P2's view
+                         cardMesh.rotation.y = handZone.rotation.y; // Align with zone's rotation
+                    }
+
+
+                    scene.add(cardMesh);
+                    opponentHandCardMeshes.push(cardMesh); 
+                }
+            }
+
+            // NEW function to update all 3D visuals based on gameState
+            function updateAllZoneVisualsFromGameState() {
+                console.log("Updating all 3D zone visuals from gameState");
+                // Update opponent hand visuals (card backs)
+                renderOpponentHand3D('self', 'P1 Hand Zone (3D Backs)'); // P1's hand from P2's perspective
+                renderOpponentHand3D('opp', 'P2 Hand Zone (3D Backs)');  // P2's hand from P1's perspective
+
+                // Update deck heights/visuals
+                ['P1 Deck', 'P2 Deck', 'P1 Discard', 'P2 Discard', 'P1 Prizes', 'P2 Prizes'].forEach(zoneName => {
+                    const zoneMesh = gameZones.find(z => z.userData.name === zoneName);
+                    if (zoneMesh) {
+                        const player = zoneName.startsWith('P1') ? 'self' : 'opp';
+                        const zoneType = zoneName.split(' ')[1].toLowerCase();
+                        const count = gameState[player === 'self' ? 'selfZoneArrays' : 'oppZoneArrays'][zoneType]?.length || 0;
+                        const cardHBase = 0.3;
+                        // Adjust height (scale Y or recreate geometry - scaling is simpler for now)
+                        zoneMesh.scale.y = Math.max(0.1, count); // Ensure a minimum height for visibility
+                        zoneMesh.position.y = (cardHBase * Math.max(0.1, count) / 2) -0.1; // Adjust position based on new scale
+                        // If deck, ensure texture is correct
+                        if (zoneType === 'deck') {
+                            updateDeckZoneTexture(zoneName, player === 'self' ? p1DeckTexture : p2DeckTexture);
+                        }
+                    }
+                });
+
+                // Conceptual: Update 3D cards in play (active, bench, stadium)
+                // This would involve creating/removing/updating THREE.Mesh objects for each card
+                // For each zone (active, bench, stadium) for each player:
+                //   Iterate gameState.<player>ZoneArrays.<zone>
+                //   Compare with cardMeshesInPlay[player][zone]
+                //   Add/remove/update 3D card meshes (texture, position, rotation, attachments)
+                // This is a complex part and would require detailed card rendering logic.
+                // For now, we're mainly handling deck/discard/prize pile heights and opponent hand backs.
+                ChatModule.addMessage('dev', '3D Visuals', 'Conceptual: Update 3D cards in play based on gameState.', 'init');
+            }
+
+
+            function updateZoneOpacities() { 
+                gameZones.forEach(zone => {
+                    if(zone.userData.type === 'gameZone' && zone.name !== "Playmat") {
+                        zone.material.opacity = gameState.isZoneContainersHidden ? 0.05 : 0.75; 
+                        zone.material.needsUpdate = true;
+                    }
+                });
+                 Object.values(specialActionMeshes).forEach(mesh => {
+                    mesh.material.opacity = gameState.isZoneContainersHidden ? 0.2 : 0.85; 
+                    mesh.material.needsUpdate = true;
+                });
+            }
+
+            let lastIntersected = null;
+            function onMouseMove(event) { 
+                mouse_three.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse_three.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse_three, camera);
+                const allClickableObjects = [...gameZones, ...Object.values(specialActionMeshes)];
+                const intersects = raycaster.intersectObjects(allClickableObjects, false);
+                
+                if (lastIntersected && (!intersects.length || intersects[0].object !== lastIntersected)) {
+                    if (lastIntersected.material.emissive) {
+                        lastIntersected.material.emissiveIntensity = lastIntersected.userData.type === 'specialActionButton' ? (lastIntersected.userData.isUsed ? 0.15 : 0.5) : 0.25; // Adjusted intensities
+                    }
+                    lastIntersected = null;
+                }
+
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    if (obj.userData.name) {
+                        zoneTooltip.style.display = 'block';
+                        zoneTooltip.style.left = `${event.clientX + 15}px`;
+                        zoneTooltip.style.top = `${event.clientY + 15}px`;
+                        zoneTooltip.textContent = obj.userData.name;
+                        
+                        if (obj !== lastIntersected) {
+                             if (obj.material.emissive) {
+                                 obj.material.emissiveIntensity = 0.7; // Brighter highlight
+                            }
+                            lastIntersected = obj;
+                        }
+                    }
+                } else {
+                    zoneTooltip.style.display = 'none';
+                }
+            }
+            function onMouseClick(event) { 
+                raycaster.setFromCamera(mouse_three, camera);
+                const allClickableObjects = [...gameZones, ...Object.values(specialActionMeshes)];
+                const intersects = raycaster.intersectObjects(allClickableObjects, false);
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    if (obj.userData.name) {
+                        ChatModule.addMessage('system', '3D Interaction', `Clicked on ${obj.userData.name}.`, 'system');
+                        if (obj.userData.type === 'specialActionButton') {
+                            obj.userData.isUsed = !obj.userData.isUsed; 
+                            obj.material.color.set(obj.userData.isUsed ? 0x404040 : obj.userData.baseColor); 
+                            obj.material.emissiveIntensity = obj.userData.isUsed ? 0.15 : 0.5; 
+                            ChatModule.addMessage('combat', 'Action', `${obj.userData.name} ${obj.userData.isUsed ? 'USED' : 'AVAILABLE'}.`);
+                            // Conceptual: Call 2D logic for VSTAR/GX
+                            // originalVSTARGXFunction(systemStateShim, obj.userData.owner, obj.userData.name.split(' ')[1], () => systemStateShim.notifyStateChange());
+                        } else if (obj.userData.type === 'gameZone') {
+                            ChatModule.addMessage('system', '3D Interaction', `Zone: ${obj.userData.name}, Owner: ${obj.userData.owner}.`);
+                            // Conceptual: Call 2D logic for zone click
+                            // originalHandleZoneClick(systemStateShim, obj.userData.owner, obj.userData.name, () => systemStateShim.notifyStateChange());
+                            // Example: If deck is clicked, maybe open a "view top cards" modal or draw a card
+                            if (obj.userData.name === 'P1 Deck' && gameState.selfZoneArrays.deck.length > 0) {
+                                // This is where you'd call your 2D draw card logic
+                                // For now, let's simulate drawing a card directly to gameState for demonstration
+                                // const drawnCard = gameState.selfZoneArrays.deck.pop();
+                                // if (drawnCard) gameState.selfZoneArrays.hand.push(drawnCard);
+                                // systemStateShim.notifyStateChange(); // Crucial to update UI
+                                ChatModule.addMessage('system', 'Action', 'Conceptual: Draw card from P1 Deck.');
+                            }
+                        }
+                    }
+                }
+            }
+            function animate() { 
+                requestAnimationFrame(animate);
+                controls_three.update();
+                renderer.render(scene, camera);
+            }
+            function onWindowResize() { 
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+            
+            return { init, setupPlayerLayout, updateZoneOpacities, loadPlayerDeckTextures, updateAllZoneVisualsFromGameState }; 
+        })();
+
+        // --- Changelog & Decklist Data ---
+        window.mainChangelogContent = `<h2>v1.5.1 Update 02/12/25</h2><p>Super quick update to the original PTCG-Sim. This 3D version is a new project.</p><hr><h3>Features</h3><ul><li>Basic 3D board layout</li><li>HTML Overlays for UI</li></ul>`;
+        window.metaChangelogContent = `<h2>Meta-PTCG (3D Wrapper) v0.1.0 - Initial Release (Today)</h2><p>This is the first version of the 3D wrapper for the PTCG simulator.</p><hr><h3>Features</h3><ul><li>Three.js 3D game board.</li><li>Interactive 3D zones (conceptual clicks).</li><li>New UI overlay system for chat, menu, modals.</li><li>Shim layer for integrating 2D game logic (ongoing).</li></ul><h3>Known Issues</h3><ul><li>Full 2D game logic not yet integrated.</li><li>Multiplayer features need to be re-wired.</li><li>Many actions are conceptual placeholders.</li></ul>`;
+        window.decklistsByYear = { 
+             '2023-2024 S&V': { 
+                Charizard_ex: `4 Charmander OBF 26
+1 Charmeleon OBF 27
+3 Charizard ex OBF 125
+1 Radiant Charizard PGO 11
+2 Pidgey MEW 16
+2 Pidgeot ex OBF 164
+1 Manaphy BRS 41
+1 Jirachi PAR 126
+1 Lumineon V BRS 40
+4 Arven OBF 186
+3 Iono PAL 185
+3 Boss's Orders PAL 172
+1 Professor's Research SVI 189
+4 Rare Candy SVI 191
+4 Ultra Ball SVI 196
+3 Nest Ball SVI 181
+1 Super Rod PAL 188
+1 Lost Vacuum LOR 162
+1 Counter Catcher PAR 160
+1 Choice Belt PAL 176
+1 Forest Seal Stone SIT 156
+1 Technical Machine: Devolution PAR 177
+2 Artazon PAL 171
+1 Collapsed Stadium BRS 137
+6 Fire Energy`,
+                Gardevoir_ex: `4 Ralts SIT 67
+1 Ralts ASR 60
+3 Kirlia SIT 68
+1 Kirlia CRE 57
+2 Gardevoir ex SVI 86
+1 Gardevoir CRE 61
+1 Scream Tail PAR 86
+1 Zacian V CEL 16
+1 Manaphy BRS 41
+1 Cresselia LOR 74
+4 Iono PAL 185
+3 Professor's Research SVI 189
+2 Boss's Orders PAL 172
+4 Level Ball BST 129
+4 Ultra Ball SVI 196
+3 Rare Candy SVI 191
+2 Super Rod PAL 188
+1 Counter Catcher PAR 160
+1 Artazon PAL 171
+1 Temple of Sinnoh ASR 155
+10 Psychic Energy 
+2 Reversal Energy PAL 192`
+            },
+        };
+
+        const ChangelogModule = (() => { 
+            const changelogModal = document.getElementById('changelogModal');
+            const mainTabButton = document.getElementById('mainChangelogTabButton');
+            const metaTabButton = document.getElementById('metaChangelogTabButton');
+            const contentArea = document.getElementById('changelogContentArea');
+            const decklistsContainer = document.getElementById('decklistsContainer');
+
+            function showChangelog() {
+                if (!contentArea) {
+                    if (ChatModule) ChatModule.addMessage('dev', 'Changelog Error', 'Changelog content area not found.', 'error');
+                    return;
+                }
+                UIManager.showModal('changelogModal');
+                contentArea.innerHTML = window.mainChangelogContent || "<p>Main changelog not available.</p>";
+                if (mainTabButton) mainTabButton.classList.add('active', 'button-primary');
+                if (metaTabButton) metaTabButton.classList.remove('active', 'button-primary');
+            }
+
+            if (mainTabButton) mainTabButton.addEventListener('click', () => {
+                contentArea.innerHTML = window.mainChangelogContent || "<p>Main changelog not available.</p>";
+                mainTabButton.classList.add('active', 'button-primary');
+                if (metaTabButton) metaTabButton.classList.remove('active', 'button-primary');
+            });
+            if (metaTabButton) metaTabButton.addEventListener('click', () => {
+                contentArea.innerHTML = window.metaChangelogContent || "<p>Meta changelog not available.</p>";
+                metaTabButton.classList.add('active', 'button-primary');
+                if (mainTabButton) mainTabButton.classList.remove('active', 'button-primary');
+            });
+            
+            function populateDecklistsBrowseModal() {
+                if (!decklistsContainer) {
+                    if (ChatModule) ChatModule.addMessage('dev', 'Decklist Error', 'Decklist container not found.', 'error');
+                    return;
+                }
+                decklistsContainer.innerHTML = ''; 
+                const years = Object.keys(window.decklistsByYear || {});
+                if (years.length === 0) {
+                    decklistsContainer.innerHTML = '<p class="text-gray-400">No decklists available.</p>';
+                    return;
+                }
+
+                years.forEach(year => {
+                    const yearHeader = document.createElement('h3');
+                    yearHeader.textContent = year;
+                    yearHeader.className = 'text-lg font-semibold mt-3 mb-1 text-blue-300';
+                    decklistsContainer.appendChild(yearHeader);
+
+                    const deckList = document.createElement('ul');
+                    deckList.className = 'list-disc list-inside';
+                    Object.keys(window.decklistsByYear[year]).forEach(deckName => {
+                        const deckItem = document.createElement('li');
+                        const deckButton = document.createElement('button');
+                        deckButton.textContent = deckName;
+                        deckButton.className = 'text-left text-gray-300 hover:text-white hover:underline py-1';
+                        deckButton.onclick = () => {
+                            const deckContent = window.decklistsByYear[year][deckName];
+                            const mainDeckArea = document.getElementById('mainDeckImportArea'); 
+                            mainDeckArea.value = deckContent;
+                            if (ChatModule) ChatModule.addMessage('system', 'DeckImport', `Loaded '${deckName}' into main deck area.`, 'success');
+                            UIManager.hideModal('decklistsBrowseModal');
+                            UIManager.showModal('deckImportModal'); 
+                        };
+                        deckItem.appendChild(deckButton);
+                        deckList.appendChild(deckItem);
+                    });
+                    decklistsContainer.appendChild(deckList);
+                });
+            }
+            return { showChangelog, populateDecklistsBrowseModal };
+        })();
+        
+        // --- Document Ready / Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            ChatModule.addMessage('init', 'System', 'DOM fully loaded and parsed.', 'init');
+            
+            try {
+                UIManager.showLoading("Initializing 3D Environment...");
+                ThreeJSModule.init(); 
+                ChatModule.addMessage('init', '3D Engine', 'Three.js scene initialized successfully.', 'init');
+            } catch (e) {
+                ChatModule.addMessage('dev', '3D Init Error', e.message, 'error');
+                console.error("3D Init Error:", e);
+            } finally {
+                UIManager.hideLoading();
+            }
+
+            ChatModule.addMessage('init', 'System', 'Project Interface Initialized.', 'init');
+            updatePlayerPanelCounts(); // Initial counts
+            
+            try {
+                let serverURL;
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    serverURL = 'http://localhost:4000';
+                } else {
+                    serverURL = 'https://ptcg-sim-meta.onrender.com'; 
+                }
+                // Fallback if RaidManager is defined (not present in this script, but good for compatibility if added)
+                // if (typeof RaidManager !== 'undefined' && RaidManager.socketUrl) {
+                //     serverURL = RaidManager.socketUrl;
+                // }
+
+                socket = io(serverURL, { reconnectionAttempts: 3 });
+                ChatModule.addMessage('init', 'Network', `Attempting to connect to Socket.IO server at ${serverURL}...`, 'init');
+
+                socket.on('connect', () => {
+                    gameState.socketId = socket.id;
+                    ChatModule.addMessage('init', 'Network', `Connected to server with ID: ${socket.id}`, 'success');
+                    // Conceptual: Initialize 2D socket event listeners, passing the systemStateShim
+                    // originalInitializeSocketEventListeners(socket, systemStateShim, () => systemStateShim.notifyStateChange());
+                    ChatModule.addMessage('init', 'SocketListeners', 'Conceptual: Socket event listeners from 2D version would be initialized here.', 'init');
+
+                    // Example: Receiving a full game state update
+                    socket.on('gameStateUpdate', (newFullState) => {
+                        ChatModule.addMessage('system', 'Network', 'Received full game state update from server.');
+                        // Deep merge or replace gameState carefully
+                        // For simplicity, direct assignment if structure matches:
+                        // Object.assign(gameState, newFullState); // Be cautious with nested objects and arrays
+                        // A more robust merge might be needed.
+                        // For now, let's assume newFullState directly maps to parts of our gameState
+                        if(newFullState.selfZoneArrays) gameState.selfZoneArrays = newFullState.selfZoneArrays;
+                        if(newFullState.oppZoneArrays) gameState.oppZoneArrays = newFullState.oppZoneArrays;
+                        if(newFullState.neutralZoneArrays) gameState.neutralZoneArrays = newFullState.neutralZoneArrays;
+                        // ... update other relevant gameState properties
+                        systemStateShim.notifyStateChange(); // Update all UI
+                    });
+                     socket.on('chatMessage', (data) => { // Example of receiving a chat message
+                        if (data.sender !== gameState.playerName) { // Don't re-display own messages if server echoes them
+                            ChatModule.addMessage(data.tab || 'general', data.sender, data.message);
+                        }
+                    });
+                });
+                socket.on('connect_error', (err) => ChatModule.addMessage('dev', 'Network Error', `Connection failed: ${err.message}. Is server at ${serverURL} running?`, 'error'));
+                socket.on('disconnect', (reason) => ChatModule.addMessage('system', 'Network', `Disconnected: ${reason}`, 'error'));
+
+            } catch (e) {
+                 ChatModule.addMessage('dev', 'Socket.IO Error', `Failed to initialize Socket.IO: ${e.message}`, 'error');
+                 console.error("Socket.IO Init Error:", e);
+            }
+
+            // Player Hand Overlay Setup
+            const playerHandOverlay = document.getElementById('playerHandOverlay');
+            // renderPlayerHand is now called by systemStateShim.notifyStateChange()
+
+            // Deck Import Modal Logic
+            const mainDeckImportArea = document.getElementById('mainDeckImportArea');
+            const altDeckImportArea = document.getElementById('altDeckImportArea');
+            document.querySelectorAll('#deckImportModalContent .deck-tabs button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const currentActive = document.querySelector('#deckImportModalContent .deck-tabs button.active');
+                    if (currentActive) currentActive.classList.remove('active', 'button-primary');
+                    button.classList.add('active','button-primary');
+                    mainDeckImportArea.style.display = (button.dataset.deckTab === 'main') ? 'block' : 'none';
+                    altDeckImportArea.style.display = (button.dataset.deckTab === 'alt') ? 'block' : 'none';
+                });
+            });
+            document.getElementById('deckImportConfirmButton').addEventListener('click', () => {
+                const activeDeckArea = mainDeckImportArea.style.display !== 'none' ? mainDeckImportArea : altDeckImportArea;
+                const deckListString = activeDeckArea.value;
+                const playerTarget = mainDeckImportArea.style.display !== 'none' ? 'self' : 'opp'; // 'opp' for alt deck usually means P1's opponent in 1P
+
+                ChatModule.addMessage('system', 'DeckImport', `Importing deck for ${playerTarget}...`, 'system');
+                
+                // Conceptual: Call your 2D deck parsing function
+                // const parsedDeck = originalParseDecklistFunction(deckListString); // This function would return an array of card objects
+                // if (parsedDeck) {
+                //    if (playerTarget === 'self') {
+                //        gameState.selfZoneArrays.deck = parsedDeck;
+                //    } else { // Assuming 'alt' deck is for opponent in 1P mode
+                //        gameState.oppZoneArrays.deck = parsedDeck;
+                //    }
+                //    ChatModule.addMessage('system', 'DeckImport', `${playerTarget} deck imported successfully (${parsedDeck.length} cards).`, 'success');
+                //    systemStateShim.notifyStateChange(); // Update UI
+                // } else {
+                //    ChatModule.addMessage('dev', 'DeckImport Error', `Failed to parse decklist for ${playerTarget}.`, 'error');
+                // }
+
+                // For demonstration, let's clear the deck and add a few dummy cards
+                const targetArray = playerTarget === 'self' ? gameState.selfZoneArrays.deck : gameState.oppZoneArrays.deck;
+                targetArray.length = 0; // Clear existing
+                for(let i=0; i< (deckListString.split('\n').length || 10); i++) { // Dummy cards based on lines
+                    targetArray.push({id: `parsed${i}`, name: `Parsed Card ${i}`, imageUrl: gameState.cardBackSrc, type: 'Unknown'});
+                }
+                ChatModule.addMessage('system', 'DeckImport', `Conceptual: ${playerTarget} deck imported with ${targetArray.length} cards.`, 'success');
+                systemStateShim.notifyStateChange();
+
+                UIManager.hideModal('deckImportModal');
+            });
+             document.getElementById('deckBrowseButton').addEventListener('click', () => {
+                ChangelogModule.populateDecklistsBrowseModal(); 
+                UIManager.showModal('decklistsBrowseModal');
+            });
+            document.getElementById('deckImportFileInput').addEventListener('change', (event) => { 
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const activeDeckArea = mainDeckImportArea.style.display !== 'none' ? mainDeckImportArea : altDeckImportArea;
+                        activeDeckArea.value = e.target.result;
+                        ChatModule.addMessage('system', 'DeckImport', `File ${file.name} loaded into import area.`, 'success');
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // Settings Modal Logic
+            document.getElementById('settingDarkMode').addEventListener('change', (e) => { 
+                gameState.isDarkMode = e.target.checked;
+                // Apply dark mode to body/overlays if not already handled by Tailwind or other CSS
+                document.body.classList.toggle('dark-theme-active', gameState.isDarkMode); // Assuming you have a .dark-theme-active class
+                ChatModule.addMessage('system', 'Settings', `Dark Mode ${gameState.isDarkMode ? 'Enabled' : 'Disabled'}.`);
+            });
+            document.getElementById('settingHideContainers').addEventListener('change', (e) => {
+                gameState.isZoneContainersHidden = e.target.checked;
+                ThreeJSModule.updateZoneOpacities(); 
+                ChatModule.addMessage('system', 'Settings', `3D Zone Containers ${gameState.isZoneContainersHidden ? 'Very Transparent' : 'Visible'}.`);
+            });
+            document.getElementById('buttonChangeCardBack').addEventListener('click', () => {
+                const newCardBackUrl = document.getElementById('inputCardBackUrl').value.trim();
+                if (newCardBackUrl) {
+                    gameState.cardBackSrc = newCardBackUrl; 
+                    // Decide if this also changes opponent's view of your cards, or their own card backs
+                    // For simplicity, let's say this is P1's primary card back
+                    gameState.p1OppCardBackSrc = newCardBackUrl; // What opponent sees for P1
+                    ThreeJSModule.loadPlayerDeckTextures(); 
+                    renderPlayerHand(); 
+                    ChatModule.addMessage('system', 'Settings', `Card back updated.`, 'success');
+                } else {
+                    ChatModule.addMessage('system', 'Settings', `Please enter a valid URL for the card back.`, 'error');
+                }
+            });
+            document.getElementById('buttonChangeBackground').addEventListener('click', () => {
+                const newBgUrl = document.getElementById('inputBackgroundUrl').value.trim();
+                if (newBgUrl) {
+                    document.body.style.backgroundImage = `linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), url('${newBgUrl}')`;
+                    ChatModule.addMessage('system', 'Settings', `Background image updated.`, 'success');
+                } else {
+                     document.body.style.backgroundImage = `linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), url('https://placehold.co/1920x1080/2d3748/1a202c?text=Game+Background+Placeholder')`;
+                    ChatModule.addMessage('system', 'Settings', `Background URL cleared or invalid. Reset to default.`, 'system');
+                }
+            });
+
+            document.getElementById('settingSpectatorModeToggle').addEventListener('change', (e) => {
+                const isSpectator = e.target.checked;
+                ChatModule.addMessage('system', 'Settings', `Spectator Mode conceptually ${isSpectator ? 'Enabled' : 'Disabled'}.`);
+                // Conceptual: Call your 2D handleSpectatorButtons(systemStateShim, isSpectator);
+                document.querySelectorAll('#gameActionControls .button, #player1Panel .button, #player2Panel .button').forEach(btn => {
+                    if (!btn.classList.contains('button-neutral') && !btn.id.includes('View')) { 
+                        btn.disabled = isSpectator;
+                    }
+                });
+            });
+
+            // Lobby Modal Logic
+            document.getElementById('lobbyGenerateRoomId').addEventListener('click', () => { 
+                const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+                document.getElementById('lobbyRoomId').value = newRoomId;
+                ChatModule.addMessage('system', 'Lobby', `Generated Room ID: ${newRoomId}`);
+            });
+            document.getElementById('lobbyCopyRoomId').addEventListener('click', () => { 
+                const roomIdInput = document.getElementById('lobbyRoomId');
+                roomIdInput.select();
+                try {
+                    document.execCommand('copy'); // execCommand is deprecated but navigator.clipboard may not work in iframe
+                    ChatModule.addMessage('system', 'Lobby', `Room ID copied to clipboard.`, 'success');
+                } catch (err) {
+                    ChatModule.addMessage('dev', 'Lobby Error', `Failed to copy Room ID.`, 'error');
+                }
+            });
+            document.getElementById('lobbyJoinRoomButton').addEventListener('click', () => { 
+                const playerName = document.getElementById('lobbyPlayerName').value.trim() || `Player${Math.floor(Math.random()*1000)}`;
+                const roomId = document.getElementById('lobbyRoomId').value.trim();
+                const isSpectator = document.getElementById('lobbySpectatorMode').checked;
+                gameState.playerName = playerName;
+
+                if (socket && socket.connected) {
+                    // Conceptual: Call your 2D join room logic
+                    // originalJoinRoom(socket, systemStateShim, playerName, roomId, isSpectator, () => systemStateShim.notifyStateChange());
+                    socket.emit('joinRoom', { playerName, roomId, isSpectator });
+                    ChatModule.addMessage('system', 'Lobby', `Attempting to join room: ${roomId || 'NEW'} as ${playerName} ${isSpectator ? '(Spectator)' : ''}.`);
+                    document.getElementById('lobbyStatus').textContent = `Joining ${roomId || 'new room'}...`;
+                    // UIManager.hideModal('lobbyModal'); // Hide on successful join from server event
+                } else {
+                    ChatModule.addMessage('dev', 'Lobby Error', 'Socket not connected. Cannot join room.', 'error');
+                }
+            });
+
+            // Game Action Bar Listeners - These should call your 2D game logic functions
+            document.getElementById('actionTurnButton').addEventListener('click', () => {
+                ChatModule.addMessage('combat', 'Action', `${gameState.playerName} attempts to start/end turn.`);
+                // Conceptual: originalTakeTurnFunction(systemStateShim, gameState.initiator, () => systemStateShim.notifyStateChange());
+                // For demo:
+                gameState.isPlayerTurn = !gameState.isPlayerTurn;
+                gameState.activePlayer = gameState.isPlayerTurn ? gameState.initiator : (gameState.initiator === 'self' ? 'opp' : 'self');
+                ChatModule.addMessage('system', 'Turn', `It is now ${gameState.activePlayer}'s turn (conceptual).`);
+                systemStateShim.notifyStateChange();
+            });
+            document.getElementById('actionAttackButton').addEventListener('click', () => {
+                ChatModule.addMessage('combat', 'Action', `${gameState.playerName} declares an attack.`);
+                // Conceptual: originalAttackFunction(systemStateShim, gameState.initiator, /* attack details */ () => systemStateShim.notifyStateChange());
+            });
+            document.getElementById('actionPassButton').addEventListener('click', () => {
+                ChatModule.addMessage('combat', 'Action', `${gameState.playerName} passes the turn.`);
+                // Conceptual: originalPassTurnFunction(systemStateShim, gameState.initiator, () => systemStateShim.notifyStateChange());
+                 // For demo:
+                gameState.isPlayerTurn = false; // Assuming pass means it's opponent's turn
+                gameState.activePlayer = gameState.initiator === 'self' ? 'opp' : 'self';
+                ChatModule.addMessage('system', 'Turn', `It is now ${gameState.activePlayer}'s turn (conceptual).`);
+                systemStateShim.notifyStateChange();
+            });
+             document.getElementById('actionUndoButton').addEventListener('click', () => {
+                ChatModule.addMessage('system', 'Action', `${gameState.playerName} attempts to undo.`);
+                // Conceptual: originalUndoFunction(systemStateShim, () => systemStateShim.notifyStateChange());
+            });
+             document.getElementById('actionFlipCoinButton').addEventListener('click', () => {
+                // Conceptual: const result = originalFlipCoinFunction(systemStateShim);
+                const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+                ChatModule.addMessage('system', 'Action', `Coin flip: ${result}.`);
+            });
+             document.getElementById('actionFlipBoardButton').addEventListener('click', () => {
+                ChatModule.addMessage('system', 'UI', `Board view flipped (conceptual).`);
+                // This would involve changing camera position or rotating the entire scene/target
+                // For OrbitControls, you might adjust camera.position and controls_three.target
+                // Example: Invert Z position and target Z.
+                camera.position.z *= -1;
+                // controls_three.target.z *= -1; // May need more sophisticated logic
+                controls_three.object.up.set(0,1,0); // Ensure up is correct
+                controls_three.update();
+            });
+             document.getElementById('actionRefreshImagesButton').addEventListener('click', () => {
+                ChatModule.addMessage('system', 'UI', `Refreshing card images (conceptual).`);
+                // Conceptual: originalRefreshImagesFunction(systemStateShim, () => systemStateShim.notifyStateChange());
+                // This would involve re-fetching image URLs and updating textures/backgrounds.
+                renderPlayerHand(); // Re-render hand which might have image URLs
+                ThreeJSModule.loadPlayerDeckTextures(); // Reload deck textures
+                ThreeJSModule.updateAllZoneVisualsFromGameState(); // Update 3D cards
+            });
+
+
+            ChatModule.addMessage('init', 'System', 'All initial event listeners attached.', 'init');
+        });
+
+        // Player Hand Rendering (called by systemStateShim.notifyStateChange)
+        function renderPlayerHand() {
+            const playerHandOverlay = document.getElementById('playerHandOverlay');
+            if (!playerHandOverlay) return;
+            playerHandOverlay.innerHTML = ''; 
+            const handToRender = gameState.selfZoneArrays.hand; 
+
+            if (!handToRender || handToRender.length === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'italic text-gray-500 p-4 text-center w-full';
+                placeholder.textContent = 'Hand is empty.';
+                playerHandOverlay.appendChild(placeholder);
+                return;
+            }
+
+            handToRender.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card-display';
+                const imageUrl = card.imageUrl || gameState.cardBackSrc; // Fallback to card back if no image
+                cardDiv.style.backgroundImage = `url('${imageUrl}')`;
+                
+                const nameTooltip = document.createElement('span');
+                nameTooltip.className = 'card-name-tooltip';
+                nameTooltip.textContent = card.name || 'Card';
+                cardDiv.appendChild(nameTooltip);
+                
+                cardDiv.title = `${card.name || 'Card'} (${card.type || 'Unknown'})`;
+                cardDiv.dataset.cardId = card.id; // Store card ID for potential interaction
+                
+                cardDiv.addEventListener('click', () => {
+                    ChatModule.addMessage('system', 'Hand', `Clicked on ${card.name || 'a card'} in hand.`);
+                    gameState.selectedCard = card; // Update global selected card state
+                    // Conceptual: Call your 2D imageClick or cardInHandClick function
+                    // originalCardInHandClick(systemStateShim, card, () => systemStateShim.notifyStateChange());
+                });
+                playerHandOverlay.appendChild(cardDiv);
+            });
+        }
+
+    </script>
+</body>
+</html>
