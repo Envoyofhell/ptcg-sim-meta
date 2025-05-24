@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTCG Raid System Integration - Optimized</title>
+    <title>PTCG Raid System Integration - Test Client</title>
     <style>
         /* Styles from your raid-test.html - condensed for brevity */
         body { margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
@@ -17,7 +17,7 @@
         .raid-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
         .raid-button:disabled { opacity: 0.6; cursor: not-allowed; }
         .raid-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; }
-        .raid-status { background: rgba(255, 255, 255, 0.8); color: #333; padding: 15px; border-radius: 8px; margin-top: 20px; min-height: 150px; font-family: monospace; font-size: 14px; white-space: pre-wrap; overflow-y: auto; max-height: 250px; border: 1px solid #eee; }
+        .raid-status { background: rgba(255, 255, 255, 0.8); color: #333; padding: 15px; border-radius: 8px; margin-top: 20px; min-height: 150px; font-family: monospace; font-size: 14px; white-space: pre-wrap; overflow-y: auto; max-height: 300px; border: 1px solid #eee; }
         #raidContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(45deg, #2c3e50 0%, #3498db 100%); display: none; z-index: 1000; perspective: 1000px; color: white; }
         #raidTable { position: absolute; top: 50%; left: 50%; width: 90vw; height: 90vh; background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 40%), linear-gradient(45deg, #34495e 0%, #2c3e50 100%); border-radius: 20px; transform: translate(-50%, -50%) perspective(1000px) rotateX(10deg); box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); overflow: hidden; }
         .raid-player { position: absolute; width: 120px; height: 80px; border: 3px solid #fff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); transition: all 0.3s ease; cursor: pointer; }
@@ -36,28 +36,28 @@
 
     <script src="/socket.io/socket.io.js"></script>
 
-    <!-- 2. Load your ES Modules.
-         The main inline script below will import EnhancedRaidClient.
-         EnhancedRaidClient.js itself imports dependencies like 'src/front-end.js' and 'src/raid/components/RaidGameUI.js'.
-         Ensure your server serves these files correctly from the 'client' directory
-         and that they are also valid ES modules.
-         The browser's module loader will handle fetching these dependencies.
+    <!--
+        EnhancedRaidClient.js will be imported as an ES Module in the script block below.
+        Ensure your server correctly serves:
+        - client/src/raid/EnhancedRaidClient.js
+        - client/src/front-end.js (which EnhancedRaidClient imports for 'socket' and 'systemState')
+        - client/src/initialization/global-variables/global-variables.js (which front-end.js imports for 'socket')
+        - client/src/raid/components/RaidGameUI.js (and its dependencies like TurnIndicatorBar.js)
+        All these files should be valid ES modules if they use import/export syntax.
     -->
-    <!-- No explicit <script type="module" src="src/raid/EnhancedRaidClient.js"></script> needed here,
-         as the inline script below will import it.
-         However, ensure EnhancedRaidClient.js and its dependencies are accessible by the server.
-    -->
-
 </head>
 <body>
+    <iframe id="selfContainer" style="display: none; width:0; height:0;" title="dummy self container"></iframe>
+    <iframe id="oppContainer" style="display: none; width:0; height:0;" title="dummy opp container"></iframe>
+
     <div class="raid-launcher">
-        <h1>🏴‍☠️ PTCG Raid Battle System</h1>
+        <h1>🏴‍☠️ PTCG Raid Test Client</h1>
         
         <div class="button-group">
-            <button class="raid-button create-raid" id="createRaidBtn">
+            <button class="raid-button create-raid" id="createRaidBtnEl">
                 Create New Raid
             </button>
-            <button class="raid-button join-raid" id="joinRaidBtn">
+            <button class="raid-button join-raid" id="joinRaidBtnEl">
                 Join Existing Raid
             </button>
         </div>
@@ -71,26 +71,26 @@
                class="raid-input" 
                id="usernameInputEl" 
                placeholder="Your username"
-               value="TestPlayer">
+               value="TestPlayer123">
 
         <div class="button-group">
-            <button class="raid-button layout-toggle" id="toggleLayoutBtn">
-                Layout: <span id="currentLayoutSpan">versus</span>
+            <button class="raid-button layout-toggle" id="toggleLayoutBtnEl">
+                Layout: <span id="currentLayoutSpanEl">versus</span>
             </button>
-            <button class="raid-button" id="testMultiplayerBtn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
-                🧪 Test Multiplayer
+            <button class="raid-button" id="testMultiplayerBtnEl" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
+                🧪 Test Multiplayer (Host)
             </button>
-            </div>
+        </div>
 
         <div class="raid-status" id="raidStatusEl">
-Status: Waiting for action...
+Status: Waiting for action... (Ensure server is running and EnhancedRaidClient + dependencies load correctly)
         </div>
     </div>
 
     <div id="raidContainer">
         <div id="raidTable">
             <div class="versus-indicator" id="layoutIndicatorEl">
-                Layout: <span id="layoutNameSpan">Versus</span>
+                Layout: <span id="layoutNameSpanEl">Versus</span>
             </div>
             <div id="raidPlayersEl"></div>
             <div id="raidBossEl" class="raid-boss">
@@ -105,20 +105,19 @@ Status: Waiting for action...
 
     <div class="raid-controls" id="raidControlsEl">
         <h3>🎮 Raid Controls</h3>
-        <button class="control-button" id="switchLayoutBtn">Switch My View</button>
-        <button class="control-button" id="leaveRaidBtn">Leave Raid</button>
+        <button class="control-button" id="switchLayoutBtnEl">Switch My View</button>
+        <button class="control-button" id="leaveRaidBtnEl">Leave Raid</button>
         <div style="margin-top: 15px;">
-            <p>Players: <span id="playerCountSpan">0</span>/4</p>
+            <p>Players: <span id="playerCountSpanEl">0</span>/4</p>
             <p>My View: <span id="controlLayoutSpanEl">versus</span></p>
-            <p>Your Angle: <span id="yourAngleSpan">-</span>°</p>
+            <p>Your Angle: <span id="yourAngleSpanEl">-</span>°</p>
             <small style="opacity: 0.7;">Layout is your personal preference</small>
         </div>
     </div>
 
     <script type="module">
         // Import EnhancedRaidClient from its module file.
-        // Ensure the path is correct relative to this HTML file (which is in 'client/').
-        // So, 'src/raid/EnhancedRaidClient.js' should point to 'client/src/raid/EnhancedRaidClient.js'.
+        // Path is relative to this HTML file (in 'client/' directory).
         import { EnhancedRaidClient } from './src/raid/EnhancedRaidClient.js';
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -126,55 +125,56 @@ Status: Waiting for action...
             const raidIdInput = document.getElementById('raidIdInputEl');
             const usernameInput = document.getElementById('usernameInputEl');
             const raidStatus = document.getElementById('raidStatusEl');
-            const currentLayoutSpan = document.getElementById('currentLayoutSpan');
+            const currentLayoutSpan = document.getElementById('currentLayoutSpanEl');
             const raidLauncherDiv = document.querySelector('.raid-launcher');
             const raidContainerDiv = document.getElementById('raidContainer');
             const raidControlsDiv = document.getElementById('raidControlsEl');
             const raidPlayersDiv = document.getElementById('raidPlayersEl');
             const raidBossDiv = document.getElementById('raidBossEl');
-            const layoutIndicatorNameSpan = document.getElementById('layoutNameSpan');
+            const layoutIndicatorNameSpan = document.getElementById('layoutNameSpanEl');
             const layoutIndicatorDiv = document.getElementById('layoutIndicatorEl');
-            const controlPlayerCountSpan = document.getElementById('playerCountSpan');
+            const controlPlayerCountSpan = document.getElementById('playerCountSpanEl');
             const controlLayoutSpan = document.getElementById('controlLayoutSpanEl');
-            const controlYourAngleSpan = document.getElementById('yourAngleSpan');
+            const controlYourAngleSpan = document.getElementById('yourAngleSpanEl');
 
             // Button References
-            const createRaidBtn = document.getElementById('createRaidBtn');
-            const joinRaidBtn = document.getElementById('joinRaidBtn');
-            const toggleLayoutBtn = document.getElementById('toggleLayoutBtn');
-            const testMultiplayerBtn = document.getElementById('testMultiplayerBtn');
-            const switchLayoutBtn = document.getElementById('switchLayoutBtn');
-            const leaveRaidBtn = document.getElementById('leaveRaidBtn');
+            const createRaidBtn = document.getElementById('createRaidBtnEl');
+            const joinRaidBtn = document.getElementById('joinRaidBtnEl');
+            const toggleLayoutBtn = document.getElementById('toggleLayoutBtnEl');
+            const testMultiplayerBtn = document.getElementById('testMultiplayerBtnEl');
+            const switchLayoutBtn = document.getElementById('switchLayoutBtnEl');
+            const leaveRaidBtn = document.getElementById('leaveRaidBtnEl');
 
             let raidClientInstance;
             try {
-                // EnhancedRaidClient constructor might take the server URL.
-                // Or it might use the global `io()` from socket.io.js if its dependency `front-end.js` does.
-                // The `EnhancedRaidClient.js` you provided imports `socket` from `../front-end.js`.
-                // This means `front-end.js` must initialize and export `socket = io();`
-                // and be successfully loaded as a module by the browser.
-                raidClientInstance = new EnhancedRaidClient(); // Assuming it uses the socket from front-end.js
-                window.raidClientInstance = raidClientInstance; // For debugging
-                log('🚀 Raid Client Initialized.');
+                // EnhancedRaidClient constructor should internally use the 'socket' instance
+                // that it imports (via front-end.js from global-variables.js).
+                // The global io() function from socket.io.js should have already run.
+                raidClientInstance = new EnhancedRaidClient(); 
+                window.raidClientInstance = raidClientInstance; // For debugging in console
+                log('🚀 Raid Client Initialized. Waiting for connection...');
             } catch (e) {
-                log(`❌ Error initializing EnhancedRaidClient: ${e.message}. Check console for details on module loading or client errors.`);
+                log(`❌ FATAL: Error initializing EnhancedRaidClient: ${e.message}. Check console for module loading errors or issues in EnhancedRaidClient/dependencies.`);
                 console.error("EnhancedRaidClient instantiation error:", e);
-                // Disable buttons if client fails to init
+                // Disable all buttons if client fails to initialize
                 [createRaidBtn, joinRaidBtn, toggleLayoutBtn, testMultiplayerBtn, switchLayoutBtn, leaveRaidBtn].forEach(btn => {
                     if (btn) btn.disabled = true;
                 });
-                return; // Stop script if client can't be initialized
+                return; // Stop further script execution if client fails
             }
 
-            let currentRaidDetails = null;   // Stores details about the current raid from server
-            let currentPlayerId = null;      // This client's player ID from the server
+            let currentRaidDetails = null;   // Holds the full raid state from the server
+            let currentPlayerId = null;      // This client's player ID (socket.id or assigned by server)
             let allPlayerPositions = [];     // Server's canonical positions for all players
             let localLayoutPreference = 'versus'; // User's local visual layout preference
 
             // --- EnhancedRaidClient Event Listeners ---
-            if (raidClientInstance) {
+            // Ensure raidClientInstance is valid before attaching listeners
+            if (raidClientInstance && typeof raidClientInstance.on === 'function') {
                 raidClientInstance.on('connect', () => {
-                    log('🔌 Connected to raid server.');
+                    log('🔌 Connected to raid server via EnhancedRaidClient.');
+                    currentPlayerId = raidClientInstance.socketId || (typeof socket !== 'undefined' ? socket.id : null); // Get client's socket ID
+                    log(`My client ID: ${currentPlayerId}`);
                 });
 
                 raidClientInstance.on('disconnect', () => {
@@ -183,54 +183,53 @@ Status: Waiting for action...
                         exitRaidView();
                         currentRaidDetails = null;
                         allPlayerPositions = [];
-                        currentPlayerId = null;
                     }
                 });
 
-                raidClientInstance.on('error', (error) => { // Assuming EnhancedRaidClient emits 'error'
+                raidClientInstance.on('error', (error) => {
                     const errorMessage = (error && error.message) ? error.message : String(error);
                     log(`❌ RaidClient Error: ${errorMessage}`);
                 });
                 
-                // This event should be emitted by EnhancedRaidClient when it receives comprehensive state
+                // Primary event for receiving full raid state updates
                 raidClientInstance.on('raidStateChange', (newState) => {
-                    if (!newState || !newState.players || !newState.raidId) {
-                        log('⚠️ Received invalid or incomplete raid state.');
+                    if (!newState || !newState.players || !newState.id) { // Changed newState.raidId to newState.id based on RaidInstance.getState()
+                        log('⚠️ Received invalid or incomplete raid state from server.');
                         console.warn('Invalid newState in raidStateChange:', newState);
                         return;
                     }
-                    log(`🔄 Raid state updated for ${newState.raidId}. Players: ${newState.players.length}, State: ${newState.state}`);
+                    log(`🔄 Raid state updated for ${newState.id}. Players: ${newState.players.length}, State: ${newState.state}`);
 
-                    currentRaidDetails = newState; // This is the full state from the server
+                    currentRaidDetails = newState;
                     allPlayerPositions = newState.playerPositions || [];
-                    currentPlayerId = newState.yourPlayerId || raidClientInstance.socketId; // Get our ID
+                    // EnhancedRaidClient should ideally tell us our player ID within the raid context if it's different from socket.id
+                    // For now, we'll rely on the socketId or what the server might send as 'yourPlayerId'
+                    currentPlayerId = newState.yourPlayerId || raidClientInstance.socketId || currentPlayerId; 
 
-                    const myPlayerData = newState.players.find(p => p.id === currentPlayerId || p.socketId === currentPlayerId);
+                    const myPlayerData = currentRaidDetails.players.find(p => p.id === currentPlayerId || p.socketId === currentPlayerId);
 
-                    if ((newState.state === 'active' || newState.state === 'lobby') && myPlayerData) {
+                    if ((currentRaidDetails.state === 'active' || currentRaidDetails.state === 'lobby') && myPlayerData) {
                         if (raidLauncherDiv.style.display !== 'none') {
                             enterRaidView();
                         }
                         updatePlayerPositionsWithLayout(localLayoutPreference);
                         updateLayoutIndicators(currentRaidDetails.config?.layout || localLayoutPreference);
-                        updateControls(myPlayerData, currentRaidDetails.players.length); // Pass myPlayerData for angle
+                        updateControls(myPlayerData, currentRaidDetails.players.length);
                         updateControlLayout(localLayoutPreference);
-                    } else if (raidLauncherDiv.style.display === 'none') {
+                    } else if (raidLauncherDiv.style.display === 'none' && !myPlayerData && currentRaidDetails.state !== 'lobby') {
+                        // If we are in raid view but no longer part of an active raid
                         exitRaidView();
                     }
                 });
                 
-                // Handle specific event from EnhancedRaidClient after successfully joining
+                // Specific handler for when this client successfully joins
+                // This event might be redundant if 'raidStateChange' provides all necessary info after join
                 raidClientInstance.on('raidJoined', (data) => {
                     if (data.success && data.raidState) {
                         log(`✅ Successfully joined raid: ${data.raidId}. Your server-assigned angle: ${data.yourPosition?.angle}°`);
-                        // EnhancedRaidClient should manage its internal state and emit 'raidStateChange'
-                        // If it doesn't, you might need to manually trigger an update or use data directly:
-                        currentRaidDetails = data.raidState;
-                        currentPlayerId = data.yourPosition?.playerId || raidClientInstance.socketId;
-                        allPlayerPositions = data.allPositions || data.raidState.playerPositions || [];
-                        enterRaidView();
-                        updatePlayerPositionsWithLayout(localLayoutPreference);
+                        // EnhancedRaidClient should ideally manage its internal state and emit 'raidStateChange'
+                        // Forcing a state update if not already handled:
+                        raidClientInstance.emit('raidStateChange', data.raidState);
                     } else {
                         log(`❌ Failed to join raid: ${data.error || 'Unknown reason'}`);
                     }
@@ -238,34 +237,29 @@ Status: Waiting for action...
 
                 raidClientInstance.on('playerJoinedRaid', (data) => {
                      log(`👋 ${data.username || data.playerId} joined. Players: ${data.playerCount}/${data.maxPlayers}`);
-                     if (data.raidState) raidClientInstance.emit('raidStateChange', data.raidState); // Prefer full state update
-                     else if (data.positions) {
-                        allPlayerPositions = data.positions;
-                        if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${data.playerCount}/${data.maxPlayers || 4}`;
-                        updatePlayerPositionsWithLayout(localLayoutPreference);
-                     }
+                     if (data.raidState) raidClientInstance.emit('raidStateChange', data.raidState);
                 });
 
                 raidClientInstance.on('playerLeftRaid', (data) => {
                     log(`👋 ${data.leftPlayerName || data.leftPlayerId} left. Players: ${data.playerCount}`);
                     if (data.raidState) raidClientInstance.emit('raidStateChange', data.raidState);
-                    else if (data.newPositions) {
-                        allPlayerPositions = data.newPositions;
-                        if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${data.playerCount}/${currentRaidDetails?.config?.maxPlayers || 4}`;
-                        updatePlayerPositionsWithLayout(localLayoutPreference);
-                    }
                 });
 
                 raidClientInstance.on('layoutUpdated', (data) => {
-                    log(`🔄 Layout updated by server to: ${data.layout}.`);
+                    log(`🔄 Server confirmed layout: ${data.layout}.`);
                     if (data.positions) allPlayerPositions = data.positions;
                     if (currentRaidDetails && currentRaidDetails.config) currentRaidDetails.config.layout = data.layout;
-                    updatePlayerPositionsWithLayout(localLayoutPreference); // Update view with our preference
-                    updateLayoutIndicators(data.layout); // Update indicator with server's layout
+                    updatePlayerPositionsWithLayout(localLayoutPreference);
+                    updateLayoutIndicators(data.layout);
                 });
 
+                // Add listeners for game actions if your EnhancedRaidClient emits them
+                // Example:
+                // raidClientInstance.on('actionResult', (data) => { /* update UI based on action result */ });
+                // raidClientInstance.on('turnChange', (turnData) => { /* update turn indicators */ });
+
             } else {
-                log("⚠️ EnhancedRaidClient instance not available. Cannot set up listeners.");
+                log("⚠️ FATAL: EnhancedRaidClient instance is not available. Cannot set up event listeners.");
             }
 
             function log(message) {
@@ -277,12 +271,25 @@ Status: Waiting for action...
 
             async function handleCreateRaid() {
                 if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
+                const usernameToJoin = usernameInput.value.trim() || 'HostPlayer';
                 log(`🏴‍☠️ Attempting to create raid...`);
                 try {
-                    const raidConfig = { raidType: 'tcg-official', layout: localLayoutPreference };
-                    const creationResponse = await raidClientInstance.createRaid(raidConfig); // EnhancedRaidClient handles ID and emits
-                    log(`👍 CreateRaid request sent. Server response (initial): ${JSON.stringify(creationResponse)}`);
-                    // Auto-join is often handled within EnhancedRaidClient's 'raidCreated' listener
+                    const raidConfig = {
+                        raidType: 'tcg-official', // This should match a type registered in RaidEngine
+                        layout: localLayoutPreference,
+                        // raidId will be generated by EnhancedRaidClient or server
+                    };
+                    // createRaid should resolve with details of the created raid, including its ID
+                    const creationResponse = await raidClientInstance.createRaid(raidConfig);
+                    log(`👍 Raid creation initiated. Server response: ${JSON.stringify(creationResponse)}`);
+                    if (creationResponse && creationResponse.success && creationResponse.raidId) {
+                        log(`✅ Raid ${creationResponse.raidId} created. Auto-joining as ${usernameToJoin}...`);
+                        raidIdInput.value = creationResponse.raidId; // Populate for visibility
+                        // EnhancedRaidClient's handleRaidCreated or a direct join call should follow
+                        // The provided EnhancedRaidClient seems to auto-join in its 'raidCreated' handler.
+                    } else {
+                        log(`⚠️ Raid creation might have failed on server or response was unexpected: ${creationResponse.error || 'No raidId in response'}`);
+                    }
                 } catch (error) {
                     log(`❌ Failed to initiate raid creation: ${error.message}`);
                 }
@@ -295,7 +302,10 @@ Status: Waiting for action...
                 if (!raidIdToJoin) { log('⚠️ Please enter a Raid ID.'); raidIdInput.focus(); return; }
                 log(`🎯 Attempting to join raid: ${raidIdToJoin} as ${usernameToJoin}`);
                 try {
-                    await raidClientInstance.joinRaid(raidIdToJoin, usernameToJoin);
+                    // joinRaid should resolve once the server confirms the join
+                    const joinResponse = await raidClientInstance.joinRaid(raidIdToJoin, usernameToJoin);
+                    // The 'raidJoined' and 'raidStateChange' events on raidClientInstance will handle UI updates.
+                    log(`👍 Join request sent. Server response: ${JSON.stringify(joinResponse)}`);
                 } catch (error) {
                     log(`❌ Failed to join raid: ${error.message}`);
                 }
@@ -303,33 +313,35 @@ Status: Waiting for action...
             
             async function handleLeaveRaid() {
                 if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
-                if (raidClientInstance.currentRaid && raidClientInstance.currentRaid.id) { // Check EnhancedRaidClient's state
+                if (raidClientInstance.currentRaid && raidClientInstance.currentRaid.id) {
                     log(`👋 Leaving raid: ${raidClientInstance.currentRaid.id}`);
                     try {
-                        await raidClientInstance.leaveRaid(); // Method in EnhancedRaidClient
+                        await raidClientInstance.leaveRaid();
                     } catch (error) {
                         log(`⚠️ Error during leaveRaid call: ${error.message}`);
                     }
                 } else {
-                    log("Not currently in a raid to leave (according to client state).");
+                    log("Not currently in a raid to leave (client state).");
                 }
-                 // UI reset should be handled by client's 'raidLeft' or 'disconnect' -> 'raidStateChange' (to null state)
-                exitRaidView(); // Force UI reset for now
-                currentRaidDetails = null;
-                allPlayerPositions = [];
-                currentPlayerId = null;
+                exitRaidView(); // Force UI reset
+                currentRaidDetails = null; allPlayerPositions = [];
             }
 
             async function handleTestMultiplayer() {
                 if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
-                log('🧪 Simulating multiplayer test setup...');
+                log('🧪 Simulating multiplayer test (Host perspective)...');
                 const hostUsername = usernameInput.value || 'HostPlayer';
                 try {
-                    const createdRaid = await raidClientInstance.createRaid({ raidType: 'tcg-official', maxPlayers: 4, minPlayers: 1 });
-                    log(`🎉 Test Raid Created by Host: ${createdRaid.raidId}`);
-                    raidIdInput.value = createdRaid.raidId;
-                    await raidClientInstance.joinRaid(createdRaid.raidId, hostUsername);
-                    log(`🏠 Host (${hostUsername}) joined. Others can join with ID: ${createdRaid.raidId}`);
+                    const creationResponse = await raidClientInstance.createRaid({ raidType: 'tcg-official', maxPlayers: 4, minPlayers: 1 });
+                    if (creationResponse && creationResponse.success && creationResponse.raidId) {
+                        log(`🎉 Test Raid Created by Host: ${creationResponse.raidId}. Auto-joining...`);
+                        raidIdInput.value = creationResponse.raidId;
+                        // EnhancedRaidClient's 'raidCreated' handler should auto-join the host.
+                        // If not, you'd call: await raidClientInstance.joinRaid(creationResponse.raidId, hostUsername);
+                        log("📢 Other players can now join this raid using ID: " + creationResponse.raidId + ". Open this page in other tabs/browsers, enter the ID and a unique username, then click 'Join Existing Raid'.");
+                    } else {
+                        log(`⚠️ Test Multiplayer: Raid creation failed or no raidId returned: ${creationResponse.error || 'Unknown issue'}`);
+                    }
                 } catch (error) {
                     log(`❌ Error in multiplayer test setup: ${error.message}`);
                 }
@@ -340,10 +352,12 @@ Status: Waiting for action...
                 if(currentLayoutSpan) currentLayoutSpan.textContent = localLayoutPreference;
                 log(`🔄 Layout preference set to: ${localLayoutPreference}.`);
                 if (currentRaidDetails && currentRaidDetails.state === 'active') {
-                    switchLayoutVisuals(); // Just update local view if already in active game
+                    switchLayoutVisuals();
+                } else if (currentRaidDetails && currentRaidDetails.state === 'lobby' && raidClientInstance.changeLayout) {
+                     raidClientInstance.changeLayout(currentRaidDetails.id, localLayoutPreference)
+                        .then(() => log(`✅ Layout change to ${localLayoutPreference} requested for lobby.`))
+                        .catch(err => log(`⚠️ Could not send layout change for lobby: ${err.message}`));
                 }
-                // If in lobby, EnhancedRaidClient could have a method to inform the server of preference
-                // e.g., if (currentRaidDetails && currentRaidDetails.state === 'lobby') raidClientInstance.updateLayoutPreference(localLayoutPreference);
             }
 
             function switchLayoutVisuals() {
@@ -355,10 +369,7 @@ Status: Waiting for action...
             }
 
             function updatePlayerPositionsWithLayout(layoutToDisplay) {
-                if (!allPlayerPositions || !currentRaidDetails) {
-                    if (raidPlayersDiv) raidPlayersDiv.innerHTML = 'Waiting for player data...';
-                    return;
-                }
+                if (!allPlayerPositions || !currentRaidDetails) { if (raidPlayersDiv) raidPlayersDiv.innerHTML = 'Waiting for player data...'; return; }
                 const visuallyAdjustedPositions = recalculatePositionsForLayout(allPlayerPositions, layoutToDisplay);
                 displayPlayerPositions(visuallyAdjustedPositions);
                 const bossPos = getBossPositionForLayout(layoutToDisplay);
@@ -389,7 +400,7 @@ Status: Waiting for action...
             function displayPlayerPositions(positionsToDisplay) {
                 if (!raidPlayersDiv) return;
                 raidPlayersDiv.innerHTML = '';
-                if (!positionsToDisplay || positionsToDisplay.length === 0) { raidPlayersDiv.innerHTML = '<div style="text-align:center; width:100%; margin-top: 40%; color: #ccc;">No players.</div>'; return; }
+                if (!positionsToDisplay || positionsToDisplay.length === 0) { raidPlayersDiv.innerHTML = '<div style="text-align:center; width:100%; margin-top: 40%; color: #ccc;">No players in raid.</div>'; return; }
                 positionsToDisplay.forEach((posData, index) => {
                     const el = document.createElement('div');
                     const isMe = posData.playerId === currentPlayerId;
@@ -404,8 +415,8 @@ Status: Waiting for action...
             }
 
             function updateBossPosition(bossPos) { if (!raidBossDiv || !bossPos) return; raidBossDiv.style.left = `${bossPos.x}%`; raidBossDiv.style.top = `${bossPos.y}%`; }
-            function updateControls(myPos, pCount) {
-                if (controlYourAngleSpan && myPos) controlYourAngleSpan.textContent = Math.round(myPos.displayAngle || 0); else if(controlYourAngleSpan) controlYourAngleSpan.textContent = '-';
+            function updateControls(myPosData, pCount) {
+                if (controlYourAngleSpan && myPosData) controlYourAngleSpan.textContent = Math.round(myPosData.displayAngle || 0); else if(controlYourAngleSpan) controlYourAngleSpan.textContent = '-';
                 if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${pCount || 0}/${currentRaidDetails?.config?.maxPlayers || 4}`;
             }
             function updateLayoutIndicators(layout) { if(layoutIndicatorNameSpan) layoutIndicatorNameSpan.textContent = layout.charAt(0).toUpperCase()+layout.slice(1); if(layoutIndicatorDiv) layoutIndicatorDiv.className = 'versus-indicator layout-' + layout; }
@@ -427,18 +438,31 @@ Status: Waiting for action...
             const autoJoinFlag = params.get('autoJoin');
             if (raidToJoinFromUrl && autoJoinFlag === 'true' && testPlayerNum) {
                 const usernameForAutoJoin = `TestPlayer${testPlayerNum}`;
-                log(`🔗 Auto-joining raid ${raidToJoinFromUrl} as ${usernameForAutoJoin}`);
+                log(`🔗 Auto-joining raid ${raidToJoinFromUrl} as ${usernameForAutoJoin} (URL params).`);
                 if(usernameInput) usernameInput.value = usernameForAutoJoin; if(raidIdInput) raidIdInput.value = raidToJoinFromUrl;
-                let attempts = 0; const maxAttempts = 5, attemptInterval = 2000 + parseInt(testPlayerNum) * 500;
+                let attempts = 0; const maxAttempts = 7, attemptInterval = 1500 + parseInt(testPlayerNum) * 300;
                 async function attemptAutoJoin() {
-                    if (!raidClientInstance) { log("⏳ Raid client not ready, retrying..."); if(attempts < maxAttempts) { attempts++; setTimeout(attemptAutoJoin, attemptInterval); } else {log("❌ Max auto-join attempts (client not ready).");} return; }
-                    attempts++; try { await raidClientInstance.joinRaid(raidToJoinFromUrl, usernameForAutoJoin); } catch (error) { log(`⚠️ Auto-join attempt ${attempts} failed: ${error.message}`); if (attempts < maxAttempts) { setTimeout(attemptAutoJoin, attemptInterval); } else { log(`❌ Max auto-join attempts for ${usernameForAutoJoin}.`);}}
+                    if (!raidClientInstance || raidClientInstance.connectionState !== 'connected') {
+                        log(`⏳ Raid client not ready/connected for auto-join (attempt ${attempts+1}), retrying...`);
+                        if(attempts < maxAttempts) { attempts++; setTimeout(attemptAutoJoin, attemptInterval); } else {log("❌ Max auto-join attempts (client not ready/connected).");} return;
+                    }
+                    attempts++;
+                    try {
+                        log(`🚀 Attempting auto-join ${attempts} for ${usernameForAutoJoin} to raid ${raidToJoinFromUrl}`);
+                        await raidClientInstance.joinRaid(raidToJoinFromUrl, usernameForAutoJoin);
+                    } catch (error) {
+                        log(`⚠️ Auto-join attempt ${attempts} failed: ${error.message}`);
+                        if (attempts < maxAttempts) { setTimeout(attemptAutoJoin, attemptInterval + 1000); } else { log(`❌ Max auto-join attempts for ${usernameForAutoJoin}.`);}
+                    }
                 }
-                setTimeout(attemptAutoJoin, 1500);
-            } else if (raidToJoinFromUrl) { if(raidIdInput) raidIdInput.value = raidToJoinFromUrl; if(usernameInput) usernameInput.value = `Player${Math.floor(Math.random()*1000)}`; log(`📋 Raid ID ${raidToJoinFromUrl} pre-filled. Enter username & join.`);}
-            log("Optimized client script initialized.");
+                setTimeout(attemptAutoJoin, 1000); // Initial delay for client to connect
+            } else if (raidToJoinFromUrl) {
+                if(raidIdInput) raidIdInput.value = raidToJoinFromUrl;
+                if(usernameInput) usernameInput.value = `Player${Math.floor(Math.random()*1000)}`;
+                log(`📋 Raid ID ${raidToJoinFromUrl} pre-filled from URL. Enter username & click 'Join Raid'.`);
+            }
+            log("Optimized client script initialized and DOM ready.");
         });
     </script>
 </body>
 </html>
-
