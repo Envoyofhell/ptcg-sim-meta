@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Raid Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #222; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; background: #333; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .attack-btn { background: #f44336; }
+        .attack-btn:hover { background: #da190b; }
+        input { padding: 10px; margin: 5px; border: 1px solid #666; background: #444; color: white; border-radius: 5px; }
+        #output { background: #111; padding: 10px; border-radius: 5px; height: 400px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🏴‍☠️ Raid System Debug Test</h1>
+    
+    <div class="test-section">
+        <h3>Player 1 (Host)</h3>
+        <input id="hostUsername" value="HostPlayer" placeholder="Username">
+        <button id="createBtn">Create Raid</button>
+        <button id="hostAttackBtn" class="attack-btn">Attack as Host</button>
+        <div>Status: <span id="hostStatus">Not connected</span></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Player 2 (Joiner)</h3>
+        <input id="joinerUsername" value="JoinerPlayer" placeholder="Username">
+        <input id="raidIdInput" placeholder="Raid ID">
+        <button id="joinBtn">Join Raid</button>
+        <button id="joinerAttackBtn" class="attack-btn">Attack as Joiner</button>
+        <div>Status: <span id="joinerStatus">Not connected</span></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Debug Output</h3>
+        <div id="output"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Enhanced debug logging
+        function log(message, source = 'System') {
+            const timestamp = new Date().toLocaleTimeString();
+            const output = document.getElementById('output');
+            output.innerHTML += `[${timestamp}] ${source}: ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(`[${source}] ${message}`);
+        }
+
+        // Host player socket
+        let hostSocket = null;
+        let hostRaidId = null;
+        
+        // Joiner player socket  
+        let joinerSocket = null;
+
+        // Initialize host connection
+        function initHostSocket() {
+            hostSocket = io();
+            
+            hostSocket.on('connect', () => {
+                log('Host connected to server', 'HOST');
+                document.getElementById('hostStatus').textContent = 'Connected';
+            });
+
+            hostSocket.on('raidCreated', (data) => {
+                hostRaidId = data.raidId;
+                log(`Host created raid: ${hostRaidId}`, 'HOST');
+                document.getElementById('raidIdInput').value = hostRaidId;
+            });
+
+            hostSocket.on('raidActionResult', (data) => {
+                log(`Host attack result: ${data.message}`, 'HOST');
+                if (data.updatedRaidState?.boss) {
+                    log(`Boss HP after host attack: ${data.updatedRaidState.boss.currentHP}`, 'HOST');
+                }
+            });
+
+            hostSocket.on('disconnect', () => {
+                log('Host disconnected', 'HOST');
+                document.getElementById('hostStatus').textContent = 'Disconnected';
+            });
+        }
+
+        // Initialize joiner connection
+        function initJoinerSocket() {
+            joinerSocket = io();
+            
+            joinerSocket.on('connect', () => {
+                log('Joiner connected to server', 'JOINER');
+                document.getElementById('joinerStatus').textContent = 'Connected';
+            });
+
+            joinerSocket.on('raidJoined', (data) => {
+                log(`Joiner joined raid: ${data.raidState.id}`, 'JOINER');
+            });
+
+            joinerSocket.on('raidActionResult', (data) => {
+                log(`Joiner attack result: ${data.message}`, 'JOINER');
+                if (data.updatedRaidState?.boss) {
+                    log(`Boss HP after joiner attack: ${data.updatedRaidState.boss.currentHP}`, 'JOINER');
+                }
+            });
+
+            joinerSocket.on('disconnect', () => {
+                log('Joiner disconnected', 'JOINER');
+                document.getElementById('joinerStatus').textContent = 'Disconnected';
+            });
+        }
+
+        // Event handlers
+        document.getElementById('createBtn').onclick = () => {
+            if (!hostSocket) initHostSocket();
+            
+            const raidId = 'TEST-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+            const username = document.getElementById('hostUsername').value;
+            
+            log(`Creating raid: ${raidId} as ${username}`, 'HOST');
+            
+            hostSocket.emit('createRaid', {
+                raidId: raidId,
+                raidType: 'tcg-official',
+                maxPlayers: 4,
+                layout: 'versus'
+            });
+        };
+
+        document.getElementById('joinBtn').onclick = () => {
+            if (!joinerSocket) initJoinerSocket();
+            
+            const raidId = document.getElementById('raidIdInput').value;
+            const username = document.getElementById('joinerUsername').value;
+            
+            if (!raidId) {
+                log('Please enter raid ID', 'JOINER');
+                return;
+            }
+            
+            log(`Joining raid: ${raidId} as ${username}`, 'JOINER');
+            
+            joinerSocket.emit('joinRaid', {
+                raidId: raidId,
+                playerData: {
+                    username: username,
+                    activePokemon: {
+                        name: 'Pikachu',
+                        maxHP: 120,
+                        attacks: [{ name: 'Thunder Shock', damage: 60 }]
+                    }
+                }
+            });
+        };
+
+        document.getElementById('hostAttackBtn').onclick = () => {
+            if (!hostSocket || !hostRaidId) {
+                log('Host not ready to attack', 'HOST');
+                return;
+            }
+            
+            log('Host attacking boss for 60 damage', 'HOST');
+            
+            hostSocket.emit('raidAction', {
+                raidId: hostRaidId,
+                action: {
+                    type: 'playerAttack',
+                    damage: 60,
+                    attackName: 'Thunder Shock'
+                }
+            });
+        };
+
+        document.getElementById('joinerAttackBtn').onclick = () => {
+            if (!joinerSocket || !hostRaidId) {
+                log('Joiner not ready to attack', 'JOINER');
+                return;
+            }
+            
+            log('Joiner attacking boss for 60 damage', 'JOINER');
+            
+            joinerSocket.emit('raidAction', {
+                raidId: hostRaidId,
+                action: {
+                    type: 'playerAttack',
+                    damage: 60,
+                    attackName: 'Thunder Shock'
+                }
+            });
+        };
+
+        log('Debug test page loaded - click Create Raid to start');
+    </script>
+</body>
+</html> 

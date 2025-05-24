@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PTCG Raid Battle System - 3D Enhanced Edition">
+    <meta name="author" content="PTCG Sim Meta Team">
+    
+    <title>PTCG Raid System - 3D Enhanced Edition</title>
+    
+    <!-- 3D ENHANCED CSS - Angled Perspective Gameboard -->
+    <style>
+        /* ================ CSS VARIABLES ================ */
+        :root {
+            --primary-blue: #3498db;
+            --primary-green: #2ecc71;
+            --primary-red: #e74c3c;
+            --primary-yellow: #f39c12;
+            --primary-purple: #9b59b6;
+            --dark-bg: #2c3e50;
+            --darker-bg: #1a252f;
+            --light-text: #ecf0f1;
+            --success: #27ae60;
+            --error: #c0392b;
+            --warning: #f39c12;
+        }
+
+        /* ================ BASE STYLES ================ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--light-text);
+            overflow-x: hidden;
+        }
+
+        /* ================ ANIMATIONS ================ */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        @keyframes damageFloat {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        @keyframes bossIdle {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); }
+            50% { transform: translate(-50%, -50%) translateY(-5px) scale(1.02); }
+        }
+
+        @keyframes rotateTable {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes turnPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
+        }
+
+        /* ================ LAUNCHER STYLES ================ */
+        .raid-launcher {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            margin: 40px auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            color: #333;
+        }
+
+        .launcher-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .launcher-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .launcher-header .version {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* ================ BUTTON STYLES ================ */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .raid-button {
+            flex: 1 1 auto;
+            min-width: 150px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .create-raid { 
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24); 
+            color: white; 
+        }
+
+        .join-raid { 
+            background: linear-gradient(45deg, #4ecdc4, #44a08d); 
+            color: white; 
+        }
+
+        .layout-toggle { 
+            background: linear-gradient(45deg, #a55eea, #8e44ad); 
+            color: white; 
+        }
+
+        .test-button { 
+            background: linear-gradient(45deg, #f39c12, #e67e22); 
+            color: white; 
+        }
+
+        .raid-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .raid-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ================ INPUT STYLES ================ */
+        .raid-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        /* ================ STATUS LOG ================ */
+        .raid-status {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* ================ CONNECTION STATUS ================ */
+        #connectionStatusDisplay {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        #connectionStatusDisplay.success { 
+            background: var(--success); 
+            color: white; 
+        }
+
+        #connectionStatusDisplay.error { 
+            background: var(--error); 
+            color: white; 
+        }
+
+        #connectionStatusDisplay.info { 
+            background: var(--primary-blue); 
+            color: white; 
+        }
+
+        /* ================ 3D GAME INTERFACE ================ */
+        .raid-container {
+            display: none; /* Hidden initially */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(45deg, var(--dark-bg) 0%, var(--primary-blue) 100%);
+            z-index: 1000;
+        }
+
+        .raid-table {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 90vw;
+            height: 90vh;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 40%),
+                        linear-gradient(45deg, #34495e 0%, #2c3e50 100%);
+            border-radius: 20px;
+            transform: translate(-50%, -50%) perspective(1000px) rotateX(10deg);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        /* ================ TURN INDICATOR BAR ================ */
+        #turnIndicatorContainer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 25px;
+            padding: 10px 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .turn-indicator-element {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .turn-indicator-element.current {
+            background: var(--primary-yellow);
+            color: #333;
+            animation: turnPulse 2s infinite;
+        }
+
+        .turn-indicator-element.waiting {
+            opacity: 0.6;
+        }
+
+        .turn-indicator-element.boss {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .turn-indicator-element:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ================ LAYOUT INDICATOR ================ */
+        .layout-indicator-gfx {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .layout-indicator-gfx.layout-versus {
+            background: linear-gradient(45deg, var(--primary-red), #c0392b);
+        }
+
+        .layout-indicator-gfx.layout-circular {
+            background: linear-gradient(45deg, var(--primary-blue), #2980b9);
+        }
+
+        /* ================ BOSS STYLES ================ */
+        .raid-boss {
+            position: absolute;
+            width: 200px;
+            height: 280px;
+            background: radial-gradient(circle, var(--primary-red) 0%, #c0392b 100%);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+            transform: translate(-50%, -50%);
+            animation: bossIdle 4s ease-in-out infinite;
+            z-index: 102;
+        }
+
+        .boss-hp-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .boss-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c0392b, var(--primary-red));
+            transition: width 0.3s ease;
+        }
+
+        /* ================ PLAYER CARD STYLES ================ */
+        .raid-player-card {
+            position: absolute;
+            width: 120px;
+            height: 100px;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 10px;
+            z-index: 101;
+        }
+
+        .raid-player-card.current-player {
+            border-color: var(--primary-yellow);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(241,196,15,0.6);
+        }
+
+        .raid-player-card.ko {
+            opacity: 0.5;
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6) !important;
+        }
+
+        .player-name {
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .player-hp-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .player-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-green), #27ae60);
+            transition: width 0.3s ease;
+        }
+
+        .player-angle-display {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* ================ LAYOUT SPECIFIC STYLES ================ */
+        .raid-table.layout-circular .raid-boss {
+            top: 50%;
+            left: 50%;
+        }
+
+        .raid-table.layout-versus .raid-boss {
+            top: 30%;
+            left: 50%;
+        }
+
+        /* ================ CONTROLS ================ */
+        .raid-controls {
+            display: none; /* Hidden initially */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 250px;
+            z-index: 1001;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .control-info {
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .control-info div {
+            margin-bottom: 5px;
+        }
+
+        .control-info strong {
+            color: var(--primary-yellow);
+        }
+
+        .control-button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #555;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* ================ GAME ACTIONS ================ */
+        .game-actions {
+            display: none; /* Hidden initially */
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1001;
+            flex-direction: row;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: linear-gradient(45deg, var(--primary-green), #27ae60);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-btn.attack { 
+            background: linear-gradient(45deg, var(--primary-red), #c0392b); 
+        }
+
+        .action-btn.debug { 
+            background: linear-gradient(45deg, #34495e, #2c3e50); 
+        }
+
+        /* ================ VISUAL EFFECTS ================ */
+        .action-feedback {
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .damage-effect {
+            top: -10px;
+            right: -10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-family: 'Arial Black', Arial, sans-serif;
+        }
+
+        /* ================ DEBUG PANEL ================ */
+        .debug-panel {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 2000;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .debug-content pre {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            overflow-x: auto;
+            margin-bottom: 10px;
+        }
+
+        /* ================ GAME LOG ================ */
+        .game-log-container {
+            display: none; /* Hidden initially */
+            position: fixed;
+            bottom: 340px; /* Moved up to make room for chat */
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1001;
+            width: 350px;
+            max-height: 200px; /* Reduced height */
+        }
+
+        /* ================ UNIFIED COMMUNICATION PANEL ================ */
+        .comm-panel {
+            display: none; /* Hidden initially */
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0;
+            border-radius: 10px;
+            z-index: 1001;
+            width: 380px;
+            max-height: 400px;
+            border: 2px solid #3498db;
+            overflow: hidden;
+        }
+
+        .comm-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid #444;
+        }
+
+        .comm-tab {
+            flex: 1;
+            padding: 10px 15px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: #ccc;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .comm-tab.active {
+            color: white;
+            background: rgba(52, 152, 219, 0.2);
+            border-bottom-color: #3498db;
+        }
+
+        .comm-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .comm-content {
+            padding: 15px;
+            height: 280px;
+            overflow: hidden;
+        }
+
+        .comm-tab-content {
+            display: none;
+            height: 100%;
+        }
+
+        .comm-tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comm-messages {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .comm-input-area {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .comm-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #666;
+            background: #333;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .comm-send-btn {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .comm-send-btn:hover {
+            background: #2980b9;
+        }
+
+        .comm-message {
+            margin: 3px 0;
+            padding: 3px 8px;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+
+        .comm-message.chat {
+            color: #ecf0f1;
+        }
+
+        .comm-message.chat.own {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 3px solid #3498db;
+        }
+
+        .comm-message.game-log {
+            color: #95a5a6;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .comm-message.game-log.success { color: #27ae60; }
+        .comm-message.game-log.error { color: #e74c3c; }
+        .comm-message.game-log.warn { color: #f39c12; }
+        .comm-message.game-log.debug { color: #95a5a6; }
+
+        .comm-header-actions {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .comm-export-btn {
+            background: none;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 5px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .comm-export-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ================ UTILITIES ================ */
+        .icon-btn {
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            color: inherit;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ================ RESPONSIVE DESIGN ================ */
+        @media (max-width: 768px) {
+            .raid-launcher {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .raid-controls {
+                right: 10px;
+                min-width: 200px;
+            }
+            
+            .game-log-container {
+                left: 10px;
+                width: 300px;
+            }
+
+            .raid-player-card {
+                width: 100px;
+                height: 80px;
+            }
+
+            .raid-table {
+                transform: translate(-50%, -50%) perspective(800px) rotateX(8deg);
+            }
+
+            #turnIndicatorContainer {
+                width: 95%;
+                padding: 5px 10px;
+            }
+
+            .turn-indicator-element {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* ================ BOSS CONTROL OVERLAY ================ */
+        .boss-control-overlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            z-index: 3000;
+            width: 500px;
+            border: 3px solid #e74c3c;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .boss-control-header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 15px;
+        }
+
+        .boss-control-header h2 {
+            color: #e74c3c;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .boss-control-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .boss-control-section h4 {
+            color: #f39c12;
+            margin: 0 0 10px 0;
+        }
+
+        .boss-attack-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .boss-attack-btn {
+            flex: 1 1 calc(50% - 5px);
+            padding: 12px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .boss-attack-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .boss-hp-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .boss-hp-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #666;
+            background: #333;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .boss-hp-btn {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .boss-hp-btn:hover {
+            background: #2980b9;
+        }
+
+        .boss-control-toggle {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid #f1c40f;
+            border-radius: 8px;
+        }
+
+        .boss-control-checkbox {
+            margin-right: 10px;
+        }
+
+        /* ================ DEBUG BUTTONS ================ */
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .debug-player-btn {
+            padding: 5px 10px;
+            background: #2c3e50;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            flex: 1 1 calc(50% - 2.5px);
+            min-width: 80px;
+        }
+
+        .debug-player-btn:hover {
+            background: #34495e;
+        }
+
+        .debug-player-btn.resurrect {
+            background: #27ae60;
+        }
+
+        .debug-player-btn.resurrect:hover {
+            background: #2ecc71;
+        }
+
+        .debug-player-btn.kill {
+            background: #e74c3c;
+        }
+
+        .debug-player-btn.kill:hover {
+            background: #c0392b;
+        }
+
+        /* ================ CHAT SYSTEM ================ */
+        .chat-container {
+            display: none; /* Hidden initially */
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1001;
+            width: 350px;
+            border: 2px solid #3498db;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        .chat-messages {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .chat-message {
+            margin: 3px 0;
+            padding: 3px 8px;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+
+        .chat-message.system {
+            color: #f39c12;
+            font-style: italic;
+        }
+
+        .chat-message.player {
+            color: #ecf0f1;
+        }
+
+        .chat-message.own {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 3px solid #3498db;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #666;
+            background: #333;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .chat-send-btn {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .chat-send-btn:hover {
+            background: #2980b9;
+        }
+
+        .chat-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 380px; /* Next to chat container */
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1002;
+            transition: all 0.3s ease;
+            display: none; /* Hidden initially */
+        }
+
+        .chat-toggle-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+    </style>
+    
+    <meta name="theme-color" content="#3498db">
+</head>
+
+<body>
+    <!-- LAUNCHER INTERFACE -->
+    <div id="raidLauncher" class="raid-launcher">
+        <header class="launcher-header">
+            <h1>🏴‍☠️ PTCG Raid Battle System</h1>
+            <div class="version">3D Enhanced Edition v3.0 - Angled Perspective</div>
+        </header>
+        
+        <!-- Main Actions -->
+        <section class="button-group">
+            <button class="raid-button create-raid" id="createRaidBtn" type="button">
+                Create New Raid
+            </button>
+            <button class="raid-button join-raid" id="joinRaidBtn" type="button">
+                Join Existing Raid
+            </button>
+        </section>
+
+        <!-- Input Fields -->
+        <section class="input-section">
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="raidIdInput" 
+                placeholder="Enter Raid ID to join"
+                maxlength="20"
+                autocomplete="off"
+            >
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="usernameInput" 
+                placeholder="Your username" 
+                value="TestPlayer123"
+                maxlength="20"
+                autocomplete="username"
+            >
+        </section>
+
+        <!-- Layout and Test Controls -->
+        <section class="button-group">
+            <button class="raid-button layout-toggle" id="launcherToggleLayoutBtn" type="button">
+                My View: <span id="launcherCurrentLayoutSpan">versus</span>
+            </button>
+            <button class="raid-button test-button" id="testMultiplayerBtn" type="button">
+                🧪 Test Multiplayer
+            </button>
+        </section>
+
+        <!-- Quick Test Actions -->
+        <section class="button-group">
+            <button class="raid-button test-button" id="quickTestBtn" type="button">
+                ⚡ Quick Test
+            </button>
+            <button class="raid-button test-button" id="stressTestBtn" type="button">
+                🔥 Stress Test
+            </button>
+        </section>
+
+        <!-- Status Log -->
+        <section class="raid-status" id="raidStatusLog" role="log" aria-live="polite">
+            <div><strong>🚀 3D Enhanced Raid System Status</strong></div>
+            <div>Status: <span id="connectionStatusDisplay">Initializing...</span></div>
+            <div>Architecture: 3D perspective with angled gameboard</div>
+            <div>Features: Client-side layouts, turn management, interactive UI</div>
+        </section>
+    </div>
+
+    <!-- 3D GAME INTERFACE -->
+    <div id="raidContainer" class="raid-container">
+        <div id="raidTable" class="raid-table">
+            <!-- Turn Indicator Bar -->
+            <div id="turnIndicatorContainer"></div>
+            
+            <!-- Layout Indicator -->
+            <div id="layoutIndicatorGfx" class="layout-indicator-gfx">
+                Layout: <span id="layoutNameDisplay">Versus</span>
+            </div>
+            
+            <!-- Boss Display -->
+            <div id="raidBossDisplay" class="raid-boss">
+                <div style="text-align: center;">
+                    <div id="bossNameDisplay">RAID BOSS</div>
+                    <div class="boss-hp-bar">
+                        <div class="boss-hp-fill" style="width: 100%;"></div>
+                    </div>
+                    <div id="bossHPDisplay">HP: 1000 / 1000</div>
+                </div>
+            </div>
+            
+            <!-- Players will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <!-- GAME CONTROLS -->
+    <aside id="raidControls" class="raid-controls" role="complementary">
+        <header class="control-header">
+            <h3>🎮 Raid Controls</h3>
+            <button id="toggleDebugPanelBtn" class="icon-btn" title="Debug (Shift+F12)" type="button">
+                🐞
+            </button>
+        </header>
+        
+        <div class="control-info">
+            <div>Raid ID: <strong id="controlRaidId">-</strong></div>
+            <div>Players: <strong id="controlPlayerCount">0/4</strong></div>
+            <div>My View: <strong id="controlLayoutDisplay">versus</strong></div>
+            <div>Your Angle: <strong id="controlYourAngle">-</strong>°</div>
+            <div>Phase: <strong id="controlRaidPhase">Lobby</strong></div>
+        </div>
+        
+        <button class="control-button" id="controlsSwitchLayoutBtn" type="button">
+            Switch My View
+        </button>
+        <button class="control-button" id="leaveRaidBtn" type="button">
+            Leave Raid
+        </button>
+    </aside>
+
+    <!-- GAME ACTIONS -->
+    <div id="gameActions" class="game-actions" role="toolbar">
+        <button class="action-btn attack" id="attackBtn" type="button">
+            ⚔️ Attack (60)
+        </button>
+        <button class="action-btn debug" id="testKOBtn" type="button">
+            💀 Test KO
+        </button>
+    </div>
+
+    <!-- DEBUG PANEL -->
+    <div id="debugPanel" class="debug-panel" role="dialog">
+        <header class="debug-header">
+            <h4>🐞 Debug Panel</h4>
+            <button id="closeDebugBtn" class="icon-btn" type="button">✕</button>
+        </header>
+        
+        <!-- Boss Control Toggle -->
+        <div class="boss-control-toggle">
+            <label>
+                <input type="checkbox" id="bossControlCheckbox" class="boss-control-checkbox">
+                <strong>🎭 Boss Control Mode</strong>
+            </label>
+            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                Enable to control the raid boss directly
+            </div>
+        </div>
+        
+        <!-- Player Control Section -->
+        <div class="debug-section" style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+            <h5 style="color: #f39c12; margin: 0 0 10px 0;">👥 Player Control</h5>
+            <div id="playerControlButtons" class="debug-buttons">
+                <!-- Player control buttons will be generated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Global Debug Controls -->
+        <div class="debug-section" style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+            <h5 style="color: #e74c3c; margin: 0 0 10px 0;">🔧 Global Controls</h5>
+            <div class="debug-buttons">
+                <button id="debugSkipTurnBtn" class="debug-player-btn" style="background: #f39c12;">⏭️ Skip Turn</button>
+                <button id="debugForceBossTurnBtn" class="debug-player-btn" style="background: #e74c3c;">👹 Force Boss Turn</button>
+                <button id="debugResetRaidBtn" class="debug-player-btn" style="background: #9b59b6;">🔄 Reset Raid</button>
+                <button id="debugStartGameBtn" class="debug-player-btn" style="background: #27ae60;">🎮 Start Game</button>
+            </div>
+        </div>
+        
+        <div class="debug-content">
+            <h5>System State:</h5>
+            <pre id="debugClientCoreState">{}</pre>
+            
+            <h5>Current Raid:</h5>
+            <pre id="debugLastRaidState">{}</pre>
+            
+            <h5>Recent Errors:</h5>
+            <pre id="debugRecentErrors">[]</pre>
+        </div>
+    </div>
+
+    <!-- BOSS CONTROL OVERLAY -->
+    <div id="bossControlOverlay" class="boss-control-overlay" role="dialog">
+        <header class="boss-control-header">
+            <h2>👹 RAID BOSS CONTROL</h2>
+            <div style="color: #ccc; font-size: 14px;">Debug Mode: Control the Mysterious Raid Boss</div>
+        </header>
+
+        <div class="boss-control-section">
+            <h4>🔥 Boss Attacks</h4>
+            <div class="boss-attack-buttons">
+                <button class="boss-attack-btn" data-attack="slash" type="button">
+                    ⚔️ Slash<br><small>30 Damage</small>
+                </button>
+                <button class="boss-attack-btn" data-attack="megaPunch" type="button">
+                    👊 Mega Punch<br><small>60 Damage</small>
+                </button>
+                <button class="boss-attack-btn" data-attack="hyperBeam" type="button">
+                    💥 Hyper Beam<br><small>100 Damage</small>
+                </button>
+                <button class="boss-attack-btn" data-attack="custom" type="button">
+                    ⭐ Custom Attack<br><small>Variable Damage</small>
+                </button>
+            </div>
+        </div>
+
+        <div class="boss-control-section">
+            <h4>❤️ Boss HP Control</h4>
+            <div class="boss-hp-controls">
+                <input type="number" id="bossHPInput" class="boss-hp-input" placeholder="Set HP" min="0" max="1000">
+                <button id="setBossHPBtn" class="boss-hp-btn" type="button">Set HP</button>
+                <button id="healBossBtn" class="boss-hp-btn" type="button">Full Heal</button>
+            </div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                Current Boss HP: <span id="bossControlCurrentHP">1000/1000</span>
+            </div>
+        </div>
+
+        <div class="boss-control-section">
+            <h4>🎯 Target Selection</h4>
+            <div id="bossTargetButtons" class="boss-attack-buttons">
+                <!-- Target buttons will be dynamically generated -->
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="closeBossControlBtn" class="boss-hp-btn" style="background: #95a5a6;" type="button">
+                Close Boss Control
+            </button>
+        </div>
+    </div>
+
+    <!-- CHAT SYSTEM -->
+    <!-- REMOVED: Now using unified communication panel -->
+
+    <!-- CHAT TOGGLE BUTTON -->
+    <!-- REMOVED: Now using unified communication panel -->
+
+    <!-- UNIFIED COMMUNICATION PANEL -->
+    <div id="commPanel" class="comm-panel" role="dialog">
+        <div class="comm-tabs">
+            <button class="comm-tab active" id="chatTab" data-tab="chat">💬 Chat</button>
+            <button class="comm-tab" id="gameLogTab" data-tab="game-log">📜 Game Log</button>
+            <div class="comm-header-actions" style="margin-left: auto; padding: 10px;">
+                <button class="comm-export-btn" id="exportLogBtn" title="Export Log">📥</button>
+                <button class="icon-btn" id="closeCommBtn" style="border: none; background: none; color: #ccc;">✕</button>
+            </div>
+        </div>
+        
+        <div class="comm-content">
+            <!-- Chat Tab Content -->
+            <div class="comm-tab-content active" id="chatTabContent">
+                <div class="comm-messages" id="chatMessages"></div>
+                <div class="comm-input-area">
+                    <input type="text" id="chatInput" class="comm-input" placeholder="Type your message...">
+                    <button id="sendChatBtn" class="comm-send-btn">Send</button>
+                </div>
+            </div>
+            
+            <!-- Game Log Tab Content -->
+            <div class="comm-tab-content" id="gameLogTabContent">
+                <div class="comm-messages" id="gameLogContent"></div>
+                <div class="comm-input-area" style="justify-content: center;">
+                    <span style="font-size: 11px; color: #666;">Game events and debug information</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMUNICATION TOGGLE BUTTON -->
+    <button id="commToggleBtn" class="chat-toggle-btn" type="button" title="Toggle Communication Panel">💬</button>
+
+    <!-- ENHANCED SCRIPTS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/raid-core.js"></script>
+
+    <!-- JavaScript disabled fallback -->
+    <noscript>
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: flex; align-items: center; justify-content: center; z-index: 9999; text-align: center; font-family: Arial, sans-serif;">
+            <div>
+                <h1>JavaScript Required</h1>
+                <p>This 3D enhanced raid system requires JavaScript to function.</p>
+                <p>Please enable JavaScript in your browser and reload the page.</p>
+            </div>
+        </div>
+    </noscript>
+</body>
+</html> 

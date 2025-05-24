@@ -1,0 +1,370 @@
+/* ===================================================================
+ * File: client/css/raid-components.css
+ * Purpose: Component styles for PTCG Raid System
+ * Version: 1.0.0
+ * Author: PTCG Sim Meta Team
+ * 
+ * Description:
+ *   Styles for reusable UI components including debug panel,
+ *   notifications, game log, spectator list, and modal dialogs.
+ * 
+ * Dependencies:
+ *   - raid-launcher.css (for CSS variables)
+ * 
+ * Used By:
+ *   - raid-test.html
+ *   - Any component implementations
+ * 
+ * Changelog:
+ *   v1.0.0 - Extracted from inline styles for modularity
+ * ===================================================================*/
+
+/* ================ DEBUG PANEL ================ */
+#debugPanel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.95);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 2000;
+    display: none;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+.debug-content h5 {
+    color: var(--primary-yellow);
+    margin: 15px 0 5px;
+}
+
+.debug-content pre {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    overflow-x: auto;
+}
+
+.debug-controls {
+    margin-top: 20px;
+    border-top: 1px solid #444;
+    padding-top: 15px;
+}
+
+.debug-control-group {
+    margin-bottom: 15px;
+}
+
+.debug-control-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.debug-control-group input,
+.debug-control-group select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #444;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 3px;
+}
+
+/* ================ GAME LOG ================ */
+#gameLogContainer {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 1001;
+    width: 350px;
+    max-height: 300px;
+    display: none;
+}
+
+.game-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.game-log-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.log-tab-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #444;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.log-tab-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.game-log-content {
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 5px;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.log-entry {
+    margin: 2px 0;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.log-entry.action { color: #3498db; }
+.log-entry.damage { color: #e74c3c; }
+.log-entry.heal { color: #2ecc71; }
+.log-entry.system { color: #95a5a6; }
+.log-entry.debug { color: #f39c12; }
+.log-entry.error { 
+    color: #c0392b; 
+    background: rgba(192,57,43,0.2); 
+}
+
+/* ================ SPECTATOR LIST ================ */
+#spectatorList {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: rgba(155,89,182,0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 1001;
+    min-width: 200px;
+    display: none;
+}
+
+.spectator-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.spectator-entry {
+    padding: 5px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ================ NOTIFICATIONS ================ */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 3000;
+    pointer-events: none;
+}
+
+.notification {
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    pointer-events: all;
+    max-width: 300px;
+}
+
+.notification.notification-show {
+    transform: translateX(0);
+}
+
+.notification.notification-success { 
+    border-left: 4px solid var(--success); 
+}
+
+.notification.notification-error { 
+    border-left: 4px solid var(--error); 
+}
+
+.notification.notification-warning { 
+    border-left: 4px solid var(--warning); 
+}
+
+.notification.notification-info { 
+    border-left: 4px solid var(--primary-blue); 
+}
+
+/* ================ MODAL DIALOGS ================ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.7);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* ================ TOOLTIPS ================ */
+.tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+}
+
+/* ================ LOADING STATES ================ */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+/* ================ RESPONSIVE DESIGN ================ */
+@media (max-width: 768px) {
+    #debugPanel {
+        width: 90%;
+        right: 5%;
+        bottom: 10px;
+    }
+    
+    #gameLogContainer {
+        width: 90%;
+        left: 5%;
+        bottom: 10px;
+    }
+    
+    #spectatorList {
+        right: 10px;
+        top: 80px;
+        min-width: 150px;
+    }
+    
+    .notification-container {
+        right: 10px;
+        top: 10px;
+    }
+    
+    .notification {
+        max-width: 250px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+}
+
+/* ===================================================================
+ * END OF FILE: client/css/raid-components.css
+ * 
+ * Notes:
+ *   - This file contains reusable component styles
+ *   - Keep components independent and modular
+ *   - Use consistent naming conventions (BEM preferred)
+ *   - Maintain proper z-index hierarchy
+ * ===================================================================*/ 

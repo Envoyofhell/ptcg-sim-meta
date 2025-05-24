@@ -5,14 +5,14 @@
 // Changes: Initial implementation of dynamic turn bar UI
 // Dependencies: ../RaidClient.js, ../../front-end.js
 // Dependents: RaidGameUI.js, index.html
-// Changelog: 
+// Changelog:
 //   v1.0.0 - Initial turn indicator with player colors
 //   v1.0.1 - Added stage progression and animations
 //   v1.0.2 - Added spectator-friendly display modes
 // Version: 1.0.2
 // ===================================================================
 
-import { socket } from '../../front-end.js';
+import { socket } from '../../initialization/global-variables/global-variables.js';
 
 export class TurnIndicatorBar {
   constructor(containerId) {
@@ -20,16 +20,16 @@ export class TurnIndicatorBar {
     this.currentTurnInfo = null;
     this.animationSpeed = 300; // ms
     this.isSpectator = false;
-    
+
     // UI settings
     this.settings = {
       layout: 'horizontal', // horizontal, vertical, circular
       showStageDetails: true,
       showPlayerColors: true,
       compactMode: false,
-      animateTransitions: true
+      animateTransitions: true,
     };
-    
+
     this.setupEventListeners();
     this.createIndicatorStructure();
   }
@@ -44,7 +44,7 @@ export class TurnIndicatorBar {
 
     this.container.innerHTML = '';
     this.container.className = 'turn-indicator-bar';
-    
+
     // Main indicator container
     const indicatorTrack = document.createElement('div');
     indicatorTrack.className = 'indicator-track';
@@ -153,35 +153,46 @@ export class TurnIndicatorBar {
   updatePhaseIndicator() {
     if (!this.phaseIndicator || !this.currentTurnInfo) return;
 
-    const phase = this.currentTurnInfo.elements.find(e => e.type === 'boss') ? 'Boss Turn' : 'Player Turns';
+    const phase = this.currentTurnInfo.elements.find((e) => e.type === 'boss')
+      ? 'Boss Turn'
+      : 'Player Turns';
     this.phaseIndicator.textContent = phase;
-    
+
     // Color based on phase
-    this.phaseIndicator.style.color = phase === 'Boss Turn' ? '#e74c3c' : '#3498db';
+    this.phaseIndicator.style.color =
+      phase === 'Boss Turn' ? '#e74c3c' : '#3498db';
   }
 
   updatePlayerIndicators() {
     if (!this.playersContainer) return;
 
     this.playersContainer.innerHTML = '';
-    
-    const playerElements = this.currentTurnInfo.elements.filter(e => e.type === 'player');
-    const bossElements = this.currentTurnInfo.elements.filter(e => e.type === 'boss');
-    
+
+    const playerElements = this.currentTurnInfo.elements.filter(
+      (e) => e.type === 'player'
+    );
+    const bossElements = this.currentTurnInfo.elements.filter(
+      (e) => e.type === 'boss'
+    );
+
     if (bossElements.length > 0) {
       this.createBossIndicator(bossElements[0]);
     } else {
-      playerElements.forEach(player => this.createPlayerIndicator(player));
+      playerElements.forEach((player) => this.createPlayerIndicator(player));
     }
   }
 
   createPlayerIndicator(playerData) {
     const playerElement = document.createElement('div');
     playerElement.className = `player-indicator ${playerData.status}`;
-    
+
     const isCurrentPlayer = playerData.status === 'current';
-    const scale = isCurrentPlayer ? 1.2 : playerData.status === 'next' ? 1.0 : 0.8;
-    
+    const scale = isCurrentPlayer
+      ? 1.2
+      : playerData.status === 'next'
+        ? 1.0
+        : 0.8;
+
     playerElement.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -238,7 +249,7 @@ export class TurnIndicatorBar {
         playerElement.style.transform = `scale(${Math.min(scale * 1.1, 1.1)})`;
         playerElement.style.opacity = Math.min(1, playerData.opacity + 0.2);
       });
-      
+
       playerElement.addEventListener('mouseleave', () => {
         playerElement.style.transform = `scale(${scale})`;
         playerElement.style.opacity = playerData.opacity || 1;
@@ -251,7 +262,7 @@ export class TurnIndicatorBar {
   createBossIndicator(bossData) {
     const bossElement = document.createElement('div');
     bossElement.className = 'boss-indicator current';
-    
+
     bossElement.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -307,18 +318,20 @@ export class TurnIndicatorBar {
 
     this.stageContainer.innerHTML = '';
 
-    const currentPlayer = this.currentTurnInfo.elements.find(e => e.type === 'player' && e.status === 'current');
+    const currentPlayer = this.currentTurnInfo.elements.find(
+      (e) => e.type === 'player' && e.status === 'current'
+    );
     if (!currentPlayer) return;
 
     // Create stage progression dots
     for (let stage = 1; stage <= 3; stage++) {
       const stageDot = document.createElement('div');
       stageDot.className = 'stage-dot';
-      
+
       const isComplete = stage < currentPlayer.stage;
       const isCurrent = stage === currentPlayer.stage;
       const isUpcoming = stage > currentPlayer.stage;
-      
+
       stageDot.style.cssText = `
         width: 12px;
         height: 12px;
@@ -332,7 +345,7 @@ export class TurnIndicatorBar {
 
       // Add stage label on hover
       stageDot.title = this.getStageDescription(stage);
-      
+
       // Connecting line (except for last dot)
       if (stage < 3) {
         const connector = document.createElement('div');
@@ -353,10 +366,14 @@ export class TurnIndicatorBar {
 
   getStageDescription(stage) {
     switch (stage) {
-      case 1: return 'Choose Action';
-      case 2: return 'Resolve Action';
-      case 3: return 'End Turn';
-      default: return 'Unknown Stage';
+      case 1:
+        return 'Choose Action';
+      case 2:
+        return 'Resolve Action';
+      case 3:
+        return 'End Turn';
+      default:
+        return 'Unknown Stage';
     }
   }
 
@@ -364,7 +381,7 @@ export class TurnIndicatorBar {
 
   setSpectatorMode(isSpectator) {
     this.isSpectator = isSpectator;
-    
+
     if (isSpectator) {
       this.container.classList.add('spectator-mode');
       // Add spectator-specific styling
@@ -399,11 +416,11 @@ export class TurnIndicatorBar {
     `;
 
     this.indicatorTrack.appendChild(overlay);
-    
+
     // Animate the overlay sweep
     overlay.style.transition = `left ${this.animationSpeed * 2}ms ease`;
     overlay.style.left = '100%';
-    
+
     setTimeout(() => {
       if (overlay.parentNode) {
         overlay.parentNode.removeChild(overlay);
@@ -427,7 +444,7 @@ export class TurnIndicatorBar {
     socket.off('raidActionResult');
     socket.off('playerJoinedRaid');
     socket.off('playerLeftRaid');
-    
+
     if (this.container) {
       this.container.innerHTML = '';
     }

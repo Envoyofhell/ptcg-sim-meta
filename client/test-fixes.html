@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KO & Boss Turn Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .danger { background: #dc3545; }
+        .danger:hover { background: #c82333; }
+        .success-btn { background: #28a745; }
+        .success-btn:hover { background: #218838; }
+        
+        .test-log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 KO & Boss Turn Fixes Test</h1>
+    
+    <div class="status info">
+        <strong>✅ Fixes Applied:</strong><br>
+        • Fixed KO detection in Test KO button<br>
+        • Fixed boss turn system to execute actual attacks<br>
+        • Fixed spectator movement when both Pokemon are KO'd<br>
+        • Enhanced turn management logging<br>
+        • Fixed unified communication panel
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Instructions</h2>
+        
+        <div class="status warning">
+            <strong>1. Server Status Check:</strong><br>
+            <button onclick="checkServer()">Check Server</button>
+            <div id="serverCheck" class="test-log">Click button to check server...</div>
+        </div>
+
+        <div class="status warning">
+            <strong>2. Open Main Interface:</strong><br>
+            <button onclick="openMainInterface()" class="success-btn">Open Raid Interface</button>
+            <p>Then create a raid or join one to test the fixes.</p>
+        </div>
+
+        <div class="status warning">
+            <strong>3. Test KO System:</strong><br>
+            • Use the "💀 Test KO" button to knock out your active Pokemon<br>
+            • Use debug panel to knock out bench Pokemon<br>
+            • Verify you become a spectator when both are KO'd<br>
+            • Verify you can't attack when KO'd<br>
+            • Verify no health regeneration
+        </div>
+
+        <div class="status warning">
+            <strong>4. Test Boss Turns:</strong><br>
+            • Take multiple attacks to progress through player turns<br>
+            • Watch for boss turn messages in server console<br>
+            • Verify boss actually attacks and damages players<br>
+            • Check communication panel for boss attack notifications
+        </div>
+
+        <div class="status warning">
+            <strong>5. Test Communication Panel:</strong><br>
+            • Click the 💬 button to open communication<br>
+            • Switch between Chat and Game Log tabs<br>
+            • Send messages and verify they appear in Chat tab<br>
+            • Verify game events appear in Game Log tab
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Behavior</h2>
+        
+        <div class="status success">
+            <strong>✅ KO System Should:</strong><br>
+            • Move player to spectator immediately when both Pokemon are KO'd<br>
+            • Prevent KO'd players from attacking<br>
+            • Not regenerate health on subsequent attacks<br>
+            • Remove players from turn order when they become spectators<br>
+            • Show proper status updates in game log
+        </div>
+
+        <div class="status success">
+            <strong>✅ Boss Turn System Should:</strong><br>
+            • Automatically trigger after all players complete turns<br>
+            • Execute random attacks on random players<br>
+            • Deal actual damage to target Pokemon<br>
+            • Show detailed attack information in server logs<br>
+            • Return to player turns after boss attack<br>
+            • Handle boss-caused KOs properly
+        </div>
+
+        <div class="status success">
+            <strong>✅ Communication Panel Should:</strong><br>
+            • Show unified interface with Chat and Game Log tabs<br>
+            • Display chat messages in Chat tab<br>
+            • Display game events in Game Log tab<br>
+            • Add chat notifications to Game Log<br>
+            • Support message export functionality
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Server Log Monitoring</h2>
+        <div class="status info">
+            Monitor your PowerShell console running the server for these messages:
+            <ul>
+                <li><code>🔥 TEST KO: [Player]'s [Pokemon] was knocked out!</code></li>
+                <li><code>👻 BOTH POKEMON KO'D: [Player] - forcing spectator move</code></li>
+                <li><code>👹 TRIGGERING BOSS TURN: All players completed their turns</code></li>
+                <li><code>👹 BOSS ATTACK EXECUTED:</code></li>
+                <li><code>✅ BOSS TURN COMPLETE: Returning to player turns</code></li>
+            </ul>
+        </div>
+        
+        <button onclick="showServerCommands()" class="info">Show Server Commands</button>
+        <div id="serverCommands" style="display: none;" class="test-log">
+            <strong>To restart server if needed:</strong><br>
+            taskkill /F /IM node.exe<br>
+            cd server<br>
+            node raid-test-server-enhanced.js<br><br>
+            
+            <strong>To check if server is running:</strong><br>
+            netstat -ano | findstr :4000
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        
+        function checkServer() {
+            const log = document.getElementById('serverCheck');
+            log.innerHTML = '🔌 Connecting to server...\n';
+            
+            socket = io('http://localhost:4000');
+            
+            socket.on('connect', () => {
+                log.innerHTML += '✅ Server connected successfully!\n';
+                log.innerHTML += `Connection ID: ${socket.id}\n`;
+                log.innerHTML += 'Server is ready for testing.\n';
+            });
+            
+            socket.on('disconnect', () => {
+                log.innerHTML += '❌ Server disconnected\n';
+            });
+            
+            socket.on('connect_error', (error) => {
+                log.innerHTML += `❌ Connection failed: ${error.message}\n`;
+                log.innerHTML += 'Make sure the server is running on port 4000\n';
+            });
+            
+            // Test raid creation
+            setTimeout(() => {
+                if (socket.connected) {
+                    log.innerHTML += '🧪 Testing raid creation...\n';
+                    socket.emit('createRaid', {
+                        raidId: 'TEST-FIXES-' + Math.random().toString(36).substr(2, 4),
+                        raidType: 'tcg-official',
+                        maxPlayers: 4,
+                        layout: 'versus'
+                    });
+                }
+            }, 1000);
+            
+            socket.on('raidCreated', (data) => {
+                log.innerHTML += `✅ Test raid created: ${data.raidId}\n`;
+                log.innerHTML += 'Ready for KO and boss turn testing!\n';
+            });
+        }
+        
+        function openMainInterface() {
+            window.open('raid-isolated.html', '_blank', 'width=1200,height=800');
+        }
+        
+        function showServerCommands() {
+            const commands = document.getElementById('serverCommands');
+            commands.style.display = commands.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Auto-check server on load
+        setTimeout(checkServer, 1000);
+    </script>
+</body>
+</html> 

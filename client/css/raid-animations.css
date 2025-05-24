@@ -1,0 +1,428 @@
+/* ===================================================================
+ * File: client/css/raid-animations.css
+ * Purpose: Animation and effect styles for PTCG Raid System
+ * Version: 1.0.0
+ * Author: PTCG Sim Meta Team
+ * 
+ * Description:
+ *   All animations, transitions, and visual effects for the raid system
+ *   including damage numbers, player effects, boss animations, and UI transitions.
+ * 
+ * Dependencies:
+ *   - raid-launcher.css (for CSS variables)
+ * 
+ * Used By:
+ *   - raid-test.html
+ *   - RaidPlayerCard.js component
+ *   - Other animated components
+ * 
+ * Changelog:
+ *   v1.0.0 - Extracted from inline styles for modularity
+ * ===================================================================*/
+
+/* ================ PLAYER CARD ANIMATIONS ================ */
+
+/* Damage number floating animation */
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-40px);
+    }
+}
+
+/* Heal number floating animation */
+@keyframes healFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-20px) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(1);
+    }
+}
+
+/* Player shake animation for damage */
+@keyframes playerShake {
+    0%, 100% { 
+        transform: translate(-50%, -50%) translateX(0); 
+    }
+    10%, 30%, 50%, 70%, 90% { 
+        transform: translate(-50%, -50%) translateX(-3px); 
+    }
+    20%, 40%, 60%, 80% { 
+        transform: translate(-50%, -50%) translateX(3px); 
+    }
+}
+
+/* Turn highlight animation */
+@keyframes turnHighlight {
+    0%, 100% { 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 25px rgba(241,196,15,0.8);
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+}
+
+/* KO overlay appear animation */
+@keyframes koAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Turn indicator pulse */
+@keyframes turnPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+/* ================ BOSS ANIMATIONS ================ */
+
+/* Boss idle animation */
+@keyframes bossIdle {
+    0%, 100% { 
+        transform: translate(-50%, -50%) translateY(0px) scale(1); 
+    }
+    50% { 
+        transform: translate(-50%, -50%) translateY(-5px) scale(1.02); 
+    }
+}
+
+/* Boss attack animation */
+@keyframes bossAttack {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    20% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    40% {
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+    60% {
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Boss glow animation for turn indicator */
+@keyframes bossGlow {
+    0%, 100% { 
+        box-shadow: 
+            0 0 20px rgba(231,76,60,0.6),
+            0 4px 15px rgba(0,0,0,0.3);
+    }
+    50% { 
+        box-shadow: 
+            0 0 30px rgba(231,76,60,0.9),
+            0 6px 20px rgba(0,0,0,0.4);
+    }
+}
+
+/* Boss damage taken animation */
+@keyframes bossHurt {
+    0%, 100% {
+        filter: hue-rotate(0deg);
+    }
+    50% {
+        filter: hue-rotate(180deg);
+    }
+}
+
+/* ================ UI ANIMATIONS ================ */
+
+/* Button press animation */
+@keyframes buttonPress {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Fade in */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Fade out */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Scale in */
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Bounce in */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ================ SPECIAL EFFECTS ================ */
+
+/* Health bar damage animation */
+@keyframes healthBarDamage {
+    0% {
+        background: linear-gradient(90deg, var(--primary-green), #27ae60);
+    }
+    50% {
+        background: linear-gradient(90deg, var(--primary-red), #c0392b);
+    }
+    100% {
+        background: linear-gradient(90deg, var(--primary-green), #27ae60);
+    }
+}
+
+/* Critical hit flash */
+@keyframes criticalHit {
+    0%, 100% {
+        background: inherit;
+    }
+    25% {
+        background: radial-gradient(circle, rgba(255,255,0,0.8) 0%, transparent 70%);
+    }
+    50% {
+        background: radial-gradient(circle, rgba(255,165,0,0.8) 0%, transparent 70%);
+    }
+    75% {
+        background: radial-gradient(circle, rgba(255,0,0,0.8) 0%, transparent 70%);
+    }
+}
+
+/* Status effect pulse */
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Loading spinner */
+@keyframes spin {
+    0% { 
+        transform: rotate(0deg); 
+    }
+    100% { 
+        transform: rotate(360deg); 
+    }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* ================ UTILITY ANIMATION CLASSES ================ */
+
+/* Animation utility classes for dynamic application */
+.animate-damage-float {
+    animation: damageFloat 1.5s ease-out forwards;
+}
+
+.animate-heal-float {
+    animation: healFloat 1.5s ease-out forwards;
+}
+
+.animate-player-shake {
+    animation: playerShake 0.5s ease-in-out;
+}
+
+.animate-turn-highlight {
+    animation: turnHighlight 2s ease-in-out infinite;
+}
+
+.animate-ko-appear {
+    animation: koAppear 0.8s ease-out forwards;
+}
+
+.animate-boss-attack {
+    animation: bossAttack 1s ease-in-out;
+}
+
+.animate-boss-hurt {
+    animation: bossHurt 0.5s ease-in-out;
+}
+
+.animate-button-press {
+    animation: buttonPress 0.2s ease-in-out;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-bounce-in {
+    animation: bounceIn 0.6s ease-out forwards;
+}
+
+.animate-critical-hit {
+    animation: criticalHit 0.8s ease-in-out;
+}
+
+.animate-status-pulse {
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+/* ================ REDUCED MOTION SUPPORT ================ */
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    /* Keep essential animations but make them shorter */
+    .animate-fade-in,
+    .animate-fade-out,
+    .animate-scale-in {
+        animation-duration: 0.1s !important;
+    }
+}
+
+/* ================ PERFORMANCE OPTIMIZATIONS ================ */
+
+/* Use hardware acceleration for smooth animations */
+.raid-player,
+#raidBossDisplay,
+.notification,
+.modal-overlay,
+.modal-content {
+    will-change: transform;
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Optimize transforms */
+.transform-optimized {
+    transform: translateZ(0);
+}
+
+/* ===================================================================
+ * END OF FILE: client/css/raid-animations.css
+ * 
+ * Notes:
+ *   - All animations are defined here for easy maintenance
+ *   - Use utility classes for JavaScript-triggered animations
+ *   - Respect accessibility preferences (reduced motion)
+ *   - Optimize for performance with hardware acceleration
+ *   - Keep animation durations consistent with design system
+ * ===================================================================*/ 

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PTCG Raid Battle System - Clean modular client">
+    <meta name="author" content="PTCG Sim Meta Team">
+    
+    <title>PTCG Raid System - Clean Edition</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/raid-launcher.css">
+    <link rel="stylesheet" href="css/raid-game.css">
+    <link rel="stylesheet" href="css/raid-components.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    
+    <meta name="theme-color" content="#3498db">
+</head>
+
+<body>
+    <!-- LAUNCHER INTERFACE -->
+    <div id="raidLauncher" class="raid-launcher">
+        <header class="launcher-header">
+            <h1>🏴‍☠️ PTCG Raid Battle System</h1>
+            <div class="version">Clean Edition - No Legacy Dependencies</div>
+        </header>
+        
+        <!-- Main Actions -->
+        <section class="button-group">
+            <button class="raid-button create-raid" id="createRaidBtn" type="button">
+                Create New Raid
+            </button>
+            <button class="raid-button join-raid" id="joinRaidBtn" type="button">
+                Join Existing Raid
+            </button>
+        </section>
+
+        <!-- Input Fields -->
+        <section class="input-section">
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="raidIdInput" 
+                placeholder="Enter Raid ID to join"
+                maxlength="20"
+                autocomplete="off"
+            >
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="usernameInput" 
+                placeholder="Your username" 
+                value="TestPlayer123"
+                maxlength="20"
+                autocomplete="username"
+            >
+        </section>
+
+        <!-- Layout and Test Controls -->
+        <section class="button-group">
+            <button class="raid-button layout-toggle" id="launcherToggleLayoutBtn" type="button">
+                Layout: <span id="launcherCurrentLayoutSpan">versus</span>
+            </button>
+            <button class="raid-button test-button" id="testMultiplayerBtn" type="button">
+                🧪 Test Multiplayer
+            </button>
+        </section>
+
+        <!-- Quick Test Actions -->
+        <section class="button-group">
+            <button class="raid-button test-button" id="quickTestBtn" type="button">
+                ⚡ Quick Test
+            </button>
+            <button class="raid-button test-button" id="stressTestBtn" type="button">
+                🔥 Stress Test
+            </button>
+        </section>
+
+        <!-- Status Log -->
+        <section class="raid-status" id="raidStatusLog" role="log" aria-live="polite">
+            <div>🚀 PTCG Raid System Ready</div>
+            <div>⚠️ Status: <span id="connectionStatusDisplay">Initializing...</span></div>
+        </section>
+    </div>
+
+    <!-- GAME INTERFACE -->
+    <div id="raidContainer" class="raid-container">
+        <div id="raidTable" class="raid-table">
+            <div id="turnIndicatorContainer" class="turn-indicator-container"></div>
+            
+            <div id="layoutIndicatorGfx" class="layout-indicator-gfx">
+                Layout: <span id="layoutNameDisplay">Versus</span>
+            </div>
+            
+            <div id="raidPlayersContainer" class="raid-players-container"></div>
+            
+            <div id="raidBossDisplay" class="raid-boss">
+                <div style="text-align: center;">
+                    <div id="bossNameDisplay">RAID BOSS</div>
+                    <div class="boss-hp-bar">
+                        <div class="boss-hp-fill" style="width: 100%;"></div>
+                    </div>
+                    <div id="bossHPDisplay">HP: 1000 / 1000</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME CONTROLS -->
+    <aside id="raidControls" class="raid-controls" role="complementary">
+        <header class="control-header">
+            <h3>🎮 Raid Controls</h3>
+            <button id="toggleDebugPanelBtn" class="icon-btn" title="Debug" type="button">
+                🐞
+            </button>
+        </header>
+        
+        <div class="control-info">
+            <div>Raid ID: <strong id="controlRaidId">-</strong></div>
+            <div>Players: <strong id="controlPlayerCount">0/4</strong></div>
+            <div>Layout: <strong id="controlLayoutDisplay">versus</strong></div>
+            <div>Your Angle: <strong id="controlYourAngle">-</strong>°</div>
+            <div>Phase: <strong id="controlRaidPhase">Lobby</strong></div>
+        </div>
+        
+        <button class="control-button" id="controlsSwitchLayoutBtn" type="button">
+            Switch Layout
+        </button>
+        <button class="control-button" id="leaveRaidBtn" type="button">
+            Leave Raid
+        </button>
+    </aside>
+
+    <!-- GAME ACTIONS -->
+    <div id="gameActions" class="game-actions" role="toolbar">
+        <button class="action-btn attack" id="attackBtn" type="button">
+            ⚔️ Attack (60)
+        </button>
+        <button class="action-btn" id="useItemBtn" disabled type="button">
+            🎒 Use Item
+        </button>
+        <button class="action-btn cheer" id="cheerBtn" disabled type="button">
+            ✨ Cheer
+        </button>
+        <button class="action-btn retreat" id="retreatBtn" disabled type="button">
+            🔄 Retreat
+        </button>
+        <button class="action-btn" id="passTurnBtn" disabled type="button">
+            ⏭️ Pass Turn
+        </button>
+        <button class="action-btn debug" id="testKOBtn" type="button">
+            💀 Test KO
+        </button>
+    </div>
+
+    <!-- GAME LOG -->
+    <aside id="gameLogContainer" class="game-log-container" role="log" aria-live="polite">
+        <header class="game-log-header">
+            <h4>📜 Game Log</h4>
+            <button class="icon-btn" onclick="this.parentElement.parentElement.style.display='none'" type="button">
+                ✕
+            </button>
+        </header>
+        
+        <nav class="game-log-tabs">
+            <button class="log-tab-btn active" data-tab="all" type="button">All</button>
+            <button class="log-tab-btn" data-tab="actions" type="button">Actions</button>
+            <button class="log-tab-btn" data-tab="debug" type="button">Debug</button>
+            <button class="log-tab-btn" data-tab="errors" type="button">Errors</button>
+        </nav>
+        
+        <div class="game-log-content" id="gameLogContent"></div>
+    </aside>
+
+    <!-- SPECTATOR LIST -->
+    <aside id="spectatorList" class="spectator-list" role="complementary">
+        <header class="spectator-header">
+            👁️ Spectators (<span id="spectatorCount">0</span>)
+        </header>
+        <div id="spectatorListContent"></div>
+    </aside>
+
+    <!-- DEBUG PANEL -->
+    <div id="debugPanel" class="debug-panel" role="dialog">
+        <header class="debug-header">
+            <h4>🐞 Debug Panel</h4>
+            <button id="closeDebugBtn" class="icon-btn" type="button">✕</button>
+        </header>
+        
+        <div class="debug-content">
+            <h5>Client Core State:</h5>
+            <pre id="debugClientCoreState">{}</pre>
+            
+            <h5>UI Controller State:</h5>
+            <pre id="debugUiControllerState">{}</pre>
+            
+            <h5>Last Full Raid State:</h5>
+            <pre id="debugLastRaidState">{}</pre>
+            
+            <h5>Recent Errors:</h5>
+            <pre id="debugRecentErrors">[]</pre>
+        </div>
+        
+        <div class="debug-controls">
+            <h5>Debug Controls:</h5>
+            
+            <div class="debug-control-group">
+                <label for="debugBossHP">Set Boss HP:</label>
+                <input type="number" id="debugBossHP" min="0" max="1000" value="1000">
+                <button class="control-button" onclick="raidClient.clientCore.sendRaidAction('debugSetHP', {target: 'boss', value: parseInt(document.getElementById('debugBossHP').value)})" type="button">
+                    Set
+                </button>
+            </div>
+            
+            <div class="debug-control-group">
+                <label for="debugPlayerSelect">Set Player HP:</label>
+                <select id="debugPlayerSelect"></select>
+                <input type="number" id="debugPlayerHP" min="0" max="200" value="120">
+                <button class="control-button" onclick="raidClient.clientCore.sendRaidAction('debugSetHP', {target: 'player-' + document.getElementById('debugPlayerSelect').value, value: parseInt(document.getElementById('debugPlayerHP').value)})" type="button">
+                    Set
+                </button>
+            </div>
+            
+            <div class="debug-control-group">
+                <button class="control-button" onclick="raidClient.clientCore.sendRaidAction('forceNextTurn', {})" type="button">
+                    Force Next Turn
+                </button>
+                <button class="control-button" onclick="raidClient.clientCore.socket.emit('toggleDebug', {raidId: raidClient.clientCore.currentRaidId})" type="button">
+                    Toggle Server Debug
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="js/raid-main.js"></script>
+
+    <!-- JavaScript disabled fallback -->
+    <noscript>
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: flex; align-items: center; justify-content: center; z-index: 9999; text-align: center; font-family: Arial, sans-serif;">
+            <div>
+                <h1>JavaScript Required</h1>
+                <p>This application requires JavaScript to function properly.</p>
+                <p>Please enable JavaScript in your browser and reload the page.</p>
+            </div>
+        </div>
+    </noscript>
+</body>
+</html> 

@@ -1,0 +1,1338 @@
+# **A Comparative Analysis of Pokémon Raid Battle Mechanics for Simulator Implementation**
+
+## **I. Introduction**
+
+This report provides a detailed breakdown and comparative analysis of
+Raid Battle mechanics across different Pokémon platforms, specifically
+the Pokémon Trading Card Game (TCG) -- encompassing both its official
+rules and prevalent community-developed formats -- and Pokémon GO. The
+primary objective is to establish a structured rubric of these concepts
+to facilitate the design and implementation of a versatile online Raid
+Battle simulator. The analysis will cover phases, turn mechanics, player
+and Raid Boss options, and distinct features, offering a foundational
+understanding for developers.
+
+## **II. Pokémon TCG Raid Battle Mechanics (Official Rules)**
+
+The official Pokémon TCG Raid Battle format is designed as a cooperative
+experience where up to four players team up against a single, powerful
+Boss Pokémon.^1^ This format simplifies some standard TCG complexities
+to focus on a streamlined, team-based challenge.
+
+### **A. Setup and Core Components**
+
+To engage in an official TCG Raid Battle, specific materials are
+required beyond players\' individual Pokémon cards.
+
+1.  **Players and Pokémon:** Four players are needed, with each player
+    > contributing two Pokémon cards (no Trainer or Energy cards are
+    > brought by players initially).^1^ These form Pokémon pairs, with
+    > one Active and one Benched Pokémon per player.^2^
+
+2.  **Game Materials** ^1^**:**
+
+    -   One Boss Pokémon card (oversized Dynamax or Gigantamax Pokémon
+        > VMAX).^2^
+
+    -   One deck of 20 Boss Attack cards.
+
+    -   One deck of 5 Cheer cards.
+
+    -   Four Knock Out (KO) counters.
+
+    -   One playmat.
+
+    -   Damage counters.
+
+    -   One coin.
+
+3.  **Boss Level Determination:** The Boss Pokémon\'s level (1, 2, or 3)
+    > is determined by summing the base damage of the highest-damage
+    > attack from each player\'s chosen Pokémon pair.^2^
+
+    -   250-390 total damage: Level 1 Boss.
+
+    -   400-590 total damage: Level 2 Boss.
+
+    -   Over 600 total damage: Level 3 Boss.
+
+    -   If the sum is below 250, players are advised to choose stronger
+        > Pokémon.^2^ This scaling mechanism ensures the challenge is
+        > appropriate for the collective power of the players\' chosen
+        > Pokémon, preventing overly easy or difficult encounters based
+        > on initial Pokémon selection.
+
+4.  **Turn Order:** Player turn order (Player 1 through Player 4) is
+    > determined at the start.^2^
+
+### **B. Player Turn Mechanics**
+
+Player turns are structured and follow a set order, with a specific rule
+for players whose Pokémon are Knocked Out.
+
+1.  **Standard Player Turn (No KO\'d Pokémon)** ^2^**:**
+
+    -   **Retreat (Optional):** The player may retreat their Active
+        > Pokémon. With only one Benched Pokémon per player, this action
+        > swaps the Active and Benched Pokémon.
+
+    -   **Attack:** The player chooses an attack from their Active
+        > Pokémon to use against the Boss Pokémon. Damage is dealt
+        > directly to the Boss. Players cannot attack other players\'
+        > Pokémon.
+
+2.  **Player Turn (KO\'d Active Pokémon)** ^2^**:**
+
+    -   If a player\'s Active Pokémon is Knocked Out, they take their
+        > turn *first* in the collective player turn sequence,
+        > irrespective of the established order.
+
+    -   **Action: Cheer:** The player performs only one action: they
+        > draw one Cheer card from the Cheer deck, apply its effect, and
+        > their turn ends. They do not retreat or attack. This
+        > prioritization ensures that players with KO\'d Pokémon have an
+        > immediate opportunity to contribute through support actions.
+
+3.  **End of Collective Player Turns and Revival** ^2^**:**
+
+    -   After all four players (or Pokémon pairs) have taken their
+        > turns, any player who Cheered during that collective turn has
+        > their Knocked Out Pokémon revived.
+
+    -   Revival removes all damage counters from the Pokémon and the KO
+        > counter. The KO counter is then flipped to its red side and
+        > set aside to track the total KOs against the player team for
+        > loss conditions. This revival mechanic is crucial for player
+        > endurance, but the limited number of KOs allowed before losing
+        > maintains pressure.
+
+    -   Pokémon Knocked Out by self-inflicted damage during a player\'s
+        > own turn remain KO\'d until the end of the *next* collective
+        > player turn, as their player would not have had the chance to
+        > Cheer in the current turn cycle.^2^
+
+4.  **GX Attacks:** Each player may use one GX attack per Raid
+    > Battle.^2^
+
+5.  **Board State:** Each player\'s board (Active and Benched Pokémon)
+    > is separate. Effects targeting \"Active Pokémon\" or \"Benched
+    > Pokémon\" only affect the Pokémon of the player using the attack
+    > or Ability.^2^ This simplifies targeting and prevents cross-player
+    > interference or unintended benefits from abilities not designed
+    > for a multi-player cooperative format. The player\'s role is
+    > largely defined by the two Pokémon they bring, limiting strategic
+    > depth compared to formats using full decks, but making the game
+    > accessible.
+
+### **C. Raid Boss Turn Mechanics**
+
+The Raid Boss\'s turn is driven by a dedicated Boss Attack deck.
+
+1.  **Drawing Boss Attack Cards** ^2^**:** The player designated to
+    > control the Boss (or a Digital Raid Battle Assistant ^1^) draws a
+    > Boss Attack card and places it on the playmat.
+
+2.  **Resolving Boss Attack Cards** ^2^**:**
+
+    -   The card\'s instructions are followed. It specifies which of the
+        > Boss\'s three numbered attacks to use, which player\'s Active
+        > Pokémon is targeted, and whether another Boss Attack card
+        > should be drawn.
+
+    -   If the card instructs to draw another, the process repeats.
+        > However, a new card is not drawn if the maximum number of
+        > attacks for the Boss\'s current Level has been reached (Level
+        > 1: max 2 attacks; Level 2: max 3; Level 3: max 4).^2^ This cap
+        > prevents an unlucky series of \"draw another card\" results
+        > from making the Boss overwhelmingly powerful in a single turn,
+        > especially at lower levels.
+
+3.  **Targeting and Damage** ^2^**:**
+
+    -   Boss attacks typically damage the targeted player\'s Active
+        > Pokémon.
+
+    -   If a player\'s Pokémon takes damage equal to or exceeding its
+        > HP, it is Knocked Out, and a KO counter is placed on it.
+
+    -   If a Boss Attack card targets a Pokémon that is already Knocked
+        > Out, the card is discarded with no effect, and another card is
+        > drawn in its place (this draw does not count towards the
+        > per-turn attack limit if the Boss Attack deck needs to be
+        > reshuffled).
+
+4.  **Boss Attack Deck Reshuffle** ^2^**:** If the Boss Attack deck runs
+    > out of cards, the discard pile is shuffled to form a new deck.
+
+5.  **End of Boss Turn** ^2^**:** Once the Boss has used its final
+    > attack for the turn (or reached its attack limit), all Boss Attack
+    > cards on the playmat are discarded. The players then begin their
+    > collective turn. The Boss\'s actions are entirely dictated by the
+    > Boss Attack deck, leading to a deterministic, albeit potentially
+    > varied, sequence of actions based on card draws.
+
+### **D. Cheer Actions and Cheer Cards**
+
+Cheer cards provide players with crucial support options, especially
+when their Pokémon are Knocked Out.
+
+1.  **Activation:** Drawn by a player whose Active Pokémon is KO\'d, as
+    > their turn\'s action.^2^
+
+2.  **Cheer Card Deck:** Consists of 5 unique, numbered cards.^1^
+
+3.  **Usage Limit:** A maximum of 3 out of the 5 Cheer cards can be used
+    > in a single Raid Battle.^2^ This limitation requires players to be
+    > strategic about when to use these powerful effects, as they cannot
+    > rely on them indefinitely.
+
+4.  **Effects** ^2^**:**
+
+    -   Card 1/5: Choose one Pokémon. Its attacks deal double damage
+        > this turn.
+
+    -   Card 2/5: Heal 80 damage from each player\'s Active Pokémon.
+
+    -   Card 3/5: Heal all damage from one Pokémon.
+
+    -   Card 4/5: The Boss Pokémon cannot play more than one Boss Attack
+        > card during its next turn.
+
+    -   Card 5/5: Attacks from all players\' Active Pokémon deal 50 more
+        > damage this turn.
+
+### **E. Boss Pokémon Characteristics and Attack System**
+
+Boss Pokémon are unique and powerful entities in this format.
+
+1.  **Boss Cards** ^2^**:** Typically oversized Pokémon VMAX cards
+    > featuring Dynamax or Gigantamax Pokémon. They possess very high HP
+    > (often in the thousands) and three distinct attacks. These attacks
+    > are usually presented in colored boxes (yellow, orange, red) and
+    > generally increase in power.^2^
+
+2.  **Special Properties** ^2^**:** Boss Pokémon cards lack Weakness,
+    > Resistance, Retreat Cost, specific attack energy costs (their
+    > attacks are triggered by Boss Attack Cards, not by players
+    > attaching energy to the Boss), and any Rule Boxes. This immunity
+    > to standard TCG Weaknesses and Resistances simplifies damage
+    > calculations against the Boss and shifts player Pokémon selection
+    > towards raw damage output rather than type-matching, unless
+    > optional rules are invoked.
+
+3.  **Boss Levels and Attack Limits** ^2^**:**
+
+    -   Level 1 (one star): Max 2 attacks per turn.
+
+    -   Level 2 (two stars): Max 3 attacks per turn.
+
+    -   Level 3 (three stars): Max 4 attacks per turn. The scaling of
+        > maximum attacks per turn with Boss Level ensures that more
+        > powerful Bosses also have the potential for more actions,
+        > appropriately increasing the challenge.
+
+4.  **Boss Attack Card Deck Logic** ^2^**:**
+
+    -   The 20-card deck is structured to provide a balanced
+        > distribution of attacks.
+
+    -   An equal number of cards target each of the four player
+        > positions.
+
+    -   Cards initiating Attack 1 (typically weaker) are more common
+        > than Attack 2, which are more common than Attack 3 (typically
+        > stronger).
+
+    -   The likelihood of a \"Draw Another Card\" effect is higher on
+        > cards for weaker attacks:
+
+        -   Attack 1 cards: Always instruct to draw another card.
+
+        -   Attack 2 cards: 50% chance to draw another card.
+
+        -   Attack 3 cards: 25% chance to draw another card. This
+            > structure creates a probabilistic behavior where the Boss
+            > is more likely to perform multiple weaker attacks or a
+            > single stronger attack before its turn ends, providing a
+            > degree of predictability while still maintaining an
+            > element of chance.
+
+### **F. Win and Loss Conditions**
+
+The outcome of the Raid Battle is determined by one of two conditions:
+
+1.  **Player Win Condition** ^2^**:** The players win if the Boss
+    > Pokémon is Knocked Out (its HP is reduced to 0).
+
+2.  **Player Loss Condition** ^2^**:** The players lose if their Pokémon
+    > have been Knocked Out a total of four times collectively. The same
+    > Pokémon can be KO\'d multiple times, and each instance counts
+    > towards this total, tracked by the KO counters. Effects that would
+    > make a Pokémon yield more than one Prize card in a standard game
+    > have no bearing here; only the number of KOs matters.^2^
+
+### **G. Optional Modifications for Difficulty/Experience**
+
+The rules allow for modifications to tailor the experience ^2^:
+
+1.  **Ignore Attack Text:** Only use the base damage of all attacks,
+    > ignoring additional effects. This simplifies gameplay for newer
+    > players.
+
+2.  **Apply Weakness and Resistance:** Player Pokémon can apply Weakness
+    > and Resistance when attacking the Boss or taking damage from it.
+    > This adds a layer of standard TCG strategy. These options allow
+    > groups to adjust the game\'s complexity and challenge level.
+
+## **III. Pokémon TCG Raid Battle Mechanics (Common Community/Alternate \"Raid Format\")**
+
+Distinct from the official rules, a popular community-driven \"Raid
+Format\" offers a more complex and strategic cooperative TCG experience.
+This format leverages players\' standard TCG decks and introduces unique
+mechanics for battling a powerful Raid Boss.^3^
+
+### **A. Core Distinctions from Official Rules**
+
+This community format diverges significantly:
+
+1.  **Player Decks:** Players use their own standard, self-constructed
+    > TCG decks (typically 60 cards), including Pokémon, Trainer cards,
+    > and Energy cards.^3^ This immediately introduces a vast range of
+    > strategic possibilities and card interactions far exceeding the
+    > official version\'s two Pokémon per player. Simulating this
+    > variant requires a comprehensive TCG engine capable of handling
+    > the full spectrum of card effects.
+
+2.  **Victory Condition:** The primary objective for players is to
+    > deplete the Raid Boss\'s *deck* by placing its cards into the Lost
+    > Zone, rather than reducing its HP to zero.^3^ The HP printed on
+    > the Boss card is generally disregarded.^3^
+
+3.  **Raid Boss Deck:** The Boss uses its own deck of cards (e.g., 60
+    > cards), which becomes its \"lifeblood\" that players aim to
+    > mill.^3^
+
+### **B. Setup**
+
+Setting up for this Raid Format follows some standard TCG procedures
+with raid-specific adjustments:
+
+1.  **Players:** Typically accommodates up to four players.^3^
+
+2.  **Player Setup** ^3^**:** Each player sets up as they would for a
+    > standard TCG game: drawing a 7-card hand, setting aside Prize
+    > cards, placing Active and Benched Pokémon. However, there is no
+    > coin flip to determine who goes first; the players *always* take
+    > the first turn.
+
+3.  **Raid Boss Setup** ^3^**:** The Raid Boss is represented by a card
+    > (often a jumbo card or a standard card designated as the Boss). It
+    > does not have a starting hand and does not set up any Prize cards.
+    > It has its own deck.
+
+### **C. Player Turn Mechanics**
+
+Player turns in this format have unique cooperative elements and
+first-turn allowances:
+
+1.  **Simultaneous Turns (Preparation Phase)** ^3^**:** Players are
+    > described as taking their turns simultaneously in preparation to
+    > attack the Raid Boss. This likely means players can discuss and
+    > sequence their actions in a coordinated fashion during their
+    > collective turn phase.
+
+2.  **First Turn Special Rules** ^3^**:** During their first turn only,
+    > players benefit from special rules:
+
+    -   They may evolve Pokémon as if the old Stadium card \"Broken
+        > Time-Space\" were in play (allowing evolution on the first
+        > turn a Pokémon comes into play).
+
+    -   They may play Supporter cards.
+
+    -   They can attack the Raid Boss.
+
+3.  **Shared Supporter Plays** ^3^**:** A crucial cooperative mechanic
+    > involves a shared limit on Supporter cards. For example, in a
+    > four-player raid, the team collectively can play up to four
+    > Supporter cards during their collective turn. This means one
+    > player could play multiple Supporters if the team total is not
+    > exceeded, but doing so would reduce the number of Supporters
+    > available to their allies.
+
+4.  **Targeted Supporters** ^3^**:** Players can play Supporter cards
+    > from their hand to affect their allies\' Pokémon or game state
+    > (e.g., using a healing Supporter on a teammate\'s damaged
+    > Pokémon). This shared resource pool and the ability to directly
+    > aid teammates necessitate a high degree of communication and
+    > strategic planning to optimize Supporter usage for the entire
+    > team.
+
+5.  **Damage Accumulation** ^3^**:** As players complete their
+    > individual actions and attacks within the collective turn, the
+    > total damage dealt to the Raid Boss is tallied. This accumulated
+    > damage is not applied to the Boss immediately but is held until
+    > *after* the Raid Boss completes its turn.
+
+### **D. Raid Boss Turn Mechanics**
+
+The Raid Boss\'s turn is characterized by potent, somewhat unpredictable
+actions fueled by its own deck:
+
+1.  **Card Draw** ^3^**:** At the beginning of its turn, the Raid Boss
+    > draws one card plus an additional card for each player
+    > participating in the raid. For instance, in a four-player raid,
+    > the Boss would draw five cards.
+
+2.  **Card Resolution** ^3^**:**
+
+    -   The Boss *must* resolve every card it draws, one at a time, in
+        > the order drawn.
+
+    -   Critically, any textual requirements or once-per-turn
+        > limitations on these cards (like for Supporters or specific
+        > Abilities) are considered automatically met for the Boss.^4^
+        > If the Boss draws multiple Supporter cards, it plays all of
+        > them.
+
+    -   Energy cards drawn are immediately attached to the Boss. All
+        > Energy attached to the Boss is treated as basic Rainbow
+        > Energy, providing every type of Energy simultaneously.^3^ This
+        > allows the Boss to easily meet energy costs for any of its
+        > attacks.
+
+    -   Pokémon Tool cards or Stadium cards drawn by the Boss are
+        > immediately put into play, replacing any previous Tool on the
+        > Boss or Stadium in play.
+
+3.  **Boss Attack** ^3^**:**
+
+    -   After resolving all drawn cards, the Boss chooses one of its
+        > attacks for which it has the necessary Energy (now Rainbow
+        > Energy). The selection of this attack is *random* from its
+        > available moves.
+
+    -   The Boss then discards Energy from itself equal to the attack\'s
+        > cost. (A common house rule or variant suggests rolling a die
+        > to determine how much Energy, if any, is discarded ^5^). The
+        > combination of drawing multiple cards, automatically resolving
+        > them with fulfilled conditions, and having universal energy
+        > access can lead to exceptionally powerful and swingy turns for
+        > the Boss, making it a formidable and unpredictable opponent.
+
+### **E. Damage Application and Winning/Losing**
+
+The resolution of damage and the conditions for victory or defeat are
+unique to this format:
+
+1.  **Boss Takes Damage (Deck Milling)** ^3^**:** After the Raid Boss
+    > has completed all its actions for the turn (including its attack),
+    > the total damage accumulated by the players during their preceding
+    > turn is applied.
+
+2.  **Damage to Lost Zone Conversion** ^3^**:** The way damage
+    > translates to defeating the Boss is central:
+
+    -   The total damage dealt by players is divided by a specific
+        > factor, typically (Number of Players x 10), and then rounded
+        > down. For example, in a four-player raid, this divisor would
+        > be 40.^3^
+
+    -   The resulting number is the quantity of cards the Boss must move
+        > from the top of its deck to the Lost Zone.
+
+    -   A simpler variant mentioned is a flat \"40 damage = 1 card to
+        > the Lost Zone\".^4^ This \"damage conversion rate\" is a
+        > significant balancing lever for the game\'s difficulty and
+        > pace; a higher damage threshold per card milled makes the game
+        > more challenging for players.
+
+    -   If any damage remains after this calculation (i.e., not enough
+        > to mill a full card), this \"leftover\" damage is noted as
+        > remaining \"on\" the Boss.^3^ It is presumed this carried-over
+        > damage is added to the players\' damage total in the
+        > subsequent turn before the division occurs again. Precise
+        > handling of this carry-over damage is vital for accurate
+        > simulation.
+
+3.  **Player Win Condition** ^3^**:** The players achieve victory if the
+    > Raid Boss\'s deck is empty and it has no more cards to place in
+    > the Lost Zone.
+
+4.  **Player Knocked Out and Loss** ^3^**:**
+
+    -   When a player\'s Pokémon (Active or Benched) is Knocked Out by
+        > the Boss, that player must take Prize cards from their own
+        > Prize card pile as if the Boss were their opponent. The number
+        > of Prizes taken corresponds to the value of the KO\'d Pokémon
+        > (e.g., 3 Prizes for a Pokémon VMAX).
+
+    -   Once a player has taken all of their Prize cards, they are
+        > eliminated from the game.
+
+5.  **Boss Win Condition** ^3^**:** The Raid Boss wins if all
+    > participating players are eliminated from the game (i.e., all
+    > players have taken all their Prize cards). This creates an
+    > attrition-based dynamic: players race to deplete the Boss\'s deck
+    > resource before the Boss forces them to deplete their own Prize
+    > card resources.
+
+### **F. Advanced/Optional Community Modifications**
+
+The community has developed further modifications to increase challenge
+and complexity, often shared in online forums ^5^:
+
+1.  **Scaled Boss Resources:** Boss draw power, energy retention after
+    > attacks, ability to keep Stadiums in play, or hold multiple
+    > Pokémon Tools can be tied to the collective \"Combat Power\" (CP,
+    > a fan-defined metric for deck strength) of the players\' decks.
+
+2.  **Reinforcement Deck** ^5^**:** This is a significant addition where
+    > the Boss can summon \"Reinforcement\" Pokémon from a separate
+    > deck.
+
+    -   These Reinforcements act as additional active combatants for the
+        > players to deal with.
+
+    -   They typically need to be defeated (based on their own HP)
+        > before players can effectively damage the Boss\'s deck again.
+
+    -   While Reinforcements are active, the Boss might not attack
+        > directly; instead, it could recover cards from its Lost Zone
+        > back into its deck, prolonging the game.
+
+    -   Reinforcements might share the Boss\'s energy pool and attack if
+        > the Boss has sufficient energy. These advanced rules
+        > demonstrate the format\'s adaptability and the community\'s
+        > desire for customizable, high-stakes challenges. They
+        > represent potential modules for a sophisticated simulator.
+
+## **IV. Pokémon GO Raid Battle Mechanics (Standard Gym Raids)**
+
+Pokémon GO Raid Battles are cooperative multiplayer events where
+Trainers team up to defeat a powerful Boss Pokémon that has taken over a
+Gym.^7^ These battles occur in real-time and emphasize quick actions and
+strategic Pokémon matchups.
+
+### **A. Raid Initiation and Access**
+
+Accessing and participating in Pokémon GO Raids involves several steps
+and specific items:
+
+1.  **Raid Eggs and Tiers** ^7^**:**
+
+    -   Raids are heralded by an Egg appearing atop a Gym, with a
+        > countdown timer to its hatch.
+
+    -   The Egg\'s appearance (color/pattern) and accompanying tier
+        > number (1-5, Mega, Elite, Primal) indicate the difficulty and
+        > type of Raid Boss.
+
+        -   Pink (Normal Egg icon, Tier 1 & 2): Easiest, often soloable.
+
+        -   Yellow (Rare Egg icon, Tier 3): Moderately difficult, may
+            > require a few trainers.
+
+        -   Purple/Dark (Legendary Egg icon, Tier 5): Feature Legendary
+            > Pokémon, require a coordinated group.
+
+        -   Mega Egg icon (Mega Raids): Feature Mega-Evolved Pokémon,
+            > difficulty similar to Tier 5.
+
+        -   Shadow Raids: Gyms taken over by Team GO Rocket, featuring
+            > Shadow Pokémon with a purple flame visual.^9^
+
+        -   Elite Raids: Special, timed in-person only raids with very
+            > rare Pokémon, hatching at specific times.^9^
+
+        -   Primal Raids: Feature Primal Reversion Pokémon (e.g., Primal
+            > Kyogre, Primal Groudon), high difficulty.
+
+2.  **Raid Duration** ^7^**:** Once an Egg hatches, the Raid Boss is
+    > typically available to battle for 45 minutes. This duration can
+    > vary during special events.
+
+3.  **Raid Passes** ^7^**:** A Raid Pass is required to join a battle.
+
+    -   **Free Raid Pass:** One can be obtained daily by spinning a
+        > Gym\'s Photo Disc. Only one can be held at a time.
+
+    -   **Premium Battle Pass:** Purchased from the in-game shop; allows
+        > participation in more raids.
+
+    -   **Remote Raid Pass:** Purchased; allows trainers to join raids
+        > remotely from the map screen or via invitations from friends.
+        > There are limits on how many can be held and used daily for
+        > remote raids.
+
+    -   **EX Raid Pass (Historical):** Formerly, these were special
+        > invitations to exclusive raids, less common in the current
+        > game structure. The ephemeral nature of raids, tied to
+        > real-world timers and locations (though eased by Remote Raid
+        > Passes), and the gating mechanism of Raid Passes, create a
+        > distinct engagement model focused on timely participation.
+
+4.  **Joining a Lobby** ^7^**:**
+
+    -   Trainers can join a public lobby or a private lobby using a
+        > group code.
+
+    -   A lobby can hold up to 20 trainers.
+
+    -   A countdown timer (typically 120 seconds from when the first
+        > trainer joins) precedes the battle. If all trainers in the
+        > lobby tap the \"Ready\" button, the timer can skip to 10
+        > seconds.^7^
+
+### **B. Player and Battle Party Configuration**
+
+Strategic preparation before entering the battle is crucial:
+
+1.  **Team Selection** ^7^**:** Each trainer selects a team of up to six
+    > Pokémon. The game may suggest a team based on the Raid Boss\'s
+    > type, but players can customize their lineup.
+
+2.  **Mega Evolution** ^9^**:** A trainer can Mega Evolve one of their
+    > Pokémon before or during the lobby phase. A Mega-Evolved Pokémon
+    > provides an attack boost to all other trainers\' Pokémon in the
+    > raid, as well as a type-specific boost to moves matching its
+    > type(s).
+
+3.  **Party Play** ^9^**:** Trainers can form an in-game \"Party\" with
+    > up to three friends before joining a raid. Being in a Party
+    > enables the \"Party Power\" mechanic during the battle. The
+    > emphasis on selecting appropriate counters with effective move
+    > types and considering Mega Evolutions underscores that pre-battle
+    > strategy significantly influences success, especially in
+    > higher-tier raids.^10^
+
+### **C. Real-Time Battle Loop**
+
+Pokémon GO Raid Battles are dynamic, real-time encounters.
+
+1.  **Battle Timer Per Attempt:** Each attempt to defeat the Raid Boss
+    > is governed by a strict time limit, which varies by raid tier. If
+    > this timer expires before the Boss is defeated, that attempt
+    > fails. However, players can re-enter the battle if the overall
+    > 45-minute raid duration at the Gym has not expired.^7^\
+    > **Table GO-1: Pokémon GO Raid Tier Battle Timers and Boss HP**
+
+  -----------------------------------------------------------------------
+  **Raid Tier**           **Boss HP**             **Battle Attempt Time
+                                                  Limit (seconds)**
+  ----------------------- ----------------------- -----------------------
+  Tier 1                  600                     180
+
+  Tier 3                  3,600                   180
+
+  Tier 5 (Legendary /     15,000                  300
+  Ultra Wormhole)                                 
+
+  Mega Raid               9,000                   300
+
+  Elite Raid              20,000                  300
+
+  Primal Raid             22,500                  300
+
+  Legendary Mega Raid     22,500                  300
+  -----------------------------------------------------------------------
+
+\*Source: Adapted from. Note: Tier 2 and Tier 4 raids have largely been
+phased out or absorbed into these categories.\*
+
+2.  **Player Actions** ^7^**:**
+
+    -   **Fast Attacks:** Performed by tapping the screen. These deal
+        > damage and generate energy for Charged Attacks.
+
+    -   **Charged Attacks:** Once the energy meter is full, the Charged
+        > Attack button becomes active. Tapping it unleashes a more
+        > powerful move.
+
+    -   **Dodging:** Swiping left or right when the Boss attacks can
+        > reduce incoming damage. The effectiveness of a dodge can
+        > depend on timing and the specific attack.^12^ A successful
+        > dodge typically reduces damage taken by a significant
+        > percentage.
+
+3.  **Raid Boss Behavior (General):**
+
+    -   The Raid Boss uses its own Fast and Charged Attacks at
+        > intervals. It does not actively dodge player attacks.
+
+    -   Standard Gym Raid Bosses do not typically have complex scripted
+        > phases like shields or multiple extra actions seen in other
+        > Pokémon game raid systems (e.g., Tera Raids in Pokémon
+        > Scarlet/Violet ^14^). Their threat comes from high stats and
+        > powerful attacks.
+
+    -   **Shadow Raids Exception:** Shadow Raid Bosses can become
+        > \"Enraged\" during the battle, significantly boosting their
+        > Attack and Defense. Trainers can use Purified Gems (up to five
+        > collectively by the group, with up to eight Gems usable in
+        > total by all trainers if needed) to subdue the Enraged Boss,
+        > temporarily removing its stat boosts.^9^
+
+4.  **Fainting and Rejoining (\"Relobbying\")** ^7^**:**
+
+    -   If all six of a trainer\'s Pokémon faint, they are temporarily
+        > out of the battle.
+
+    -   The trainer can choose to revive and heal their Pokémon using
+        > items from their bag and then rejoin the ongoing battle
+        > without using another Raid Pass, provided the raid is still
+        > active at the Gym.
+
+    -   This process of \"relobbying\" takes time, during which the
+        > trainer is not dealing damage. Minimizing relobby time is
+        > crucial for maximizing overall damage output in difficult
+        > raids.^15^ The real-time nature of these battles demands
+        > constant player input and reaction (tapping for attacks,
+        > timing Charged Attacks, swiping to dodge). This contrasts
+        > sharply with the turn-based, deliberate play of TCG raids.
+        > Simulating this requires modeling not just the outcome of
+        > actions but also their timing and frequency, or making
+        > assumptions about player skill and reaction speed.
+
+### **D. Key Features and Modifiers**
+
+Several mechanics can influence damage output and battle dynamics:
+
+1.  **Party Power** ^9^**:**
+
+    -   Available when trainers participate in a raid as part of an
+        > in-game \"Party.\"
+
+    -   A Party Power meter fills as Party members use Fast Attacks. The
+        > more members in the Party (up to 4), the faster it charges.
+
+    -   Once full, a trainer can tap the Party Power button to make
+        > their *next Charged Attack* deal double damage. This is a
+        > significant, coordinated damage boost.
+
+2.  **Weather Boosts** ^16^**:**
+
+    -   The game\'s real-world weather system can boost certain Pokémon
+        > types.
+
+    -   During weather conditions that favor a move\'s type (e.g., Sunny
+        > weather for Fire-type moves), that move deals 20% additional
+        > damage.
+
+3.  **STAB (Same Type Attack Bonus)** ^17^**:**
+
+    -   If a Pokémon uses an attack that matches one of its own types,
+        > the attack receives a 20% damage bonus.
+
+4.  **Type Effectiveness** ^10^**:**
+
+    -   Super Effective attacks deal 1.6× normal damage.
+
+    -   Double Super Effective attacks (e.g., a Rock-type move against a
+        > Fire/Flying-type Pokémon) deal 1.6×1.6=2.56× normal damage.
+
+    -   Resisted attacks deal 0.625× normal damage.
+
+    -   Double Resisted attacks deal 0.625×0.625≈0.39× normal damage.
+        > *(Note: These are the generally accepted current multipliers.
+        > Some older sources might list 1.4x for SE and 0.714x for
+        > NVE)*.
+
+5.  **Friendship Damage Bonus** ^15^**:**
+
+    -   Battling with friends in the same raid lobby provides a passive
+        > damage bonus. This bonus scales with Friendship level:
+
+        -   Good Friend: +3% damage
+
+        -   Great Friend: +5% damage
+
+        -   Ultra Friend: +7% damage
+
+        -   Best Friend: +10% damage Accurate calculation of these
+            > potentially stacking damage modifiers (Party Power,
+            > Weather, STAB, Type Effectiveness, Friendship) is
+            > fundamental for any Pokémon GO raid simulator aiming to
+            > predict battle outcomes or required trainer numbers.
+
+### **E. Victory and Post-Battle Sequence**
+
+Successfully defeating the Raid Boss leads to rewards and a capture
+opportunity:
+
+1.  **Victory Condition** ^7^**:** The Raid Boss\'s HP is reduced to
+    > zero before the battle attempt timer expires.
+
+2.  **Rewards** ^7^**:** Upon victory, trainers receive various items,
+    > which can include:
+
+    -   Rare Candies, Golden Razz Berries, Fast TMs, Charged TMs.
+
+    -   Potions and Revives.
+
+    -   Stardust.
+
+    -   Trainer XP.
+
+    -   Mega Energy (if it was a Mega Raid) or Primal Energy (if it was
+        > a Primal Raid).
+
+3.  **Bonus Challenge: Capture Phase** ^7^**:**
+
+    -   Trainers get a chance to catch the defeated Raid Boss.
+
+    -   A limited number of Premier Balls are awarded for the capture
+        > attempt. Only Premier Balls can be used.
+
+    -   The number of Premier Balls received depends on several factors:
+
+**Table GO-2: Pokémon GO Premier Ball Allocation Factors**
+
+  -----------------------------------------------------------------------
+  **Factor**              **Premier Balls Awarded **Notes**
+                          (Typical)**             
+  ----------------------- ----------------------- -----------------------
+  Boss Defeated (Base)    +6                      
+
+  Damage Contribution     +0 to +4                Based on percentage of
+  (Individual)                                    total damage dealt by
+                                                  the trainer
+
+  Gym Control             +2                      If the trainer\'s team
+                                                  controls the Gym where
+                                                  the raid occurs
+
+  Friendship Level        +0 to +4                Good Friend: +1, Great:
+  (Highest with any                               +2, Ultra: +3, Best: +4
+  raider)                                         (approximate values,
+                                                  may vary slightly)
+
+  Speed Bonus             +0 to +8 (varies)       Faster completion time
+                                                  yields more balls (or
+                                                  more Mega/Primal Energy
+                                                  for those raid types)
+  -----------------------------------------------------------------------
+
+\*Source: Adapted from.\[10\] Exact values for damage/speed tiers can
+fluctuate with game updates.\*\
+\
+\* Trainers can use Berries (e.g., Golden Razz Berry, Silver Pinap
+Berry) to improve their chances of a successful catch or increase candy
+rewards.\
+\* If the Raid Boss appears as a Shiny Pokémon during the capture
+encounter, the catch is guaranteed (as long as a ball hits it).\[8\]\
+\* If a trainer runs out of Premier Balls before catching the Boss, the
+Boss will flee.
+
+The capture phase introduces a secondary skill challenge (accurate Poké
+Ball throwing) and resource management (Premier Balls, Berries), with
+performance in the battle directly influencing the number of capture
+attempts.
+
+## **V. Comparative Analysis and Structured Rubric for Simulator Design**
+
+To effectively design a versatile Raid Battle simulator, it is essential
+to juxtapose the mechanics of the TCG (Official and Community variants)
+and Pokémon GO systems, identifying commonalities, differences, and the
+data required for accurate modeling.
+
+### **A. Juxtaposition of TCG and Pokémon GO Raid Systems**
+
+The three primary raid systems exhibit fundamental differences:
+
+-   **Core Gameplay Loop:**
+
+    -   **TCG (Official & Community):** Turn-based, strategic card play.
+        > Players make discrete decisions about playing cards, attaching
+        > energy, and selecting attacks.
+
+    -   **Pokémon GO:** Real-time action. Players continuously tap,
+        > swipe, and activate abilities in response to a dynamic
+        > battlefield.
+
+-   **Player Input:**
+
+    -   **TCG:** Focus on hand management, resource allocation (Energy,
+        > Supporters), deck knowledge, and predicting opponent (Boss)
+        > actions based on its potential card pool or attack deck.
+
+    -   **Pokémon GO:** Focus on reaction time (dodging), energy
+        > management (for Charged Attacks), and sustained damage output
+        > (tapping speed).
+
+-   **Boss Representation & Behavior:**
+
+    -   **TCG Official:** Physical card with high HP, predefined attacks
+        > chosen by a separate Boss Attack Deck. Limited AI, behavior
+        > driven by card draws.
+
+    -   **TCG Community:** Physical card (HP often ignored), uses its
+        > own TCG deck. Draws multiple cards, resolves all with auto-met
+        > conditions, attacks randomly. More complex, potentially
+        > volatile AI.
+
+    -   **Pokémon GO:** Digital entity with a large HP pool and a battle
+        > timer. Uses Fast and Charged Attacks at set intervals or based
+        > on an internal pattern. Shadow Bosses have an Enrage mechanic.
+
+-   **Win Conditions:**
+
+    -   **TCG Official:** Reduce Boss Pokémon\'s HP to 0.
+
+    -   **TCG Community:** Mill the Boss\'s entire deck (send all its
+        > cards to the Lost Zone).
+
+    -   **Pokémon GO:** Reduce Boss Pokémon\'s HP to 0 within the battle
+        > attempt timer.
+
+-   **Loss Conditions:**
+
+    -   **TCG Official:** Players\' Pokémon are collectively Knocked Out
+        > 4 times.
+
+    -   **TCG Community:** All players are eliminated by taking all
+        > their own Prize cards.
+
+    -   **Pokémon GO:** Battle attempt timer expires before Boss is
+        > defeated. (Overall raid fails if Boss is not defeated within
+        > its 45-minute Gym presence).
+
+-   **Complexity Drivers:**
+
+    -   **TCG Official:** Managing limited Cheer cards, optimizing
+        > damage with few Pokémon.
+
+    -   **TCG Community:** Vast card interactions from full decks,
+        > complex Boss turns due to multi-card plays, shared Supporter
+        > resource management.
+
+    -   **Pokémon GO:** Pokémon stats, move data (damage, energy,
+        > cooldowns), type matchups, stacking buffs (Weather,
+        > Friendship, Party Power), real-time decision-making under time
+        > pressure, relobby management.
+
+-   **Cooperative Mechanics:**
+
+    -   **TCG Official:** Cheer card effects benefiting the team or
+        > hindering the Boss.
+
+    -   **TCG Community:** Shared Supporter play limit, ability to
+        > target allies with Supporters, verbal strategy.
+
+    -   **Pokémon GO:** Friendship damage bonus, Mega Evolution boosts
+        > for all, Party Power, verbal coordination for attack timing or
+        > relobbying.
+
+### **B. Essential Data Points for Simulation**
+
+A comprehensive simulator requires a structured representation of
+various entities, their attributes, states, possible actions, and
+critical events.
+
+-   **Entities:**
+
+    -   Player: Represents each human participant.
+
+    -   RaidBoss: The primary antagonist.
+
+    -   Pokémon: Individual creatures used by Players or as the
+        > Boss/Reinforcements.
+
+    -   Card (TCG-specific): Units within decks, hands, discard piles,
+        > etc. Includes Pokémon, Trainer, Energy, Boss Attack, Cheer
+        > cards.
+
+-   **Key Attributes (Examples):**
+
+    -   Pokémon: Current HP, Max HP, Attack Stat, Defense Stat, Special
+        > Attack Stat, Special Defense Stat, Speed (if applicable),
+        > Type(s), Moves (Name, Damage, Energy Cost/Gain, Effects,
+        > Accuracy), Abilities, Held Item (TCG), Attached Energy (TCG),
+        > CP (GO), IVs (GO).
+
+    -   Player: Prize cards remaining (TCG Community), KO counters used
+        > (TCG Official), Available Pokémon roster, In-game Party status
+        > (GO).
+
+    -   RaidBoss: Max HP (TCG Official, GO) or Deck Size (TCG
+        > Community), Level/Tier, List of Attacks/Moves, Special
+        > Rules/Abilities (e.g., Enrage, Energy type).
+
+    -   Card (TCG): Name, Type (Pokémon, Trainer, Energy), Text/Effects.
+
+-   **Key States (Examples):**
+
+    -   GamePhase: PlayerTurn, BossTurn, SetupPhase, VictoryPhase.
+
+    -   PokémonStatus: Active, Benched, KnockedOut, Fainted,
+        > Stat-Modified (buffed/debuffed), Affected by Status Condition
+        > (Poison, Burn, etc.).
+
+    -   BossStatus: Enraged (GO Shadow), Shielded (if applicable to a
+        > variant).
+
+    -   Environment: Weather Active (GO), Stadium in Play (TCG).
+
+    -   PlayerResourceStatus: Party Power Charged (GO), Cheer Card
+        > Available (TCG Official), Supporter Play Available (TCG
+        > Community).
+
+-   **Key Actions (Examples):**
+
+    -   **TCG:** PlayCard (from hand), AttachEnergy (from hand),
+        > UseAttack, UseAbility, UseSupporter, UseItem, Retreat,
+        > DrawCard, ShuffleDeck, SearchDeck, DiscardCard,
+        > MoveToLostZone, TakePrizeCard, UseCheerCard.
+
+    -   **GO:** UseFastAttack, UseChargedAttack, Dodge, SwitchPokémon,
+        > ActivatePartyPower, UsePurifiedGem (Shadow Raids), HealPokémon
+        > (outside active battle/relobby), MegaEvolve.
+
+-   **Key Events (Examples):**
+
+    -   DamageDealt, HPReduced, PokémonKnockedOut / PokémonFainted,
+        > BossAttackCardDrawn, PlayerAttackSelected, CardDrawn (from
+        > deck), CardMilled (to Lost Zone), TimerTick (GO),
+        > WinConditionMet, LossConditionMet, StatusConditionApplied,
+        > BuffApplied.
+
+### **C. Proposed Rubric Framework**
+
+The following table (SIM-1) provides a structured comparison of
+mechanics across the raid systems, intended to serve as a foundational
+rubric for simulator design. This granularity allows for modular
+development, where individual mechanics can be implemented and
+potentially configured or toggled, supporting accurate simulation of
+each distinct raid type. It also helps distinguish core gameplay
+mechanics essential for initial implementation from secondary or
+\"flavor\" elements that might be added later.
+
+**Table SIM-1: Comprehensive Rubric for Pokémon Raid Battle Simulation**
+
+  ----------------------------------------------------------------------------------------------------------------------------
+  **Mechanic    **Sub-Mechanic/Parameter**   **TCG - Official      **TCG - Community  **Pokémon GO -     **Simulator
+  Category**                                 Rules**               Variant**          Standard Gym       Implementation
+                                                                                      Raid**             Notes/Variables**
+  ------------- ---------------------------- --------------------- ------------------ ------------------ ---------------------
+  **Setup**     Player Count                 4 players ^1^         Up to 4 players    Up to 20 trainers  Variable player
+                                                                   (typically) ^3^    per lobby ^7^      slots; manage
+                                                                                                         lobby/party systems
+                                                                                                         for GO.
+
+                Player Initial Resources     2 Pokémon cards each  Full standard TCG  Team of 6 Pokémon  TCG: Mode for limited
+                                             (no Trainers/Energy)  deck (Pokémon,     from collection;   Pokémon vs. full deck
+                                             ^1^                   Trainers, Energy), Raid Pass used ^7^ system. GO: Pokémon
+                                                                   7-card hand, Prize                    selection interface,
+                                                                   cards ^3^                             Raid Pass as entry
+                                                                                                         condition (optional
+                                                                                                         for pure sim).
+
+                Boss \"Health\" Metric       High HP value on Boss Boss\'s deck size  High HP value,     Track HP for
+                                             card ^2^              (e.g., 60 cards);  varies by Tier     TCG-Official/GO;
+                                                                   HP on card often                      track deck count for
+                                                                   ignored ^3^                           TCG-Community.
+
+                Boss Initial State           Level determined by   No hand, no        Tier determines    TCG-Official: Boss
+                                             sum of players\'      prizes, uses its   HP, moveset,       level calculation.
+                                             Pokémon damage output own deck ^3^       battle timer       TCG-Community: Boss
+                                             ^2^                                                         deck setup. GO: Tier
+                                                                                                         selection defining
+                                                                                                         Boss stats.
+
+  **Player      Core Actions                 Optional Retreat,     Standard TCG       Tap for Fast       TCG: Turn-based
+  Turn**                                     Attack Boss ^2^       actions (Play      Attack, Tap button action queue. GO:
+                                                                   Trainers, Attach   for Charged        Real-time input
+                                                                   Energy, Evolve,    Attack, Swipe to   processing (or AI for
+                                                                   Attack, etc.) ^3^  Dodge ^7^          player actions if
+                                                                                                         non-interactive sim),
+                                                                                                         energy tracking.
+
+                Special First Turn Rules     None specified beyond Evolve Pokémon     N/A (battle starts TCG-Community:
+                                             standard turn.        freely, play       immediately)       Implement first-turn
+                                                                   Supporters, can                       flags for special
+                                                                   attack ^3^                            rules.
+
+                Cooperative Action 1         Cheer Card (if KO\'d, Shared Supporter   Party Power        Implement distinct
+                                             1 of 5 effects, max 3 limit (e.g., 4 for (charge via Fast   cooperative
+                                             uses/game) ^2^        team); can target  Attacks in Party,  resource/mechanic
+                                                                   allies with        next Charged       systems for each
+                                                                   Supporters ^3^     Attack x2 damage)  mode. GO: Party Power
+                                                                                      ^9^                charging/activation
+                                                                                                         logic. TCG: Cheer
+                                                                                                         card deck/effects,
+                                                                                                         Supporter play
+                                                                                                         tracking.
+
+                Cooperative Action 2         N/A                   N/A                Friendship Damage  GO: Apply passive
+                                                                                      Bonus (up to       damage bonuses based
+                                                                                      +10%); Mega        on friendship/Mega
+                                                                                      Evolution boosts   status.
+                                                                                      team ^9^           
+
+  **Boss Turn** Action Determination         Draw Boss Attack      Draw 1 + (1 per    Periodic           TCG-Official: Boss
+                                             Card; follow          player) cards from Fast/Charged       Attack Deck logic.
+                                             instructions (attack  own deck; resolve  Attacks based on   TCG-Community: Boss
+                                             type, target, draw    all (auto-met      internal           deck draw/resolve
+                                             again?) ^2^           conditions);       timer/pattern;     logic, random attack
+                                                                   random attack      Shadow Bosses can  selection. GO: Boss
+                                                                   choice ^3^         Enrage ^9^         AI for attack
+                                                                                                         timing/selection;
+                                                                                                         Enrage mechanic for
+                                                                                                         Shadow Raids.
+
+                Resource Usage               Attacks have no       Energy drawn is    Moves have         TCG-Community:
+                                             energy cost on Boss   Rainbow Energy;    implicit energy    Rainbow energy
+                                             card; driven by       discards energy    generation/cost as handling, energy
+                                             Attack Cards ^2^      per attack cost    per standard GO    discard. GO: Standard
+                                                                   ^3^                mechanics.         move energy
+                                                                                                         simulation.
+
+                Attack Limits                Max 2/3/4 attacks per Limited by cards   Limited by move    TCG-Official: Enforce
+                                             turn based on Boss    drawn and energy   cooldowns and      attack cap.
+                                             Level ^2^             available.         energy generation. 
+
+  **Damage &    Damage to Boss               Player attacks reduce Player damage      Player attacks     Implement appropriate
+  Effects**                                  Boss HP ^2^           converts to Boss   reduce Boss HP ^7^ damage application:
+                                                                   deck cards Lost                       HP reduction or deck
+                                                                   Zoned (e.g.,                          milling.
+                                                                   (Players x10) dmg                     TCG-Community:
+                                                                   = 1 card) ^3^                         \"Damage conversion
+                                                                                                         rate\" as a variable.
+
+                Player Pokémon KO            KO counter placed;    Player takes Prize Pokémon faints;    TCG-Official: KO
+                                             player takes Cheer    cards from own     trainer can        counter tracking,
+                                             turn ^2^              pile ^3^           relobby with       Cheer turn trigger.
+                                                                                      new/revived team   TCG-Community: Player
+                                                                                      if battle time     Prize card tracking.
+                                                                                      remains ^7^        GO: Faint/relobby
+                                                                                                         logic, relobby timer.
+
+                Statuses/Other Effects       Attack text on player Full TCG card      Standard GO move   TCG: Full TCG effect
+                                             cards (unless         effects apply      effects (stat      engine needed for
+                                             optional rule ignores (Abilities,        changes rare in    Community variant.
+                                             it) ^2^               Trainers, etc.)    raids, but         GO: Implement damage
+                                                                   ^3^                possible). Weather multipliers.
+                                                                                      boosts, STAB, Type 
+                                                                                      Effectiveness ^16^ 
+
+  **Win         How Players Win              Boss Pokémon HP       Boss Deck milled   Boss HP reduced to Implement distinct
+  Condition                                  reduced to 0 ^2^      (0 cards left) ^3^ 0 within battle    win condition checks
+  (Player)**                                                                          attempt timer ^7^  for each mode.
+
+  **Loss        How Players Lose             Player Pokémon        All players        Battle attempt     Implement distinct
+  Condition                                  collectively KO\'d 4  eliminated (taken  timer expires      loss condition
+  (Player)**                                 times ^2^             all own Prize      before Boss HP is  checks. GO: Manage
+                                                                   cards) ^3^         0. (Overall raid   multiple timers
+                                                                                      lost if 45-min Gym (attempt vs. overall
+                                                                                      timer expires) ^7^ raid availability).
+
+  **Key         Unique Player Support        Cheer Cards (5 types, Shared Supporter   Party Power;       Model distinct
+  Resources**                                max 3 used) ^2^       plays from own     Berries (capture   resource pools and
+                                                                   deck; individual   phase);            activation/usage
+                                                                   Trainer cards ^3^  Revives/Potions    conditions.
+                                                                                      (relobby) ^9^      
+
+                Unique Boss Trait            Boss Attack Deck;     Draws many cards,  High HP, fixed     Model unique Boss
+                                             Level-based attack    auto-resolves,     moveset, potential behaviors and
+                                             limit ^2^             Rainbow Energy,    Enrage (Shadow)    constraints per mode.
+                                                                   random attack ^3^  ^9^                
+
+  **Optional    Variability                  Ignore attack text;   Numerous community Shadow Raid        Design for
+  Rules**                                    apply                 mods               mechanics          configurability.
+                                             Weakness/Resistance   (Reinforcements,   (Enrage/Purified   Allow toggling
+                                             ^2^                   CP-based scaling,  Gems) are a        official variants.
+                                                                   etc.) ^5^          specific variant   Community mods or GO
+                                                                                      ^9^                variants like Shadow
+                                                                                                         Raids could be
+                                                                                                         modules.
+  ----------------------------------------------------------------------------------------------------------------------------
+
+## **VI. Conclusion and Strategic Considerations for Simulator Development**
+
+The analysis reveals that while \"Raid Battle\" is a shared concept, its
+implementation across the Pokémon TCG (Official and Community variants)
+and Pokémon GO presents fundamentally different gameplay experiences.
+The TCG versions are turn-based and card-driven, emphasizing strategic
+resource management and deck synergy (especially in the community
+format). Pokémon GO raids are real-time, action-oriented encounters
+demanding quick reflexes, sustained damage output, and effective use of
+temporary buffs. An online simulator aiming to encompass these diverse
+systems must be architected with flexibility and modularity at its core.
+
+**Critical Mechanical Distinctions to Capture:**
+
+-   **Core Interaction Model:** Turn-based discrete actions (TCG) versus
+    > continuous real-time inputs (GO).
+
+-   **Primary Player Objective:** Boss HP depletion (TCG Official, GO)
+    > versus Boss deck depletion (TCG Community).
+
+-   **Source of Boss Actions:** Dedicated Boss Attack Deck (TCG
+    > Official), drawing from its own TCG deck (TCG Community), or
+    > timed/patterned attacks (GO).
+
+-   **Cooperative Elements:** Unique systems like Cheer Cards (TCG
+    > Official), shared Supporter plays (TCG Community), and Party
+    > Power/Friendship Bonuses (GO).
+
+**Recommendations for Simulator Architecture:**
+
+1.  **Modular Design:** A core engine could manage common elements like
+    > Pokémon data (stats, types, moves, though moves function
+    > differently across platforms). Mode-specific modules would then
+    > implement the unique rulesets for TCG Official, TCG Community, and
+    > Pokémon GO concerning turn structure, action resolution, Boss AI,
+    > and win/loss conditions. This approach allows for easier
+    > maintenance and future expansion to include other variants.
+
+2.  **Data-Driven Design:** Key game data---such as Pokémon statistics,
+    > move effects, TCG card text, Boss Attack card details, Cheer card
+    > effects, Raid Boss HP/movepools for GO, and damage calculation
+    > formulas---should be stored in external, easily editable data
+    > files (e.g., JSON, XML). This facilitates updates as game rules
+    > evolve (especially in Pokémon GO) or as new TCG cards are
+    > released, and can also support community contributions or custom
+    > content. The complexity of existing fan-made tools and databases
+    > underscores the need for robust data management.^20^
+
+3.  **Configurable Rulesets:** The simulator should allow users to
+    > select the specific raid system they wish to engage with. For TCG
+    > modes, offering toggles for optional rules (like applying
+    > Weakness/Resistance in Official, or common community modifications
+    > like different damage-to-mill rates) would significantly enhance
+    > utility.
+
+4.  **User Interface (UI) Adaptation:** The UI must adapt to the chosen
+    > mode:
+
+    -   **TCG:** Requires clear representation of player hands, the play
+        > area (Active/Benched Pokémon, Stadium, etc.), discard piles,
+        > Lost Zone, Prize cards, the Boss\'s card, and any active Boss
+        > Attack or Cheer cards.
+
+    -   **Pokémon GO:** Needs a dynamic display of the battle scene, HP
+        > bars for player Pokémon and the Boss, energy meters for
+        > Charged Attacks, visual cues for Boss attacks (for dodging),
+        > and indicators for active buffs like Party Power or Weather.
+
+**Handling Randomness and AI:**
+
+-   **TCG:** Randomness is inherent in deck shuffling, drawing cards,
+    > coin flips specified by card effects, and (in the community
+    > variant) the Boss\'s random attack choice. The Boss AI will be
+    > primarily script-driven based on its card draws.
+
+-   **Pokémon GO:** Boss attack patterns may have some degree of
+    > randomness or prioritization logic. Player actions in a
+    > non-interactive simulation would require AI to mimic tapping,
+    > dodging, and special attack usage, potentially with configurable
+    > skill levels (e.g., \"perfect dodger,\" \"average dodger\"). Tools
+    > like Pokebattler employ sophisticated simulations for GO,
+    > suggesting the depth possible.^20^
+
+Future Expansion Potential:
+
+A well-architected simulator could be expanded to:
+
+-   Incorporate more advanced TCG community modifications, such as
+    > Reinforcement Decks.^5^
+
+-   Add distinct Pokémon GO raid types like Shadow Raids (with
+    > Enrage/Purified Gem mechanics) or potentially model aspects of
+    > Elite Raids if desired.
+
+-   Allow users to create custom Boss Pokémon or scenarios.
+
+-   For TCG modes, integrate deck-building tools and allow users to
+    > import/export decklists.
+
+The development of such a simulator should prioritize accurately
+capturing the core interactive experience of each raid type. While
+predictive capabilities (e.g., calculating precise battle outcomes under
+optimal conditions) are valuable, the primary goal indicated by the
+request is a playable simulation. The provided rubric and analysis aim
+to furnish a robust blueprint for achieving this, enabling developers to
+create a flexible and engaging platform for experiencing Pokémon Raid
+Battles across their varied instantiations.
+
+#### Works cited
+
+1.  Pokémon Trading Card Game Raid Battle, accessed May 23, 2025,
+    > [[https://tcg.pokemon.com/en-us/raid-battle/]{.underline}](https://tcg.pokemon.com/en-us/raid-battle/)
+
+2.  Raid Battle (TCG) - Bulbapedia, the community-driven Pokémon
+    > encyclopedia, accessed May 23, 2025,
+    > [[https://bulbapedia.bulbagarden.net/wiki/Raid_Battle\_(TCG)]{.underline}](https://bulbapedia.bulbagarden.net/wiki/Raid_Battle_(TCG))
+
+3.  TPCI Releases Alternative Play Handbook: Raid Format, 2v2 Team
+    > Battles, & More!, accessed May 23, 2025,
+    > [[https://www.pokebeach.com/2022/07/tpci-releases-alternative-play-handbook-raid-format-2v2-team-battles-more]{.underline}](https://www.pokebeach.com/2022/07/tpci-releases-alternative-play-handbook-raid-format-2v2-team-battles-more)
+
+4.  Raid Format Deck suggestions : r/PTCGL - Reddit, accessed May 23,
+    > 2025,
+    > [[https://www.reddit.com/r/PTCGL/comments/1ddgo71/raid_format_deck_suggestions/]{.underline}](https://www.reddit.com/r/PTCGL/comments/1ddgo71/raid_format_deck_suggestions/)
+
+5.  I have ideas on how to make the Raid Format harder! : r/PTCGL -
+    > Reddit, accessed May 23, 2025,
+    > [[https://www.reddit.com/r/PTCGL/comments/1jf8pjq/i_have_ideas_on_how_to_make_the_raid_format_harder/]{.underline}](https://www.reddit.com/r/PTCGL/comments/1jf8pjq/i_have_ideas_on_how_to_make_the_raid_format_harder/)
+
+6.  I have ideas to make Raid Decks harder. : r/pkmntcg - Reddit,
+    > accessed May 23, 2025,
+    > [[https://www.reddit.com/r/pkmntcg/comments/1jeraas/i_have_ideas_to_make_raid_decks_harder/]{.underline}](https://www.reddit.com/r/pkmntcg/comments/1jeraas/i_have_ideas_to_make_raid_decks_harder/)
+
+7.  What are Raid Battles? --- Pokémon GO Help Center - Niantic Support,
+    > accessed May 23, 2025,
+    > [[https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2187-what-are-raid-battles/]{.underline}](https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2187-what-are-raid-battles/)
+
+8.  Raids - Pokemon GO Guide - IGN, accessed May 23, 2025,
+    > [[https://www.ign.com/wikis/pokemon-go/raids]{.underline}](https://www.ign.com/wikis/pokemon-go/raids)
+
+9.  GO Hub Guide to Raid Battles \| Pokémon GO Hub, accessed May 23,
+    > 2025,
+    > [[https://pokemongohub.net/post/guide/go-hub-guide-to-raid-battles/]{.underline}](https://pokemongohub.net/post/guide/go-hub-guide-to-raid-battles/)
+
+10. Pokémon Go Raid Hour date and time, plus how Raids work, including
+    > Raid Rewards and Raid level requirement - Eurogamer, accessed May
+    > 23, 2025,
+    > [[https://www.eurogamer.net/pokemon-go-raid-hour-raid-battles-raid-passes-raid-rewards-4819]{.underline}](https://www.eurogamer.net/pokemon-go-raid-hour-raid-battles-raid-passes-raid-rewards-4819)
+
+11. Pokemon GO Starter Guide for New Trainers, accessed May 23, 2025,
+    > [[https://pogo.gamepress.gg/starter-guide]{.underline}](https://pogo.gamepress.gg/starter-guide)
+
+12. Attack Strategies - Pokebattler, accessed May 23, 2025,
+    > [[https://articles.pokebattler.com/attack-strategies/]{.underline}](https://articles.pokebattler.com/attack-strategies/)
+
+13. Dodging Charged attacks in raids : r/TheSilphRoad - Reddit, accessed
+    > May 23, 2025,
+    > [[https://www.reddit.com/r/TheSilphRoad/comments/1femip3/dodging_charged_attacks_in_raids/]{.underline}](https://www.reddit.com/r/TheSilphRoad/comments/1femip3/dodging_charged_attacks_in_raids/)
+
+14. Tera Raid Battle - Bulbapedia, the community-driven Pokémon
+    > encyclopedia, accessed May 23, 2025,
+    > [[https://bulbapedia.bulbagarden.net/wiki/Tera_Raid_Battle]{.underline}](https://bulbapedia.bulbagarden.net/wiki/Tera_Raid_Battle)
+
+15. Tier 5 and Mega Raid Guides - Pokemon GO Wiki - GamePress, accessed
+    > May 23, 2025,
+    > [[https://pogo.gamepress.gg/tier-5-and-mega-raid-guides]{.underline}](https://pogo.gamepress.gg/tier-5-and-mega-raid-guides)
+
+16. Weather Boosts --- Pokémon GO Help Center - Niantic Support,
+    > accessed May 23, 2025,
+    > [[https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/53-weather-boosts/]{.underline}](https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/53-weather-boosts/)
+
+17. Comprehensive guide to Moves in Pokemon GO \| Pokémon GO Hub,
+    > accessed May 23, 2025,
+    > [[https://pokemongohub.net/post/wiki/comprehensive-guide-moves-pokemon-go/]{.underline}](https://pokemongohub.net/post/wiki/comprehensive-guide-moves-pokemon-go/)
+
+18. Professor Willow\'s Handbook: Raids \| Pokebattler, accessed May 23,
+    > 2025,
+    > [[https://articles.pokebattler.com/professor-willows-handbook-raids/]{.underline}](https://articles.pokebattler.com/professor-willows-handbook-raids/)
+
+19. Pokémon Go Max Battles explained, including how to Max Battle, how
+    > to win and Max Battle rewards \| Eurogamer.net, accessed May 23,
+    > 2025,
+    > [[https://www.eurogamer.net/pokemon-go-max-battles-how-to-win-rewards-9404]{.underline}](https://www.eurogamer.net/pokemon-go-max-battles-how-to-win-rewards-9404)
+
+20. Raid Simulator - Pokemon GO Pokebattler, accessed May 23, 2025,
+    > [[https://www.pokebattler.com/battle]{.underline}](https://www.pokebattler.com/battle)
+
+21. Poke Genie -Remote Raid IV PvP - App Store, accessed May 23, 2025,
+    > [[https://apps.apple.com/ec/app/poke-genie-remote-raid-iv-pvp/id1143920524?l=en-GB]{.underline}](https://apps.apple.com/ec/app/poke-genie-remote-raid-iv-pvp/id1143920524?l=en-GB)

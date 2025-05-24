@@ -632,6 +632,256 @@
         .notification.notification-error { border-left: 4px solid var(--error); }
         .notification.notification-warning { border-left: 4px solid var(--warning); }
         .notification.notification-info { border-left: 4px solid var(--primary-blue); }
+
+        /* ================ RAID PLAYER CARD ANIMATIONS ================ */
+        
+        /* Damage number animation */
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+        }
+
+        /* Heal number animation */
+        @keyframes healFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-40px) scale(1);
+            }
+        }
+
+        /* Player shake animation for damage */
+        @keyframes playerShake {
+            0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-50%, -50%) translateX(-3px); }
+            20%, 40%, 60%, 80% { transform: translate(-50%, -50%) translateX(3px); }
+        }
+
+        /* Turn highlight animation */
+        @keyframes turnHighlight {
+            0%, 100% { 
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% { 
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 25px rgba(241,196,15,0.8);
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        /* KO overlay appear animation */
+        @keyframes koAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Turn indicator pulse */
+        @keyframes turnPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        /* Player card specific styles */
+        .raid-player {
+            position: absolute;
+            width: 120px;
+            height: 100px;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .raid-player.current-player {
+            border-color: var(--primary-yellow);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(241,196,15,0.6);
+        }
+
+        .raid-player.ko {
+            opacity: 0.5;
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6) !important;
+        }
+
+        .player-header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .player-name {
+            font-size: 11px;
+            text-align: center;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-turn-indicator {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            background: var(--primary-yellow);
+            border-radius: 50%;
+            animation: turnPulse 1.5s infinite;
+        }
+
+        .player-pokemon {
+            text-align: center;
+            margin: 3px 0;
+        }
+
+        .pokemon-name {
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .pokemon-sprite .pokemon-icon {
+            font-size: 16px;
+        }
+
+        .player-hp-container {
+            width: 100%;
+            margin: 3px 0;
+        }
+
+        .hp-label {
+            font-size: 10px;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .player-hp-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .player-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-green), #27ae60);
+            transition: width 0.3s ease;
+        }
+
+        .player-hp-fill.hp-healthy {
+            background: linear-gradient(90deg, var(--primary-green), #27ae60);
+        }
+
+        .player-hp-fill.hp-warning {
+            background: linear-gradient(90deg, var(--primary-yellow), #f39c12);
+        }
+
+        .player-hp-fill.hp-critical {
+            background: linear-gradient(90deg, var(--primary-red), #c0392b);
+        }
+
+        .hp-damage-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(231, 76, 60, 0.7);
+            display: none;
+            transition: width 0.8s ease;
+        }
+
+        .player-status {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .status-effects {
+            display: flex;
+            gap: 2px;
+        }
+
+        .status-effect {
+            font-size: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .action-indicator {
+            font-size: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .player-angle-display {
+            font-size: 9px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .player-ko-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .ko-text {
+            color: var(--primary-red);
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
     </style>
 </head>
 <body>

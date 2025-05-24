@@ -1,0 +1,273 @@
+/* ===================================================================
+ * File: client/css/raid-launcher.css
+ * Purpose: Launcher screen styles for PTCG Raid System
+ * Version: 1.0.0
+ * Author: PTCG Sim Meta Team
+ * 
+ * Description:
+ *   Styles for the initial launcher interface including buttons,
+ *   inputs, status display, and session management components.
+ * 
+ * Dependencies:
+ *   - None (base CSS file)
+ * 
+ * Used By:
+ *   - raid-test.html
+ *   - Any launcher implementation
+ * 
+ * Changelog:
+ *   v1.0.0 - Extracted from inline styles for modularity
+ * ===================================================================*/
+
+/* ================ CSS VARIABLES ================ */
+:root {
+    --primary-blue: #3498db;
+    --primary-green: #2ecc71;
+    --primary-red: #e74c3c;
+    --primary-yellow: #f39c12;
+    --primary-purple: #9b59b6;
+    --dark-bg: #2c3e50;
+    --darker-bg: #1a252f;
+    --light-text: #ecf0f1;
+    --success: #27ae60;
+    --error: #c0392b;
+    --warning: #f39c12;
+}
+
+/* ================ BASE STYLES ================ */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: var(--light-text);
+    overflow-x: hidden;
+}
+
+/* ================ LAUNCHER STYLES ================ */
+.raid-launcher {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 700px;
+    margin: 40px auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.launcher-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.launcher-header h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.launcher-header .version {
+    color: #666;
+    font-size: 14px;
+}
+
+/* ================ SESSION DISPLAY ================ */
+.session-display {
+    background: rgba(52, 152, 219, 0.1);
+    border: 2px solid var(--primary-blue);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.session-header h3 {
+    color: var(--primary-blue);
+    font-size: 18px;
+}
+
+.session-id-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#currentSessionIdInput {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.session-stats {
+    display: flex;
+    justify-content: space-around;
+    font-size: 14px;
+}
+
+/* ================ BUTTON STYLES ================ */
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.raid-button {
+    flex: 1 1 auto;
+    min-width: 150px;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.create-raid { 
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24); 
+    color: white; 
+}
+
+.join-raid { 
+    background: linear-gradient(45deg, #4ecdc4, #44a08d); 
+    color: white; 
+}
+
+.layout-toggle { 
+    background: linear-gradient(45deg, #a55eea, #8e44ad); 
+    color: white; 
+}
+
+.test-button { 
+    background: linear-gradient(45deg, #f39c12, #e67e22); 
+    color: white; 
+}
+
+.raid-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.raid-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.icon-btn {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.icon-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* ================ INPUT STYLES ================ */
+.raid-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+/* ================ STATUS LOG ================ */
+.raid-status {
+    background: rgba(255, 255, 255, 0.8);
+    color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    min-height: 150px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.status-entry {
+    margin: 2px 0;
+    padding: 2px 0;
+}
+
+.status-entry.error { color: var(--error); }
+.status-entry.success { color: var(--success); }
+.status-entry.warning { color: var(--warning); }
+.status-entry.info { color: #333; }
+
+/* ================ CONNECTION STATUS ================ */
+#connectionStatusDisplay {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+#connectionStatusDisplay.success { 
+    background: var(--success); 
+    color: white; 
+}
+
+#connectionStatusDisplay.error { 
+    background: var(--error); 
+    color: white; 
+}
+
+#connectionStatusDisplay.warning { 
+    background: var(--warning); 
+    color: white; 
+}
+
+#connectionStatusDisplay.info { 
+    background: var(--primary-blue); 
+    color: white; 
+}
+
+/* ================ RESPONSIVE DESIGN ================ */
+@media (max-width: 768px) {
+    .raid-launcher {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .raid-button {
+        min-width: auto;
+    }
+}
+
+/* ===================================================================
+ * END OF FILE: client/css/raid-launcher.css
+ * 
+ * Notes:
+ *   - This file contains only launcher-specific styles
+ *   - Game view styles are in separate CSS files
+ *   - Follow CSS BEM methodology for future additions
+ *   - Maintain consistent color variables across all CSS files
+ * ===================================================================*/ 
