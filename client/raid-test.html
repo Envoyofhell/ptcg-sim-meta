@@ -3,314 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTCG Raid System Integration</title>
+    <title>PTCG Raid System Integration - Optimized</title>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .raid-launcher {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 600px;
-            margin: 0 auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-        }
-
-        .raid-launcher h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .raid-button {
-            flex: 1;
-            padding: 15px 25px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .create-raid {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-        }
-
-        .join-raid {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-
-        .layout-toggle {
-            background: linear-gradient(45deg, #a55eea, #8e44ad);
-            color: white;
-        }
-
-        .raid-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .raid-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-
-        .raid-status {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            min-height: 100px;
-            font-family: monospace;
-            font-size: 14px;
-            white-space: pre-wrap;
-            overflow-y: auto;
-            max-height: 200px;
-        }
-
-        /* Raid Table Styles */
-        #raidContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(45deg, #2c3e50 0%, #3498db 100%);
-            display: none;
-            z-index: 1000;
-            perspective: 1000px;
-        }
-
-        #raidTable {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 90vw;
-            height: 90vh;
-            background: 
-                radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 50%),
-                linear-gradient(45deg, #34495e 0%, #2c3e50 100%);
-            border-radius: 20px;
-            transform: translate(-50%, -50%) perspective(1000px) rotateX(10deg);
-            box-shadow: 
-                0 20px 60px rgba(0,0,0,0.4),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-            overflow: hidden;
-        }
-
-        .raid-player {
-            position: absolute;
-            width: 120px;
-            height: 80px;
-            border: 3px solid #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .raid-player:hover {
-            transform: translate(-50%, -50%) scale(1.1) !important;
-        }
-
-        .raid-player.current-player {
-            border-color: #f1c40f;
-            box-shadow: 
-                0 5px 15px rgba(0,0,0,0.3),
-                0 0 20px rgba(241,196,15,0.6);
-        }
-
-        .raid-boss {
-            position: absolute;
-            width: 200px;
-            height: 300px;
-            background: radial-gradient(circle, #e74c3c 0%, #c0392b 100%);
-            border: 3px solid #fff;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-            transform: translate(-50%, -50%);
-            animation: bossIdle 4s ease-in-out infinite;
-        }
-
-        @keyframes bossIdle {
-            0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); }
-            50% { transform: translate(-50%, -50%) translateY(-5px) scale(1.02); }
-        }
-
-        .raid-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 10px;
-            color: white;
-            z-index: 1001;
-            display: none;
-        }
-
-        .control-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .control-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .angle-indicator {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: white;
-        }
-
-        /* Layout indicators */
-        .versus-indicator {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 10;
-        }
-
-        .layout-versus {
-            background: linear-gradient(45deg, #e74c3c 0%, #c0392b 100%);
-        }
-
-        .layout-circular {
-            background: linear-gradient(45deg, #3498db 0%, #2980b9 100%);
-        }
+        /* Styles from your raid-test.html - condensed for brevity */
+        body { margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
+        .raid-launcher { background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 30px; max-width: 600px; margin: 40px auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); }
+        .raid-launcher h1 { text-align: center; color: #333; margin-bottom: 30px; font-size: 28px; }
+        .button-group { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .raid-button { flex: 1 1 auto; min-width: 150px; padding: 15px 20px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .create-raid { background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; }
+        .join-raid { background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; }
+        .layout-toggle { background: linear-gradient(45deg, #a55eea, #8e44ad); color: white; }
+        .raid-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
+        .raid-button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .raid-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; }
+        .raid-status { background: rgba(255, 255, 255, 0.8); color: #333; padding: 15px; border-radius: 8px; margin-top: 20px; min-height: 150px; font-family: monospace; font-size: 14px; white-space: pre-wrap; overflow-y: auto; max-height: 250px; border: 1px solid #eee; }
+        #raidContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(45deg, #2c3e50 0%, #3498db 100%); display: none; z-index: 1000; perspective: 1000px; color: white; }
+        #raidTable { position: absolute; top: 50%; left: 50%; width: 90vw; height: 90vh; background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 40%), linear-gradient(45deg, #34495e 0%, #2c3e50 100%); border-radius: 20px; transform: translate(-50%, -50%) perspective(1000px) rotateX(10deg); box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); overflow: hidden; }
+        .raid-player { position: absolute; width: 120px; height: 80px; border: 3px solid #fff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); transition: all 0.3s ease; cursor: pointer; }
+        .raid-player:hover { transform: translate(-50%, -50%) scale(1.1) !important; }
+        .raid-player.current-player { border-color: #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(241,196,15,0.6); }
+        .raid-boss { position: absolute; width: 180px; height: 270px; background: radial-gradient(circle, #e74c3c 0%, #c0392b 100%); border: 3px solid #fff; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); transform: translate(-50%, -50%); animation: bossIdle 4s ease-in-out infinite; padding: 10px; box-sizing: border-box; }
+        @keyframes bossIdle { 0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); } 50% { transform: translate(-50%, -50%) translateY(-5px) scale(1.02); } }
+        .raid-controls { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; color: white; z-index: 1001; display: none; }
+        .control-button { background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; transition: all 0.3s ease; }
+        .control-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .angle-indicator { position: absolute; top: -10px; right: -10px; width: 25px; height: 25px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #333; font-weight: bold; }
+        .versus-indicator { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; z-index: 10; }
+        .layout-versus { background: linear-gradient(45deg, #e74c3c 0%, #c0392b 100%); }
+        .layout-circular { background: linear-gradient(45deg, #3498db 0%, #2980b9 100%); }
     </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- 2. Load your ES Modules.
+         The main inline script below will import EnhancedRaidClient.
+         EnhancedRaidClient.js itself imports dependencies like 'src/front-end.js' and 'src/raid/components/RaidGameUI.js'.
+         Ensure your server serves these files correctly from the 'client' directory
+         and that they are also valid ES modules.
+         The browser's module loader will handle fetching these dependencies.
+    -->
+    <!-- No explicit <script type="module" src="src/raid/EnhancedRaidClient.js"></script> needed here,
+         as the inline script below will import it.
+         However, ensure EnhancedRaidClient.js and its dependencies are accessible by the server.
+    -->
+
 </head>
 <body>
     <div class="raid-launcher">
         <h1>🏴‍☠️ PTCG Raid Battle System</h1>
         
         <div class="button-group">
-            <button class="raid-button create-raid" onclick="createRaid()">
-                Single Player Raid
+            <button class="raid-button create-raid" id="createRaidBtn">
+                Create New Raid
             </button>
-            <button class="raid-button join-raid" onclick="joinRaid()">
+            <button class="raid-button join-raid" id="joinRaidBtn">
                 Join Existing Raid
             </button>
         </div>
 
         <input type="text" 
                class="raid-input" 
-               id="raidIdInput" 
-               placeholder="Enter Raid ID to join (or leave empty to create)"
-               onkeypress="handleKeyPress(event)">
+               id="raidIdInputEl" 
+               placeholder="Enter Raid ID to join">
 
         <input type="text" 
                class="raid-input" 
-               id="usernameInput" 
+               id="usernameInputEl" 
                placeholder="Your username"
-               value="Test Player">
+               value="TestPlayer">
 
         <div class="button-group">
-            <button class="raid-button layout-toggle" onclick="toggleLayout()">
-                Layout: <span id="currentLayout">versus</span>
+            <button class="raid-button layout-toggle" id="toggleLayoutBtn">
+                Layout: <span id="currentLayoutSpan">versus</span>
             </button>
-            <button class="raid-button" onclick="openMultipleWindows()" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
+            <button class="raid-button" id="testMultiplayerBtn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
                 🧪 Test Multiplayer
             </button>
-            <button class="raid-button" onclick="manualMultiplayerTest()" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
-                🔗 Launch Raid Server
-            </button>
-        </div>
+            </div>
 
-        <div class="raid-status" id="raidStatus">
-🎮 Raid System Ready!
-
-Features:
-✅ Angular positioning (15°-75° for players)
-✅ Real-time multiplayer (2-4 players)
-✅ Per-user layout preferences (versus/circular)
-✅ Position recalculation on player join/leave
-✅ Boss positioning based on your view
-
-Instructions:
-1. Click "Create New Raid" or enter a Raid ID and click "Join"
-2. Try "🧪 Test Multiplayer" for automatic 4-player demo
-3. Use "🔗 Manual Test" to get a shareable raid link
-4. Switch YOUR view without affecting others
-
-Tips:
-• Test Multiplayer: Auto-opens 4 windows with staggered joins
-• Manual Test: Creates raid ID you can share or open in new tabs
-• Versus Layout: Players at 15°-75°, Boss at top
-• Circular Layout: 360° distribution, Boss in center
-• Layout changes are YOUR view only - others keep their preference
-
+        <div class="raid-status" id="raidStatusEl">
 Status: Waiting for action...
         </div>
     </div>
 
-    <!-- Raid Table Container -->
     <div id="raidContainer">
         <div id="raidTable">
-            <div class="versus-indicator" id="layoutIndicator">
-                Layout: <span id="layoutName">Versus</span>
+            <div class="versus-indicator" id="layoutIndicatorEl">
+                Layout: <span id="layoutNameSpan">Versus</span>
             </div>
-            <div id="raidPlayers"></div>
-            <div id="raidBoss" class="raid-boss">
+            <div id="raidPlayersEl"></div>
+            <div id="raidBossEl" class="raid-boss">
                 <div style="text-align: center;">
                     <div>RAID BOSS</div>
                     <div style="font-size: 16px; opacity: 0.9;">Mysterious Pokémon</div>
@@ -320,547 +103,342 @@ Status: Waiting for action...
         </div>
     </div>
 
-    <!-- Raid Controls -->
-            <div class="raid-controls" id="raidControls">
+    <div class="raid-controls" id="raidControlsEl">
         <h3>🎮 Raid Controls</h3>
-        <button class="control-button" onclick="switchLayout()">Switch My View</button>
-        <button class="control-button" onclick="leaveRaid()">Leave Raid</button>
+        <button class="control-button" id="switchLayoutBtn">Switch My View</button>
+        <button class="control-button" id="leaveRaidBtn">Leave Raid</button>
         <div style="margin-top: 15px;">
-            <p>Players: <span id="playerCount">0</span>/4</p>
-            <p>My View: <span id="controlLayout">versus</span></p>
-            <p>Your Angle: <span id="yourAngle">-</span>°</p>
+            <p>Players: <span id="playerCountSpan">0</span>/4</p>
+            <p>My View: <span id="controlLayoutSpanEl">versus</span></p>
+            <p>Your Angle: <span id="yourAngleSpan">-</span>°</p>
             <small style="opacity: 0.7;">Layout is your personal preference</small>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // Connect to the raid test server
-        const socket = io('http://localhost:4000');
-        
-        let currentRaid = null;
-        let playerPosition = null;
-        let allPositions = [];
-        let currentLayout = 'versus';
-        
-        // Status logging
-        function log(message) {
-            const status = document.getElementById('raidStatus');
-            const timestamp = new Date().toLocaleTimeString();
-            status.textContent += `\n[${timestamp}] ${message}`;
-            status.scrollTop = status.scrollHeight;
-        }
+    <script type="module">
+        // Import EnhancedRaidClient from its module file.
+        // Ensure the path is correct relative to this HTML file (which is in 'client/').
+        // So, 'src/raid/EnhancedRaidClient.js' should point to 'client/src/raid/EnhancedRaidClient.js'.
+        import { EnhancedRaidClient } from './src/raid/EnhancedRaidClient.js';
 
-        // Socket event listeners
-        socket.on('connect', () => {
-            log('🔌 Connected to raid server');
-        });
+        window.addEventListener('DOMContentLoaded', () => {
+            // DOM Element References
+            const raidIdInput = document.getElementById('raidIdInputEl');
+            const usernameInput = document.getElementById('usernameInputEl');
+            const raidStatus = document.getElementById('raidStatusEl');
+            const currentLayoutSpan = document.getElementById('currentLayoutSpan');
+            const raidLauncherDiv = document.querySelector('.raid-launcher');
+            const raidContainerDiv = document.getElementById('raidContainer');
+            const raidControlsDiv = document.getElementById('raidControlsEl');
+            const raidPlayersDiv = document.getElementById('raidPlayersEl');
+            const raidBossDiv = document.getElementById('raidBossEl');
+            const layoutIndicatorNameSpan = document.getElementById('layoutNameSpan');
+            const layoutIndicatorDiv = document.getElementById('layoutIndicatorEl');
+            const controlPlayerCountSpan = document.getElementById('playerCountSpan');
+            const controlLayoutSpan = document.getElementById('controlLayoutSpanEl');
+            const controlYourAngleSpan = document.getElementById('yourAngleSpan');
 
-        socket.on('disconnect', () => {
-            log('🔌 Disconnected from raid server');
-        });
+            // Button References
+            const createRaidBtn = document.getElementById('createRaidBtn');
+            const joinRaidBtn = document.getElementById('joinRaidBtn');
+            const toggleLayoutBtn = document.getElementById('toggleLayoutBtn');
+            const testMultiplayerBtn = document.getElementById('testMultiplayerBtn');
+            const switchLayoutBtn = document.getElementById('switchLayoutBtn');
+            const leaveRaidBtn = document.getElementById('leaveRaidBtn');
 
-        socket.on('raidCreated', (data) => {
-            if (data.success) {
-                log(`🏴‍☠️ Raid created: ${data.raidId}`);
-                log(`📋 Type: ${data.config.type}, Layout: ${data.config.layout}`);
-                currentRaid = data;
-            } else {
-                log(`❌ Failed to create raid: ${data.error}`);
+            let raidClientInstance;
+            try {
+                // EnhancedRaidClient constructor might take the server URL.
+                // Or it might use the global `io()` from socket.io.js if its dependency `front-end.js` does.
+                // The `EnhancedRaidClient.js` you provided imports `socket` from `../front-end.js`.
+                // This means `front-end.js` must initialize and export `socket = io();`
+                // and be successfully loaded as a module by the browser.
+                raidClientInstance = new EnhancedRaidClient(); // Assuming it uses the socket from front-end.js
+                window.raidClientInstance = raidClientInstance; // For debugging
+                log('🚀 Raid Client Initialized.');
+            } catch (e) {
+                log(`❌ Error initializing EnhancedRaidClient: ${e.message}. Check console for details on module loading or client errors.`);
+                console.error("EnhancedRaidClient instantiation error:", e);
+                // Disable buttons if client fails to init
+                [createRaidBtn, joinRaidBtn, toggleLayoutBtn, testMultiplayerBtn, switchLayoutBtn, leaveRaidBtn].forEach(btn => {
+                    if (btn) btn.disabled = true;
+                });
+                return; // Stop script if client can't be initialized
             }
-        });
 
-        socket.on('raidJoined', (data) => {
-            if (data.success) {
-                log(`✅ Joined raid: ${data.raidId}`);
+            let currentRaidDetails = null;   // Stores details about the current raid from server
+            let currentPlayerId = null;      // This client's player ID from the server
+            let allPlayerPositions = [];     // Server's canonical positions for all players
+            let localLayoutPreference = 'versus'; // User's local visual layout preference
+
+            // --- EnhancedRaidClient Event Listeners ---
+            if (raidClientInstance) {
+                raidClientInstance.on('connect', () => {
+                    log('🔌 Connected to raid server.');
+                });
+
+                raidClientInstance.on('disconnect', () => {
+                    log('🔌 Disconnected from raid server.');
+                    if (currentRaidDetails) {
+                        exitRaidView();
+                        currentRaidDetails = null;
+                        allPlayerPositions = [];
+                        currentPlayerId = null;
+                    }
+                });
+
+                raidClientInstance.on('error', (error) => { // Assuming EnhancedRaidClient emits 'error'
+                    const errorMessage = (error && error.message) ? error.message : String(error);
+                    log(`❌ RaidClient Error: ${errorMessage}`);
+                });
                 
-                currentRaid = data.raidState;
-                playerPosition = data.yourPosition;
-                allPositions = data.allPositions;
-                
-                log(`👤 Your server position: ${Math.round(data.yourPosition.angle)}°`);
-                log(`🎨 Applying your layout preference: ${currentLayout}`);
-                
-                enterRaidView();
-                
-                // Apply user's layout preference to the server positions
-                updatePlayerPositionsWithLayout(currentLayout);
-                updateLayoutIndicators(currentLayout);
-                updateControls();
-                updateControlLayout(currentLayout);
-            } else {
-                log(`❌ Failed to join raid: ${data.error}`);
-            }
-        });
+                // This event should be emitted by EnhancedRaidClient when it receives comprehensive state
+                raidClientInstance.on('raidStateChange', (newState) => {
+                    if (!newState || !newState.players || !newState.raidId) {
+                        log('⚠️ Received invalid or incomplete raid state.');
+                        console.warn('Invalid newState in raidStateChange:', newState);
+                        return;
+                    }
+                    log(`🔄 Raid state updated for ${newState.raidId}. Players: ${newState.players.length}, State: ${newState.state}`);
 
-        socket.on('raidJoinFailed', (data) => {
-            log(`❌ Join failed: ${data.error}`);
-        });
+                    currentRaidDetails = newState; // This is the full state from the server
+                    allPlayerPositions = newState.playerPositions || [];
+                    currentPlayerId = newState.yourPlayerId || raidClientInstance.socketId; // Get our ID
 
-        socket.on('playerJoinedRaid', (data) => {
-            log(`👋 ${data.username} joined (${data.playerCount}/4 players)`);
-            allPositions = data.positions;
-            
-            // Apply user's layout preference to the new positions
-            updatePlayerPositionsWithLayout(currentLayout);
-            updatePlayerCount(data.playerCount);
-        });
+                    const myPlayerData = newState.players.find(p => p.id === currentPlayerId || p.socketId === currentPlayerId);
 
-        socket.on('playerLeftRaid', (data) => {
-            log(`👋 Player left (${data.playerCount} remaining)`);
-            allPositions = data.newPositions;
-            
-            // Apply user's layout preference to the updated positions
-            updatePlayerPositionsWithLayout(currentLayout);
-            updatePlayerCount(data.playerCount);
-        });
-
-        socket.on('layoutUpdated', (data) => {
-            // Note: This event still exists on server but we ignore it
-            // since layouts are now per-user preferences
-            log(`📢 Server layout change ignored (using personal preference: ${currentLayout})`);
-        });
-
-        // Raid functions
-        function createRaid() {
-            const username = document.getElementById('usernameInput').value || 'Anonymous Player';
-            const raidId = 'raid-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
-            
-            log(`🏴‍☠️ Creating raid: ${raidId}`);
-            
-            // Store the raid ID for auto-join
-            const tempRaidId = raidId;
-            
-            socket.emit('createRaid', {
-                roomId: raidId, // Explicitly set the raid ID
-                raidType: 'tcg-official',
-                maxPlayers: 4,
-                minPlayers: 2,
-                layout: currentLayout
-            });
-            
-            // Set up one-time listener for this specific raid creation
-            const handleRaidCreated = (data) => {
-                if (data.success && data.raidId === tempRaidId) {
-                    log(`✅ Raid created successfully: ${data.raidId}`);
-                    
-                    // Auto-join the created raid
-                    setTimeout(() => {
-                        log(`🎯 Auto-joining raid: ${data.raidId}`);
-                        socket.emit('joinRaid', {
-                            raidId: data.raidId,
-                            username: username
-                        });
-                    }, 300);
-                } else if (data.raidId === tempRaidId) {
-                    log(`❌ Failed to create raid: ${data.error}`);
-                }
-                
-                // Remove this specific listener after handling
-                socket.off('raidCreated', handleRaidCreated);
-            };
-            
-            socket.on('raidCreated', handleRaidCreated);
-        }
-
-        function manualMultiplayerTest() {
-            const raidId = 'manual-test-' + Math.random().toString(36).substring(2, 8);
-            
-            log('🔗 Manual Multiplayer Test');
-            log(`📋 Raid ID: ${raidId}`);
-            log('📝 Instructions:');
-            log('1. Copy this URL and open in new tabs:');
-            log(`   ${window.location.origin}${window.location.pathname}?testRaid=${raidId}`);
-            log('2. Or share the Raid ID with others: ' + raidId);
-            
-            // Set the raid ID in the input for easy copying
-            document.getElementById('raidIdInput').value = raidId;
-            document.getElementById('usernameInput').value = 'Host Player';
-            
-            // Create the raid
-            socket.emit('createRaid', {
-                roomId: raidId,
-                raidType: 'tcg-official',
-                maxPlayers: 4,
-                minPlayers: 2,
-                layout: currentLayout
-            });
-            
-            // Handle creation result
-            socket.once('raidCreated', (data) => {
-                if (data.success) {
-                    log(`✅ Manual test raid created: ${data.raidId}`);
-                    log('🔗 Ready for others to join!');
-                } else {
-                    log(`❌ Failed to create manual test raid: ${data.error}`);
-                }
-            });
-        }
-
-        function joinRaid() {
-            const raidId = document.getElementById('raidIdInput').value;
-            const username = document.getElementById('usernameInput').value || 'Anonymous Player';
-            
-            if (!raidId) {
-                log('❌ Please enter a Raid ID');
-                return;
-            }
-            
-            socket.emit('joinRaid', {
-                raidId: raidId,
-                username: username
-            });
-        }
-
-        function toggleLayout() {
-            currentLayout = currentLayout === 'versus' ? 'circular' : 'versus';
-            document.getElementById('currentLayout').textContent = currentLayout;
-            log(`🔄 Layout preference: ${currentLayout}`);
-        }
-
-        function switchLayout() {
-            if (!currentRaid) return;
-            
-            // Make layout change client-side only (per-user visual preference)
-            currentLayout = currentLayout === 'versus' ? 'circular' : 'versus';
-            
-            log(`🔄 Switched YOUR view to: ${currentLayout} (others keep their preference)`);
-            
-            // Recalculate positions locally using the current server positions
-            // but display them according to the user's layout preference
-            updatePlayerPositionsWithLayout(currentLayout);
-            updateLayoutIndicators(currentLayout);
-            updateControlLayout(currentLayout);
-        }
-
-        function updatePlayerPositionsWithLayout(layout) {
-            if (!allPositions.length) return;
-            
-            // Calculate new positions based on user's preferred layout
-            const newPositions = recalculatePositionsForLayout(allPositions, layout);
-            
-            // Update display with new positions
-            displayPlayerPositions(newPositions);
-            
-            // Update boss position for this layout
-            const bossPos = getBossPositionForLayout(layout);
-            updateBossPosition(bossPos);
-        }
-
-        function recalculatePositionsForLayout(originalPositions, layout) {
-            const playerCount = originalPositions.length;
-            let angles;
-            
-            if (layout === 'circular') {
-                // Circular layout - players around center
-                switch (playerCount) {
-                    case 1: angles = [0]; break;
-                    case 2: angles = [45, 225]; break;
-                    case 3: angles = [30, 150, 270]; break;
-                    case 4: angles = [45, 135, 225, 315]; break;
-                    default: 
-                        angles = Array.from({length: playerCount}, (_, i) => (360 / playerCount) * i);
-                }
-            } else {
-                // Versus layout - players on one side
-                switch (playerCount) {
-                    case 1: angles = [45]; break;
-                    case 2: angles = [30, 60]; break;
-                    case 3: angles = [15, 45, 75]; break;
-                    case 4: angles = [15, 35, 55, 75]; break;
-                    default:
-                        const start = 15, end = 75;
-                        const step = (end - start) / (playerCount - 1);
-                        angles = Array.from({length: playerCount}, (_, i) => start + (step * i));
-                }
-            }
-            
-            const radius = layout === 'versus' ? 35 : 30;
-            
-            return originalPositions.map((pos, i) => {
-                const angle = angles[i] || (15 + i * 20);
-                const radians = (angle * Math.PI) / 180;
-                
-                return {
-                    ...pos,
-                    angle: angle,
-                    x: Math.max(5, Math.min(95, 50 + radius * Math.cos(radians))),
-                    y: Math.max(5, Math.min(95, 50 + radius * Math.sin(radians))),
-                    layout: layout
-                };
-            });
-        }
-
-        function getBossPositionForLayout(layout) {
-            if (layout === 'versus') {
-                return { x: 50, y: 15, angle: 270 }; // Top center
-            } else {
-                return { x: 50, y: 50, angle: 0 };   // Center
-            }
-        }
-
-        function leaveRaid() {
-            if (currentRaid) {
-                exitRaidView();
-                currentRaid = null;
-                playerPosition = null;
-                allPositions = [];
-                log('👋 Left raid');
-            }
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                const raidId = document.getElementById('raidIdInput').value;
-                if (raidId) {
-                    joinRaid();
-                } else {
-                    createRaid();
-                }
-            }
-        }
-
-        function openMultipleWindows() {
-            log('🧪 Opening test windows...');
-            
-            // Generate a test raid ID
-            const testRaidId = 'test-' + Math.random().toString(36).substring(2, 8);
-            log(`🎯 Test Raid ID: ${testRaidId}`);
-            
-            // First, create the raid from this window
-            document.getElementById('raidIdInput').value = testRaidId;
-            document.getElementById('usernameInput').value = 'Host Player';
-            
-            // Create raid first
-            socket.emit('createRaid', {
-                roomId: testRaidId, // Explicitly set the raid ID
-                raidType: 'tcg-official',
-                maxPlayers: 4,
-                minPlayers: 2,
-                layout: currentLayout
-            });
-            
-            // Wait for raid to be created, then join and open other windows
-            const handleTestRaidCreated = (data) => {
-                if (data.success && data.raidId === testRaidId) {
-                    log(`✅ Test raid created: ${data.raidId}`);
-                    
-                    // Join the raid from this window first
-                    socket.emit('joinRaid', {
-                        raidId: testRaidId,
-                        username: 'Host Player'
-                    });
-                    
-                    // Then open other windows with a delay - force open 3 windows
-                    setTimeout(() => {
-                        for (let i = 1; i <= 3; i++) {
-                            try {
-                                const url = `${window.location.origin}${window.location.pathname}?testPlayer=${i}&testRaid=${testRaidId}`;
-                                const windowFeatures = `width=800,height=600,left=${i * 220 + 100},top=${i * 120 + 100},scrollbars=yes,resizable=yes`;
-                                
-                                const newWindow = window.open(url, `testPlayer${i}`, windowFeatures);
-                                
-                                if (newWindow) {
-                                    log(`🚀 Opened test window ${i} successfully`);
-                                } else {
-                                    log(`⚠️ Failed to open window ${i} - popup blocked?`);
-                                    log(`🔗 Manual URL for Player ${i}: ${url}`);
-                                }
-                            } catch (error) {
-                                log(`❌ Error opening window ${i}: ${error.message}`);
-                            }
+                    if ((newState.state === 'active' || newState.state === 'lobby') && myPlayerData) {
+                        if (raidLauncherDiv.style.display !== 'none') {
+                            enterRaidView();
                         }
-                        
-                        log(`📝 If popups were blocked, manually open these URLs:`);
-                        for (let i = 1; i <= 3; i++) {
-                            log(`   Player ${i}: ${window.location.origin}${window.location.pathname}?testPlayer=${i}&testRaid=${testRaidId}`);
-                        }
-                    }, 1000);
-                } else if (data.raidId === testRaidId) {
-                    log(`❌ Failed to create test raid: ${data.error}`);
-                }
+                        updatePlayerPositionsWithLayout(localLayoutPreference);
+                        updateLayoutIndicators(currentRaidDetails.config?.layout || localLayoutPreference);
+                        updateControls(myPlayerData, currentRaidDetails.players.length); // Pass myPlayerData for angle
+                        updateControlLayout(localLayoutPreference);
+                    } else if (raidLauncherDiv.style.display === 'none') {
+                        exitRaidView();
+                    }
+                });
                 
-                // Clean up listener
-                socket.off('raidCreated', handleTestRaidCreated);
-            };
-            
-            socket.on('raidCreated', handleTestRaidCreated);
-        }
+                // Handle specific event from EnhancedRaidClient after successfully joining
+                raidClientInstance.on('raidJoined', (data) => {
+                    if (data.success && data.raidState) {
+                        log(`✅ Successfully joined raid: ${data.raidId}. Your server-assigned angle: ${data.yourPosition?.angle}°`);
+                        // EnhancedRaidClient should manage its internal state and emit 'raidStateChange'
+                        // If it doesn't, you might need to manually trigger an update or use data directly:
+                        currentRaidDetails = data.raidState;
+                        currentPlayerId = data.yourPosition?.playerId || raidClientInstance.socketId;
+                        allPlayerPositions = data.allPositions || data.raidState.playerPositions || [];
+                        enterRaidView();
+                        updatePlayerPositionsWithLayout(localLayoutPreference);
+                    } else {
+                        log(`❌ Failed to join raid: ${data.error || 'Unknown reason'}`);
+                    }
+                });
 
-        // UI update functions
-        function enterRaidView() {
-            document.querySelector('.raid-launcher').style.display = 'none';
-            document.getElementById('raidContainer').style.display = 'block';
-            document.getElementById('raidControls').style.display = 'block';
-        }
+                raidClientInstance.on('playerJoinedRaid', (data) => {
+                     log(`👋 ${data.username || data.playerId} joined. Players: ${data.playerCount}/${data.maxPlayers}`);
+                     if (data.raidState) raidClientInstance.emit('raidStateChange', data.raidState); // Prefer full state update
+                     else if (data.positions) {
+                        allPlayerPositions = data.positions;
+                        if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${data.playerCount}/${data.maxPlayers || 4}`;
+                        updatePlayerPositionsWithLayout(localLayoutPreference);
+                     }
+                });
 
-        function exitRaidView() {
-            document.querySelector('.raid-launcher').style.display = 'block';
-            document.getElementById('raidContainer').style.display = 'none';
-            document.getElementById('raidControls').style.display = 'none';
-        }
+                raidClientInstance.on('playerLeftRaid', (data) => {
+                    log(`👋 ${data.leftPlayerName || data.leftPlayerId} left. Players: ${data.playerCount}`);
+                    if (data.raidState) raidClientInstance.emit('raidStateChange', data.raidState);
+                    else if (data.newPositions) {
+                        allPlayerPositions = data.newPositions;
+                        if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${data.playerCount}/${currentRaidDetails?.config?.maxPlayers || 4}`;
+                        updatePlayerPositionsWithLayout(localLayoutPreference);
+                    }
+                });
 
-        function updatePlayerPositions() {
-            displayPlayerPositions(allPositions);
-        }
+                raidClientInstance.on('layoutUpdated', (data) => {
+                    log(`🔄 Layout updated by server to: ${data.layout}.`);
+                    if (data.positions) allPlayerPositions = data.positions;
+                    if (currentRaidDetails && currentRaidDetails.config) currentRaidDetails.config.layout = data.layout;
+                    updatePlayerPositionsWithLayout(localLayoutPreference); // Update view with our preference
+                    updateLayoutIndicators(data.layout); // Update indicator with server's layout
+                });
 
-        function displayPlayerPositions(positions) {
-            const container = document.getElementById('raidPlayers');
-            container.innerHTML = '';
-
-            positions.forEach((position, index) => {
-                const playerElement = document.createElement('div');
-                playerElement.className = 'raid-player';
-                
-                if (position.playerId === socket.id) {
-                    playerElement.classList.add('current-player');
-                }
-
-                // Position styling
-                const isCurrentPlayer = position.playerId === socket.id;
-                const playerColors = [
-                    'linear-gradient(45deg, #e74c3c, #c0392b)',
-                    'linear-gradient(45deg, #3498db, #2980b9)', 
-                    'linear-gradient(45deg, #2ecc71, #27ae60)',
-                    'linear-gradient(45deg, #f39c12, #e67e22)'
-                ];
-                
-                playerElement.style.cssText = `
-                    position: absolute;
-                    width: 120px;
-                    height: 80px;
-                    background: ${isCurrentPlayer ? 
-                        'linear-gradient(45deg, #f1c40f, #f39c12)' : 
-                        playerColors[index % playerColors.length]};
-                    border: ${isCurrentPlayer ? '3px solid #fff' : '2px solid #fff'};
-                    border-radius: 10px;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-                    left: ${position.x}%;
-                    top: ${position.y}%;
-                    transform: translate(-50%, -50%);
-                    z-index: ${100 - Math.floor((position.overlapFactor || 0) * 10)};
-                    transition: all 0.3s ease;
-                `;
-
-                playerElement.innerHTML = `
-                    <div style="text-align: center;">
-                        <div>${isCurrentPlayer ? 'YOU' : `P${index + 1}`}</div>
-                        <div style="font-size: 12px; opacity: 0.8;">${Math.round(position.angle)}°</div>
-                    </div>
-                `;
-
-                // Add angle indicator
-                const angleIndicator = document.createElement('div');
-                angleIndicator.className = 'angle-indicator';
-                angleIndicator.style.cssText = `
-                    position: absolute;
-                    top: -15px;
-                    right: -15px;
-                    width: 25px;
-                    height: 25px;
-                    background: rgba(255,255,255,0.9);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 10px;
-                    color: #333;
-                    font-weight: bold;
-                `;
-                angleIndicator.textContent = Math.round(position.angle);
-                playerElement.appendChild(angleIndicator);
-
-                container.appendChild(playerElement);
-            });
-        }
-
-        function updateBossPosition(bossPos) {
-            if (!bossPos) return;
-            
-            const boss = document.getElementById('raidBoss');
-            boss.style.left = `${bossPos.x}%`;
-            boss.style.top = `${bossPos.y}%`;
-        }
-
-        function updateControls() {
-            if (playerPosition) {
-                document.getElementById('yourAngle').textContent = Math.round(playerPosition.angle);
+            } else {
+                log("⚠️ EnhancedRaidClient instance not available. Cannot set up listeners.");
             }
-        }
 
-        function updatePlayerCount(count) {
-            document.getElementById('playerCount').textContent = count;
-        }
+            function log(message) {
+                if (!raidStatus) { console.warn("raidStatus element not found for logging:", message); return; }
+                const timestamp = new Date().toLocaleTimeString();
+                raidStatus.textContent += `\n[${timestamp}] ${message}`;
+                raidStatus.scrollTop = raidStatus.scrollHeight;
+            }
 
-        function updateLayoutIndicators(layout) {
-            document.getElementById('layoutName').textContent = layout.charAt(0).toUpperCase() + layout.slice(1);
+            async function handleCreateRaid() {
+                if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
+                log(`🏴‍☠️ Attempting to create raid...`);
+                try {
+                    const raidConfig = { raidType: 'tcg-official', layout: localLayoutPreference };
+                    const creationResponse = await raidClientInstance.createRaid(raidConfig); // EnhancedRaidClient handles ID and emits
+                    log(`👍 CreateRaid request sent. Server response (initial): ${JSON.stringify(creationResponse)}`);
+                    // Auto-join is often handled within EnhancedRaidClient's 'raidCreated' listener
+                } catch (error) {
+                    log(`❌ Failed to initiate raid creation: ${error.message}`);
+                }
+            }
+
+            async function handleJoinRaid() {
+                if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
+                const raidIdToJoin = raidIdInput.value.trim();
+                const usernameToJoin = usernameInput.value.trim() || 'Player';
+                if (!raidIdToJoin) { log('⚠️ Please enter a Raid ID.'); raidIdInput.focus(); return; }
+                log(`🎯 Attempting to join raid: ${raidIdToJoin} as ${usernameToJoin}`);
+                try {
+                    await raidClientInstance.joinRaid(raidIdToJoin, usernameToJoin);
+                } catch (error) {
+                    log(`❌ Failed to join raid: ${error.message}`);
+                }
+            }
             
-            const indicator = document.getElementById('layoutIndicator');
-            indicator.className = 'versus-indicator layout-' + layout;
-        }
+            async function handleLeaveRaid() {
+                if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
+                if (raidClientInstance.currentRaid && raidClientInstance.currentRaid.id) { // Check EnhancedRaidClient's state
+                    log(`👋 Leaving raid: ${raidClientInstance.currentRaid.id}`);
+                    try {
+                        await raidClientInstance.leaveRaid(); // Method in EnhancedRaidClient
+                    } catch (error) {
+                        log(`⚠️ Error during leaveRaid call: ${error.message}`);
+                    }
+                } else {
+                    log("Not currently in a raid to leave (according to client state).");
+                }
+                 // UI reset should be handled by client's 'raidLeft' or 'disconnect' -> 'raidStateChange' (to null state)
+                exitRaidView(); // Force UI reset for now
+                currentRaidDetails = null;
+                allPlayerPositions = [];
+                currentPlayerId = null;
+            }
 
-        function updateControlLayout(layout) {
-            document.getElementById('controlLayout').textContent = layout;
-        }
+            async function handleTestMultiplayer() {
+                if (!raidClientInstance) { log("❌ Raid client not initialized."); return; }
+                log('🧪 Simulating multiplayer test setup...');
+                const hostUsername = usernameInput.value || 'HostPlayer';
+                try {
+                    const createdRaid = await raidClientInstance.createRaid({ raidType: 'tcg-official', maxPlayers: 4, minPlayers: 1 });
+                    log(`🎉 Test Raid Created by Host: ${createdRaid.raidId}`);
+                    raidIdInput.value = createdRaid.raidId;
+                    await raidClientInstance.joinRaid(createdRaid.raidId, hostUsername);
+                    log(`🏠 Host (${hostUsername}) joined. Others can join with ID: ${createdRaid.raidId}`);
+                } catch (error) {
+                    log(`❌ Error in multiplayer test setup: ${error.message}`);
+                }
+            }
 
-        // Auto-join if URL parameters are present (for testing)
-        window.addEventListener('load', () => {
+            function handleToggleLayout() {
+                localLayoutPreference = localLayoutPreference === 'versus' ? 'circular' : 'versus';
+                if(currentLayoutSpan) currentLayoutSpan.textContent = localLayoutPreference;
+                log(`🔄 Layout preference set to: ${localLayoutPreference}.`);
+                if (currentRaidDetails && currentRaidDetails.state === 'active') {
+                    switchLayoutVisuals(); // Just update local view if already in active game
+                }
+                // If in lobby, EnhancedRaidClient could have a method to inform the server of preference
+                // e.g., if (currentRaidDetails && currentRaidDetails.state === 'lobby') raidClientInstance.updateLayoutPreference(localLayoutPreference);
+            }
+
+            function switchLayoutVisuals() {
+                if (!currentRaidDetails) return;
+                log(`🔄 Updating YOUR view to: ${localLayoutPreference}`);
+                updatePlayerPositionsWithLayout(localLayoutPreference);
+                updateLayoutIndicators(localLayoutPreference);
+                updateControlLayout(localLayoutPreference);
+            }
+
+            function updatePlayerPositionsWithLayout(layoutToDisplay) {
+                if (!allPlayerPositions || !currentRaidDetails) {
+                    if (raidPlayersDiv) raidPlayersDiv.innerHTML = 'Waiting for player data...';
+                    return;
+                }
+                const visuallyAdjustedPositions = recalculatePositionsForLayout(allPlayerPositions, layoutToDisplay);
+                displayPlayerPositions(visuallyAdjustedPositions);
+                const bossPos = getBossPositionForLayout(layoutToDisplay);
+                updateBossPosition(bossPos);
+            }
+
+            function recalculatePositionsForLayout(serverPositions, displayLayout) {
+                const playerCount = serverPositions.length;
+                if (playerCount === 0) return [];
+                let angles;
+                if (displayLayout === 'circular') {
+                    switch (playerCount) { case 1: angles = [0]; break; case 2: angles = [45, 225]; break; case 3: angles = [30, 150, 270]; break; case 4: angles = [45, 135, 225, 315]; break; default: angles = Array.from({length: playerCount}, (_, i) => (360 / playerCount) * i); }
+                } else {
+                    switch (playerCount) { case 1: angles = [45]; break; case 2: angles = [30, 60]; break; case 3: angles = [15, 45, 75]; break; case 4: angles = [15, 35, 55, 75]; break; default: const s=15,e=75,t=(playerCount>1)?(e-s)/(playerCount-1):0; angles=Array.from({length:playerCount},(_,i)=>s+(t*i));}
+                }
+                const radius = displayLayout === 'versus' ? 35 : 30;
+                return serverPositions.map((originalPos, i) => {
+                    const angle = angles[i] !== undefined ? angles[i] : (15 + i * 20);
+                    const radians = (angle * Math.PI) / 180;
+                    return { ...originalPos, displayAngle: angle, x: Math.max(5, Math.min(95, 50 + radius * Math.cos(radians))), y: Math.max(5, Math.min(95, 50 + radius * Math.sin(radians))) };
+                });
+            }
+
+            function getBossPositionForLayout(layout) { return layout === 'versus' ? { x: 50, y: 15 } : { x: 50, y: 50 }; }
+            function enterRaidView() { if(raidLauncherDiv) raidLauncherDiv.style.display = 'none'; if(raidContainerDiv) raidContainerDiv.style.display = 'block'; if(raidControlsDiv) raidControlsDiv.style.display = 'block'; }
+            function exitRaidView() { if(raidLauncherDiv) raidLauncherDiv.style.display = 'block'; if(raidContainerDiv) raidContainerDiv.style.display = 'none'; if(raidControlsDiv) raidControlsDiv.style.display = 'none'; }
+
+            function displayPlayerPositions(positionsToDisplay) {
+                if (!raidPlayersDiv) return;
+                raidPlayersDiv.innerHTML = '';
+                if (!positionsToDisplay || positionsToDisplay.length === 0) { raidPlayersDiv.innerHTML = '<div style="text-align:center; width:100%; margin-top: 40%; color: #ccc;">No players.</div>'; return; }
+                positionsToDisplay.forEach((posData, index) => {
+                    const el = document.createElement('div');
+                    const isMe = posData.playerId === currentPlayerId;
+                    el.className = 'raid-player' + (isMe ? ' current-player' : '');
+                    const colors = ['linear-gradient(45deg, #e74c3c, #c0392b)', 'linear-gradient(45deg, #3498db, #2980b9)', 'linear-gradient(45deg, #2ecc71, #27ae60)', 'linear-gradient(45deg, #f39c12, #e67e22)'];
+                    el.style.background = isMe ? 'linear-gradient(45deg, #f1c40f, #f39c12)' : colors[(posData.serverIndex || index) % colors.length];
+                    el.style.left = `${posData.x}%`; el.style.top = `${posData.y}%`;
+                    el.innerHTML = `<div style="text-align: center;"><div>${isMe ? 'YOU' : (posData.username || `P${index + 1}`)}</div><div style="font-size: 12px; opacity: 0.8;">${Math.round(posData.displayAngle)}°</div></div>`;
+                    const angleInd = document.createElement('div'); angleInd.className = 'angle-indicator'; angleInd.textContent = Math.round(posData.displayAngle); el.appendChild(angleInd);
+                    raidPlayersDiv.appendChild(el);
+                });
+            }
+
+            function updateBossPosition(bossPos) { if (!raidBossDiv || !bossPos) return; raidBossDiv.style.left = `${bossPos.x}%`; raidBossDiv.style.top = `${bossPos.y}%`; }
+            function updateControls(myPos, pCount) {
+                if (controlYourAngleSpan && myPos) controlYourAngleSpan.textContent = Math.round(myPos.displayAngle || 0); else if(controlYourAngleSpan) controlYourAngleSpan.textContent = '-';
+                if(controlPlayerCountSpan) controlPlayerCountSpan.textContent = `${pCount || 0}/${currentRaidDetails?.config?.maxPlayers || 4}`;
+            }
+            function updateLayoutIndicators(layout) { if(layoutIndicatorNameSpan) layoutIndicatorNameSpan.textContent = layout.charAt(0).toUpperCase()+layout.slice(1); if(layoutIndicatorDiv) layoutIndicatorDiv.className = 'versus-indicator layout-' + layout; }
+            function updateControlLayout(layout) { if(controlLayoutSpan) controlLayoutSpan.textContent = layout; }
+
+            function handleKeyPress(event) { if (event.key === 'Enter') { if (raidIdInput && raidIdInput.value) handleJoinRaid(); else handleCreateRaid(); } }
+            if(raidIdInput) raidIdInput.addEventListener('keypress', handleKeyPress);
+
+            if(createRaidBtn) createRaidBtn.addEventListener('click', handleCreateRaid);
+            if(joinRaidBtn) joinRaidBtn.addEventListener('click', handleJoinRaid);
+            if(toggleLayoutBtn) toggleLayoutBtn.addEventListener('click', handleToggleLayout);
+            if(testMultiplayerBtn) testMultiplayerBtn.addEventListener('click', handleTestMultiplayer);
+            if(switchLayoutBtn) switchLayoutBtn.addEventListener('click', switchLayoutVisuals);
+            if(leaveRaidBtn) leaveRaidBtn.addEventListener('click', handleLeaveRaid);
+
             const params = new URLSearchParams(window.location.search);
-            const testPlayer = params.get('testPlayer');
-            const testRaid = params.get('testRaid');
-            
-            if (testRaid) {
-                document.getElementById('raidIdInput').value = testRaid;
-                
-                if (testPlayer) {
-                    // Automatic multiplayer test
-                    document.getElementById('usernameInput').value = `Test Player ${testPlayer}`;
-                    log(`🧪 Test window ${testPlayer} loaded for raid: ${testRaid}`);
-                    
-                    // Wait longer and retry if needed
-                    const attemptJoin = (attempt = 1) => {
-                        if (attempt > 5) {
-                            log(`❌ Failed to join after 5 attempts`);
-                            return;
-                        }
-                        
-                        log(`🎯 Join attempt ${attempt} for raid: ${testRaid}`);
-                        socket.emit('joinRaid', {
-                            raidId: testRaid,
-                            username: `Test Player ${testPlayer}`
-                        });
-                        
-                        // If join fails, retry after a delay
-                        const retryTimer = setTimeout(() => {
-                            log(`⏰ Retrying join (attempt ${attempt + 1})`);
-                            attemptJoin(attempt + 1);
-                        }, 2000);
-                        
-                        // Clear retry timer if join succeeds
-                        socket.once('raidJoined', () => {
-                            clearTimeout(retryTimer);
-                            log(`✅ Successfully joined on attempt ${attempt}`);
-                        });
-                    };
-                    
-                    // Start first attempt after a delay based on player number
-                    setTimeout(() => {
-                        attemptJoin();
-                    }, 2000 + parseInt(testPlayer) * 1000);
-                } else {
-                    // Manual test - just prefill the raid ID
-                    document.getElementById('usernameInput').value = `Player ${Math.floor(Math.random() * 1000)}`;
-                    log(`🔗 Manual test mode - Raid ID: ${testRaid}`);
-                    log('👆 Click "Join Existing Raid" to join this raid');
+            const testPlayerNum = params.get('testPlayer');
+            const raidToJoinFromUrl = params.get('testRaid');
+            const autoJoinFlag = params.get('autoJoin');
+            if (raidToJoinFromUrl && autoJoinFlag === 'true' && testPlayerNum) {
+                const usernameForAutoJoin = `TestPlayer${testPlayerNum}`;
+                log(`🔗 Auto-joining raid ${raidToJoinFromUrl} as ${usernameForAutoJoin}`);
+                if(usernameInput) usernameInput.value = usernameForAutoJoin; if(raidIdInput) raidIdInput.value = raidToJoinFromUrl;
+                let attempts = 0; const maxAttempts = 5, attemptInterval = 2000 + parseInt(testPlayerNum) * 500;
+                async function attemptAutoJoin() {
+                    if (!raidClientInstance) { log("⏳ Raid client not ready, retrying..."); if(attempts < maxAttempts) { attempts++; setTimeout(attemptAutoJoin, attemptInterval); } else {log("❌ Max auto-join attempts (client not ready).");} return; }
+                    attempts++; try { await raidClientInstance.joinRaid(raidToJoinFromUrl, usernameForAutoJoin); } catch (error) { log(`⚠️ Auto-join attempt ${attempts} failed: ${error.message}`); if (attempts < maxAttempts) { setTimeout(attemptAutoJoin, attemptInterval); } else { log(`❌ Max auto-join attempts for ${usernameForAutoJoin}.`);}}
                 }
-            }
+                setTimeout(attemptAutoJoin, 1500);
+            } else if (raidToJoinFromUrl) { if(raidIdInput) raidIdInput.value = raidToJoinFromUrl; if(usernameInput) usernameInput.value = `Player${Math.floor(Math.random()*1000)}`; log(`📋 Raid ID ${raidToJoinFromUrl} pre-filled. Enter username & join.`);}
+            log("Optimized client script initialized.");
         });
     </script>
 </body>
 </html>
+
