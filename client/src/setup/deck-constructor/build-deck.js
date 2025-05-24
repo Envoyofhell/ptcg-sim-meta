@@ -1,3 +1,7 @@
+// Project: PTCGO-Online
+// File Created: 2023-10-01
+// client\src\setup\spectator\handle-spectator-buttons.js
+//     }
 import { systemState } from '../../front-end.js';
 import { determineDeckData } from '../general/determine-deckdata.js';
 import { getZone } from '../zones/get-zone.js';

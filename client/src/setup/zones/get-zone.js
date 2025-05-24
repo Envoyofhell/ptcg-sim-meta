@@ -1,3 +1,6 @@
+// Project: PTCGO-Online
+// File Created: 2023-10-01
+//client\src\setup\zones\get-zone.js
 import {
   oppContainerDocument,
   selfContainerDocument,
