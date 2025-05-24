@@ -1,3 +1,6 @@
+// Project: PTCGO-Online
+// File Created: 2023-10-01
+// client\src\setup\spectator\handle-spectator-buttons.js
 // number: every card UP until that number is of that type, i.e., that number's card is the first card whose type is different. this currently needs to be updated for the new sets manually.
 const SVEra = {
   SV8a: {

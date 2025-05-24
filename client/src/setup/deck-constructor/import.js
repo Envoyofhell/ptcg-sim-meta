@@ -1,3 +1,6 @@
+// Project: PTCGO-Online
+// File Created: 2023-10-01
+// client\src\setup\spectator\handle-spectator-buttons.js
 import { reset } from '../../actions/general/reset.js';
 import {
   oppContainer,

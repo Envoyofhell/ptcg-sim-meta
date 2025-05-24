@@ -1,3 +1,6 @@
+// Project: PTCGO-Online
+// File Created: 2023-10-01
+// client\src\setup\spectator\handle-spectator-buttons.js
 // Check if there's an overflow
 const checkOverflow = (element) => {
   return element.scrollWidth > element.clientWidth;
