@@ -1,36 +1,40 @@
 /* ===================================================================
  * File: client/js/raid-core.js
- * Purpose: 3D Enhanced Isolated Raid Battle System
- * Version: 3.0.0
+ * Purpose: Pokemon Raid Battle System - Authentic Pokemon Playmat Edition
+ * Version: 4.0.0
  * Author: PTCG Sim Meta Team
  *
  * Description:
- *   Complete 3D enhanced front-end system with angled perspective gameboard,
- *   client-side layout preferences, interactive turn management,
- *   and advanced visual effects. Fully isolated from main simulator.
+ *   Complete authentic Pokemon raid battle system with playmat design,
+ *   Pokemon team selection, enhanced player cards, and 3D battlefield.
+ *   Based on official Pokemon TCG raid battle mechanics.
  *
  * Features:
- *   - 3D angled perspective rendering
- *   - Client-side layout switching (not synced to server)
- *   - Interactive turn indicator with debug controls
- *   - Enhanced player positioning algorithms
- *   - Advanced visual feedback system
- *   - Turn management with clickable controls
+ *   - Authentic Pokemon TCG playmat design
+ *   - Pokemon team selection system
+ *   - Enhanced player cards with detailed Pokemon info
+ *   - 3D angled battlefield perspective
+ *   - Real-time turn management
+ *   - Advanced visual effects and animations
  * ===================================================================*/
 
-// ================ GLOBAL RAID SYSTEM ================
-window.RaidSystem = {
+// ================ GLOBAL POKEMON RAID SYSTEM ================
+window.PokemonRaidSystem = {
   // Core state management
   state: {
     isConnected: false,
     currentRaid: null,
     playerId: null,
-    username: 'Player',
-    layoutPreference: 'versus', // CLIENT-SIDE ONLY
-    yourAngle: 0, // Player's angle in current layout
+    username: 'Trainer',
+    selectedPokemon: {
+      active: null,
+      bench: null,
+    },
+    viewMode: 'battlefield',
     debugMode: false,
     isInitialized: false,
     gamePhase: 'lobby',
+    spectators: [],
   },
 
   // Socket management
@@ -40,13 +44,13 @@ window.RaidSystem = {
   ui: {
     launcher: null,
     container: null,
-    table: null,
-    controls: null,
-    actions: null,
-    logContainer: null,
-    debugPanel: null,
+    battlefield: null,
+    playerPanel: null,
     turnIndicator: null,
+    gameControls: null,
     playerCards: new Map(),
+    spectatorPanel: null,
+    pokemonGrid: null,
   },
 
   // Configuration
@@ -59,9 +63,9 @@ window.RaidSystem = {
     reconnectInterval: 5000,
 
     // 3D rendering options
-    perspective: '1000px',
-    tableRotationX: '10deg',
-    mobileRotationX: '8deg',
+    perspective: '1200px',
+    battlefieldRotationX: '25deg',
+    battlefieldRotationY: '-10deg',
   },
 
   // Event system
@@ -79,80 +83,556 @@ window.RaidSystem = {
     },
   },
 
+  // Enhanced notification system
+  notifications: {
+    container: null,
+    queue: [],
+    maxVisible: 5,
+    defaultDuration: 4000,
+
+    show: function (title, message, type = 'info', duration = null) {
+      if (!this.container) {
+        this.container = document.getElementById('gameNotifications');
+      }
+
+      const notification = this.create(
+        title,
+        message,
+        type,
+        duration || this.defaultDuration
+      );
+      this.container.appendChild(notification);
+
+      // Auto-remove after duration
+      if (duration !== 0) {
+        setTimeout(() => {
+          this.remove(notification);
+        }, duration || this.defaultDuration);
+      }
+
+      // Limit visible notifications
+      this.limitVisible();
+      return notification;
+    },
+
+    create: function (title, message, type, duration) {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+
+      const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️',
+        pokemon: '⚡',
+      };
+
+      notification.innerHTML = `
+        <div class="notification-content">
+          <div class="notification-icon">${icons[type] || icons.info}</div>
+          <div class="notification-text">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+          </div>
+          <button class="notification-close">×</button>
+        </div>
+      `;
+
+      // Close button functionality
+      const closeBtn = notification.querySelector('.notification-close');
+      closeBtn.addEventListener('click', () => {
+        this.remove(notification);
+      });
+
+      return notification;
+    },
+
+    remove: function (notification) {
+      if (notification && notification.parentNode) {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }
+    },
+
+    limitVisible: function () {
+      if (!this.container) return;
+
+      const notifications = this.container.querySelectorAll('.notification');
+      if (notifications.length > this.maxVisible) {
+        for (let i = 0; i < notifications.length - this.maxVisible; i++) {
+          this.remove(notifications[i]);
+        }
+      }
+    },
+
+    clear: function () {
+      if (this.container) {
+        this.container.innerHTML = '';
+      }
+    },
+  },
+
+  // Modal management system
+  modals: {
+    pokemonDetail: null,
+    attackSelection: null,
+
+    init: function () {
+      this.pokemonDetail = document.getElementById('pokemonDetailModal');
+      this.attackSelection = document.getElementById('attackSelectionModal');
+
+      // Set up close handlers
+      this.setupCloseHandlers();
+    },
+
+    setupCloseHandlers: function () {
+      // Pokemon detail modal
+      if (this.pokemonDetail) {
+        const closeBtn = this.pokemonDetail.querySelector('#closePokemonModal');
+        const backdrop = this.pokemonDetail.querySelector('.modal-backdrop');
+
+        if (closeBtn)
+          closeBtn.addEventListener('click', () => this.close('pokemon'));
+        if (backdrop)
+          backdrop.addEventListener('click', () => this.close('pokemon'));
+      }
+
+      // Attack selection modal
+      if (this.attackSelection) {
+        const closeBtn =
+          this.attackSelection.querySelector('#closeAttackModal');
+        const backdrop = this.attackSelection.querySelector('.modal-backdrop');
+        const cancelBtn = this.attackSelection.querySelector('#cancelAttack');
+
+        if (closeBtn)
+          closeBtn.addEventListener('click', () => this.close('attack'));
+        if (backdrop)
+          backdrop.addEventListener('click', () => this.close('attack'));
+        if (cancelBtn)
+          cancelBtn.addEventListener('click', () => this.close('attack'));
+      }
+
+      // ESC key handler for all modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.closeAll();
+        }
+      });
+    },
+
+    show: function (modalType, data = {}) {
+      switch (modalType) {
+        case 'pokemon':
+          this.showPokemonDetail(data);
+          break;
+        case 'attack':
+          this.showAttackSelection(data);
+          break;
+      }
+    },
+
+    close: function (modalType) {
+      let modal = null;
+
+      switch (modalType) {
+        case 'pokemon':
+          modal = this.pokemonDetail;
+          break;
+        case 'attack':
+          modal = this.attackSelection;
+          break;
+      }
+
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    },
+
+    closeAll: function () {
+      if (this.pokemonDetail) this.pokemonDetail.style.display = 'none';
+      if (this.attackSelection) this.attackSelection.style.display = 'none';
+    },
+
+    showPokemonDetail: function (pokemon) {
+      if (!this.pokemonDetail || !pokemon) return;
+
+      // Populate pokemon information
+      const nameEl = document.getElementById('modalPokemonName');
+      const iconEl = document.getElementById('modalPokemonIcon');
+      const typeEl = document.getElementById('modalPokemonType');
+      const hpEl = document.getElementById('modalPokemonHP');
+      const rarityEl = document.getElementById('modalPokemonRarity');
+      const weaknessEl = document.getElementById('modalPokemonWeakness');
+      const resistanceEl = document.getElementById('modalPokemonResistance');
+      const movesEl = document.getElementById('modalPokemonMoves');
+      const abilitiesEl = document.getElementById('modalPokemonAbilities');
+
+      if (nameEl) nameEl.textContent = `${pokemon.name} Details`;
+      if (iconEl)
+        iconEl.textContent = PokemonRaidSystem.core.getPokemonIcon(
+          pokemon.name
+        );
+
+      if (typeEl) {
+        typeEl.textContent = pokemon.type.toUpperCase();
+        typeEl.className = `pokemon-type-large type-${pokemon.type}`;
+        typeEl.style.backgroundColor = PokemonRaidSystem.utils.getTypeColor(
+          pokemon.type
+        );
+      }
+
+      if (hpEl)
+        hpEl.textContent = `${pokemon.currentHP || pokemon.maxHP}/${pokemon.maxHP}`;
+      if (rarityEl) rarityEl.textContent = pokemon.rarity || 'Common';
+      if (weaknessEl) weaknessEl.textContent = pokemon.weakness || 'None';
+      if (resistanceEl) resistanceEl.textContent = pokemon.resistance || 'None';
+
+      // Populate moves
+      if (movesEl && pokemon.moves) {
+        movesEl.innerHTML = '';
+        pokemon.moves.forEach((move) => {
+          const moveEl = document.createElement('div');
+          moveEl.className = 'move-item';
+          moveEl.innerHTML = `
+            <div class="move-name">${move.name}</div>
+            <div class="move-damage">💥 ${move.damage} Damage</div>
+            <div class="move-cost">Cost: ${move.cost ? move.cost.join(', ') : 'Unknown'}</div>
+          `;
+          movesEl.appendChild(moveEl);
+        });
+      }
+
+      // Populate abilities
+      if (abilitiesEl && pokemon.abilities) {
+        abilitiesEl.innerHTML = '';
+        pokemon.abilities.forEach((ability) => {
+          const abilityEl = document.createElement('div');
+          abilityEl.className = 'ability-item';
+          abilityEl.textContent = ability;
+          abilitiesEl.appendChild(abilityEl);
+        });
+      }
+
+      this.pokemonDetail.style.display = 'flex';
+    },
+
+    showAttackSelection: function (pokemon) {
+      if (!this.attackSelection || !pokemon || !pokemon.moves) return;
+
+      // Update active Pokemon info
+      const iconEl = document.getElementById('attackModalPokemonIcon');
+      const nameEl = document.getElementById('attackModalPokemonName');
+      const optionsEl = document.getElementById('attackOptions');
+
+      if (iconEl)
+        iconEl.textContent = PokemonRaidSystem.core.getPokemonIcon(
+          pokemon.name
+        );
+      if (nameEl) nameEl.textContent = pokemon.name;
+
+      // Populate attack options
+      if (optionsEl) {
+        optionsEl.innerHTML = '';
+
+        pokemon.moves.forEach((move, index) => {
+          const option = document.createElement('div');
+          option.className = 'attack-option';
+          option.dataset.moveIndex = index;
+
+          option.innerHTML = `
+            <div class="attack-option-header">
+              <div class="attack-option-name">${move.name}</div>
+              <div class="attack-option-damage">${move.damage}</div>
+            </div>
+            <div class="attack-option-cost">Energy Cost: ${move.cost ? move.cost.join(', ') : 'None'}</div>
+            <div class="attack-option-description">${PokemonRaidSystem.utils.getRandomDescription(pokemon)}</div>
+          `;
+
+          // Add click handler
+          option.addEventListener('click', () => {
+            // Remove previous selections
+            optionsEl.querySelectorAll('.attack-option').forEach((opt) => {
+              opt.classList.remove('selected');
+            });
+
+            // Select this option
+            option.classList.add('selected');
+
+            // Execute attack after short delay
+            setTimeout(() => {
+              this.executeAttack(move, pokemon);
+              this.close('attack');
+            }, 500);
+          });
+
+          optionsEl.appendChild(option);
+        });
+      }
+
+      this.attackSelection.style.display = 'flex';
+    },
+
+    executeAttack: function (move, pokemon) {
+      PokemonRaidSystem.notifications.show(
+        'Attack Launched!',
+        `${pokemon.name} used ${move.name} for ${move.damage} damage!`,
+        'pokemon'
+      );
+
+      // Send the attack to the server
+      if (PokemonRaidSystem.core) {
+        PokemonRaidSystem.core.sendRaidAction('playerAttack', {
+          damage: move.damage,
+          attackName: move.name,
+          pokemonUsed: pokemon.name,
+          energyCost: move.cost,
+        });
+      }
+    },
+  },
+
   // Enhanced utilities
   utils: {
     generateRaidId: () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = 'TEST-';
+      let result = 'RAID-';
       for (let i = 0; i < 4; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       return result;
     },
 
-    adjustColor: (hex, percent) => {
-      const num = parseInt(hex.replace('#', ''), 16);
-      const amt = Math.round(2.55 * percent);
-      const R = (num >> 16) + amt;
-      const G = ((num >> 8) & 0x00ff) + amt;
-      const B = (num & 0x0000ff) + amt;
-      return (
-        '#' +
-        (
-          0x1000000 +
-          (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
-          (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
-          (B < 255 ? (B < 1 ? 0 : B) : 255)
-        )
-          .toString(16)
-          .slice(1)
-      );
-    },
-
     formatTime: () => {
       return new Date().toLocaleTimeString();
     },
 
-    saveLayoutPreference: (layout) => {
-      localStorage.setItem('raidLayoutPreference', layout);
+    getTypeColor: (type) => {
+      const typeColors = {
+        grass: '#7ac74c',
+        fire: '#ee8130',
+        water: '#6390f0',
+        electric: '#f7d02c',
+        psychic: '#f95587',
+        ice: '#96d9d6',
+        dragon: '#6f35fc',
+        dark: '#705746',
+        fairy: '#d685ad',
+        normal: '#a8a878',
+        fighting: '#c22e28',
+        poison: '#a33ea1',
+        ground: '#e2bf65',
+        flying: '#a98ff3',
+        bug: '#a6b91a',
+        rock: '#b6a136',
+        ghost: '#735797',
+        steel: '#b7b7ce',
+      };
+      return typeColors[type.toLowerCase()] || '#a8a878';
     },
 
-    loadLayoutPreference: () => {
-      return localStorage.getItem('raidLayoutPreference') || 'versus';
+    savePokemonTeam: (activeId, benchId) => {
+      localStorage.setItem(
+        'pokemonTeam',
+        JSON.stringify({ activeId, benchId })
+      );
+    },
+
+    loadPokemonTeam: () => {
+      const saved = localStorage.getItem('pokemonTeam');
+      return saved ? JSON.parse(saved) : null;
+    },
+
+    // New utility functions for enhanced features
+    formatMovesList: (moves) => {
+      return moves
+        .map((move) => `${move.name} (${move.damage} damage)`)
+        .join(', ');
+    },
+
+    getRandomDescription: (pokemon) => {
+      const descriptions = {
+        pikachu:
+          'This Electric Mouse Pokémon is known for its adorable appearance and powerful electric attacks.',
+        charizard:
+          'A mighty Fire/Flying type that soars through the skies, breathing intense flames.',
+        blastoise:
+          'This Water-type turtle Pokémon can withdraw into its shell and blast water from its cannons.',
+        venusaur:
+          'A Grass/Poison type with a beautiful flower that releases a soothing scent.',
+        lucario:
+          'An Aura Pokémon that can sense emotions and channel fighting energy.',
+        gardevoir:
+          'A Psychic/Fairy type that can predict the future and protect its trainer.',
+        dragonite:
+          'Despite its bulky appearance, this Dragon/Flying type is incredibly fast and kind-hearted.',
+        mewtwo:
+          'A Legendary Psychic-type created through genetic manipulation, possessing incredible psychic powers.',
+      };
+      return (
+        descriptions[pokemon.id] || 'A powerful Pokémon with unique abilities.'
+      );
     },
   },
+
+  // Pokemon database
+  pokemonDatabase: [
+    {
+      id: 'pikachu',
+      name: 'Pikachu',
+      type: 'electric',
+      maxHP: 120,
+      moves: [
+        { name: 'Thunder Shock', damage: 60, cost: ['Electric'] },
+        { name: 'Quick Attack', damage: 40, cost: ['Colorless'] },
+      ],
+      abilities: ['Static'],
+      weakness: 'Fighting',
+      resistance: 'Metal',
+      rarity: 'Common',
+    },
+    {
+      id: 'charizard',
+      name: 'Charizard',
+      type: 'fire',
+      maxHP: 180,
+      moves: [
+        { name: 'Flamethrower', damage: 90, cost: ['Fire', 'Colorless'] },
+        { name: 'Wing Attack', damage: 60, cost: ['Colorless', 'Colorless'] },
+      ],
+      abilities: ['Blaze'],
+      weakness: 'Water',
+      resistance: 'Fighting',
+      rarity: 'Rare',
+    },
+    {
+      id: 'blastoise',
+      name: 'Blastoise',
+      type: 'water',
+      maxHP: 170,
+      moves: [
+        { name: 'Hydro Pump', damage: 100, cost: ['Water', 'Water'] },
+        { name: 'Bubble Beam', damage: 50, cost: ['Water'] },
+      ],
+      abilities: ['Torrent'],
+      weakness: 'Electric',
+      resistance: 'Fire',
+      rarity: 'Rare',
+    },
+    {
+      id: 'venusaur',
+      name: 'Venusaur',
+      type: 'grass',
+      maxHP: 160,
+      moves: [
+        { name: 'Solar Beam', damage: 120, cost: ['Grass', 'Grass'] },
+        { name: 'Vine Whip', damage: 50, cost: ['Grass'] },
+      ],
+      abilities: ['Overgrow'],
+      weakness: 'Fire',
+      resistance: 'Water',
+      rarity: 'Rare',
+    },
+    {
+      id: 'lucario',
+      name: 'Lucario',
+      type: 'fighting',
+      maxHP: 140,
+      moves: [
+        { name: 'Aura Sphere', damage: 80, cost: ['Fighting', 'Colorless'] },
+        { name: 'Force Palm', damage: 60, cost: ['Fighting'] },
+      ],
+      abilities: ['Inner Focus'],
+      weakness: 'Psychic',
+      resistance: 'Dark',
+      rarity: 'Rare',
+    },
+    {
+      id: 'gardevoir',
+      name: 'Gardevoir',
+      type: 'psychic',
+      maxHP: 130,
+      moves: [
+        { name: 'Psychic', damage: 70, cost: ['Psychic', 'Colorless'] },
+        { name: 'Teleport', damage: 30, cost: ['Psychic'] },
+      ],
+      abilities: ['Synchronize'],
+      weakness: 'Ghost',
+      resistance: 'Fighting',
+      rarity: 'Rare',
+    },
+    {
+      id: 'dragonite',
+      name: 'Dragonite',
+      type: 'dragon',
+      maxHP: 200,
+      moves: [
+        { name: 'Dragon Rush', damage: 110, cost: ['Dragon', 'Colorless'] },
+        { name: 'Hurricane', damage: 80, cost: ['Colorless', 'Colorless'] },
+      ],
+      abilities: ['Inner Focus'],
+      weakness: 'Fairy',
+      resistance: 'Fighting',
+      rarity: 'Rare',
+    },
+    {
+      id: 'mewtwo',
+      name: 'Mewtwo',
+      type: 'psychic',
+      maxHP: 190,
+      moves: [
+        { name: 'Psystrike', damage: 120, cost: ['Psychic', 'Psychic'] },
+        { name: 'Psycho Cut', damage: 70, cost: ['Psychic'] },
+      ],
+      abilities: ['Pressure'],
+      weakness: 'Ghost',
+      resistance: 'Fighting',
+      rarity: 'Legendary',
+    },
+  ],
 };
 
-// ================ ENHANCED 3D RAID CORE ================
-class Enhanced3DRaidCore {
+// ================ ENHANCED POKEMON RAID CORE ================
+class PokemonRaidCore {
   constructor() {
     this.initializeSystem();
   }
 
   initializeSystem() {
-    console.log('🚀 Initializing 3D Enhanced Raid System v3.0.0...');
-
-    // Load saved layout preference
-    RaidSystem.state.layoutPreference = RaidSystem.utils.loadLayoutPreference();
+    console.log('🚀 Initializing Pokemon Raid Battle System v4.0.0...');
 
     // Initialize core systems
     this.initializeLogging();
     this.initializeUI();
+    this.initializePokemonSelection();
     this.initializeSocket();
     this.initializeEventHandlers();
     this.initializeKeyboardShortcuts();
 
+    // Initialize new systems
+    this.initializeNotifications();
+    this.initializeModals();
+
     // Mark as initialized
-    RaidSystem.state.isInitialized = true;
-    this.log(
-      '3D Enhanced raid system core initialized successfully',
-      'SUCCESS'
-    );
+    PokemonRaidSystem.state.isInitialized = true;
+    this.log('Pokemon Raid Battle System initialized successfully', 'SUCCESS');
+
+    // Show welcome notification
+    setTimeout(() => {
+      PokemonRaidSystem.notifications.show(
+        'Welcome!',
+        'Pokemon Raid Battle System v4.0 - Authentic Playmat Edition is ready!',
+        'success'
+      );
+    }, 1000);
   }
 
   // ================ LOGGING SYSTEM ================
   initializeLogging() {
-    RaidSystem.log.add = (message, level = 'INFO', data = null) => {
+    PokemonRaidSystem.log.add = (message, level = 'INFO', data = null) => {
       const entry = {
         timestamp: new Date().toISOString(),
         level: level.toUpperCase(),
@@ -161,17 +641,20 @@ class Enhanced3DRaidCore {
         id: Date.now() + Math.random(),
       };
 
-      RaidSystem.log.entries.push(entry);
+      PokemonRaidSystem.log.entries.push(entry);
 
       // Maintain max entries
-      if (RaidSystem.log.entries.length > RaidSystem.config.logMaxEntries) {
-        RaidSystem.log.entries = RaidSystem.log.entries.slice(
-          -RaidSystem.config.logMaxEntries
+      if (
+        PokemonRaidSystem.log.entries.length >
+        PokemonRaidSystem.config.logMaxEntries
+      ) {
+        PokemonRaidSystem.log.entries = PokemonRaidSystem.log.entries.slice(
+          -PokemonRaidSystem.config.logMaxEntries
         );
       }
 
       // Enhanced console output with timestamps
-      const consoleMsg = `[${RaidSystem.utils.formatTime()}] ${message}`;
+      const consoleMsg = `[${PokemonRaidSystem.utils.formatTime()}] ${message}`;
       switch (level.toUpperCase()) {
         case 'DEBUG':
           console.debug(consoleMsg, data);
@@ -193,317 +676,238 @@ class Enhanced3DRaidCore {
           console.log(consoleMsg, data);
       }
 
-      // Update UI log
-      this.updateUILog();
-
       // Emit log event
-      RaidSystem.events.dispatchEvent(
+      PokemonRaidSystem.events.dispatchEvent(
         new CustomEvent('log', { detail: entry })
       );
     };
 
     // Shorthand methods
     this.log = (msg, level = 'INFO', data = null) =>
-      RaidSystem.log.add(msg, level, data);
+      PokemonRaidSystem.log.add(msg, level, data);
   }
 
   // ================ UI MANAGEMENT ================
   initializeUI() {
-    this.log('Initializing 3D enhanced UI management system');
+    this.log('Initializing Pokemon raid UI components...');
 
-    // Get UI component references
-    RaidSystem.ui = {
+    // Main UI references
+    PokemonRaidSystem.ui = {
+      // Views
       launcher: document.getElementById('raidLauncher'),
       container: document.getElementById('raidContainer'),
-      table: document.getElementById('raidTable'),
-      controls: document.getElementById('raidControls'),
-      actions: document.getElementById('gameActions'),
-      logContainer: document.getElementById('gameLogContainer'),
-      logContent: document.getElementById('gameLogContent'),
-      debugPanel: document.getElementById('debugPanel'),
+      battlefield: document.getElementById('raidBattlefield'),
+      playerPanel: document.getElementById('playerPanel'),
+      turnIndicator: document.getElementById('turnIndicator'),
+      gameControls: document.getElementById('gameControls'),
 
-      // Boss elements
-      bossDisplay: document.getElementById('raidBossDisplay'),
-      bossHPFill: document.querySelector('.boss-hp-fill'),
-      bossHPText: document.getElementById('bossHPDisplay'),
-      bossName: document.getElementById('bossNameDisplay'),
+      // Game elements
+      bossZone: document.getElementById('bossZone'),
+      bossName: document.getElementById('bossName'),
+      bossHPText: document.getElementById('bossHPText'),
+      bossHPFill: document.getElementById('bossHPFill'),
+      playerZones: document.getElementById('playerZones'),
 
-      // Turn indicator
-      turnIndicator: document.getElementById('turnIndicatorContainer'),
-      layoutIndicator: document.getElementById('layoutIndicatorGfx'),
+      // Player panel elements
+      playerCardsContainer: document.getElementById('playerCardsContainer'),
+      spectatorSection: document.getElementById('spectatorSection'),
+      spectatorList: document.getElementById('spectatorList'),
 
-      // Status elements
-      connectionStatus: document.getElementById('connectionStatusDisplay'),
-      statusLog: document.getElementById('raidStatusLog'),
+      // Info displays
+      raidIdDisplay: document.getElementById('raidIdDisplay'),
+      playerCountDisplay: document.getElementById('playerCountDisplay'),
+      gamePhaseDisplay: document.getElementById('gamePhaseDisplay'),
+      currentTurnDisplay: document.getElementById('currentTurnDisplay'),
 
-      // Player cards
+      // Pokemon selection
+      pokemonGrid: document.getElementById('pokemonGrid'),
+      activeSlot: document.getElementById('activeSlot'),
+      benchSlot: document.getElementById('benchSlot'),
+
+      // Controls
       playerCards: new Map(),
     };
 
+    this.log('✅ Pokemon raid UI components initialized');
+
     // Initialize view management
     this.initializeViewManagement();
-
-    // Initialize chat system
-    this.initializeChatSystem();
-
-    // Update layout UI
-    this.updateLayoutUI();
   }
 
   initializeViewManagement() {
-    // Enhanced view switching with 3D transitions
-    RaidSystem.ui.switchView = (viewName) => {
+    // Enhanced view switching with Pokemon-themed transitions
+    PokemonRaidSystem.ui.switchView = (viewName) => {
       this.log(`Switching to view: ${viewName}`);
 
-      const launcher = RaidSystem.ui.launcher;
-      const container = RaidSystem.ui.container;
-      const controls = RaidSystem.ui.controls;
-      const actions = RaidSystem.ui.actions;
-      const logContainer = RaidSystem.ui.logContainer;
+      const launcher = PokemonRaidSystem.ui.launcher;
+      const container = PokemonRaidSystem.ui.container;
+      const gameControls = PokemonRaidSystem.ui.gameControls;
 
       // Hide all views with fade effect
-      [launcher, container, controls, actions, logContainer].forEach((el) => {
+      [launcher, container].forEach((el) => {
         if (el) el.style.display = 'none';
       });
-
-      // Hide chat toggle by default
-      if (RaidSystem.ui.chat?.toggleBtn) {
-        RaidSystem.ui.chat.toggleBtn.style.display = 'none';
-      }
 
       // Show target view
       if (viewName === 'launcher') {
         if (launcher) launcher.style.display = 'block';
+        if (gameControls) gameControls.style.display = 'none';
       } else if (viewName === 'game') {
         if (container) container.style.display = 'block';
-        if (controls) controls.style.display = 'block';
-        if (actions) actions.style.display = 'flex';
-        if (logContainer) logContainer.style.display = 'block';
-
-        // Show chat toggle in game
-        if (RaidSystem.ui.chat?.toggleBtn) {
-          RaidSystem.ui.chat.toggleBtn.style.display = 'block';
-        }
-      }
-
-      // Hide/show communication panel toggle
-      if (RaidSystem.ui.comm?.toggleBtn) {
-        RaidSystem.ui.comm.toggleBtn.style.display =
-          viewName === 'game' ? 'block' : 'none';
-      }
-      if (RaidSystem.ui.comm?.oldToggleBtn) {
-        RaidSystem.ui.comm.oldToggleBtn.style.display =
-          viewName === 'game' ? 'block' : 'none';
+        if (gameControls) gameControls.style.display = 'flex';
       }
     };
 
     // Initialize in launcher view
-    RaidSystem.ui.switchView('launcher');
+    PokemonRaidSystem.ui.switchView('launcher');
   }
 
-  initializeChatSystem() {
-    this.log('Initializing unified communication system...');
+  // ================ POKEMON SELECTION SYSTEM ================
+  initializePokemonSelection() {
+    this.log('Initializing Pokemon team selection system...');
 
-    // Get communication UI references
-    RaidSystem.ui.comm = {
-      panel: document.getElementById('commPanel'),
-      toggleBtn: document.getElementById('commToggleBtn'),
-      oldToggleBtn: document.getElementById('chatToggleBtn'), // Keep old one for compatibility
-      closeBtn: document.getElementById('closeCommBtn'),
+    const pokemonGrid = PokemonRaidSystem.ui.pokemonGrid;
+    if (!pokemonGrid) return;
 
-      // Tabs
-      chatTab: document.getElementById('chatTab'),
-      gameLogTab: document.getElementById('gameLogTab'),
+    // Clear existing content
+    pokemonGrid.innerHTML = '';
 
-      // Tab contents
-      chatTabContent: document.getElementById('chatTabContent'),
-      gameLogTabContent: document.getElementById('gameLogTabContent'),
-
-      // Messages areas
-      chatMessages: document.getElementById('chatMessages'),
-      gameLogMessages: document.getElementById('gameLogContent'),
-
-      // Input
-      chatInput: document.getElementById('chatInput'),
-      sendBtn: document.getElementById('sendChatBtn'),
-      exportBtn: document.getElementById('exportLogBtn'),
-    };
-
-    // Communication state
-    RaidSystem.state.comm = {
-      isOpen: false,
-      activeTab: 'chat',
-      chatMessages: [],
-      gameLogMessages: [],
-      maxMessages: 100,
-    };
-
-    // Setup communication events
-    if (RaidSystem.ui.comm.toggleBtn) {
-      RaidSystem.ui.comm.toggleBtn.addEventListener('click', () =>
-        this.toggleCommPanel()
-      );
-    }
-
-    if (RaidSystem.ui.comm.oldToggleBtn) {
-      RaidSystem.ui.comm.oldToggleBtn.addEventListener('click', () =>
-        this.toggleCommPanel()
-      );
-    }
-
-    if (RaidSystem.ui.comm.closeBtn) {
-      RaidSystem.ui.comm.closeBtn.addEventListener('click', () =>
-        this.toggleCommPanel()
-      );
-    }
-
-    if (RaidSystem.ui.comm.sendBtn) {
-      RaidSystem.ui.comm.sendBtn.addEventListener('click', () =>
-        this.sendChatMessage()
-      );
-    }
-
-    if (RaidSystem.ui.comm.chatInput) {
-      RaidSystem.ui.comm.chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.sendChatMessage();
-        }
-      });
-    }
-
-    // Tab switching
-    if (RaidSystem.ui.comm.chatTab) {
-      RaidSystem.ui.comm.chatTab.addEventListener('click', () =>
-        this.switchCommTab('chat')
-      );
-    }
-
-    if (RaidSystem.ui.comm.gameLogTab) {
-      RaidSystem.ui.comm.gameLogTab.addEventListener('click', () =>
-        this.switchCommTab('game-log')
-      );
-    }
-
-    if (RaidSystem.ui.comm.exportBtn) {
-      RaidSystem.ui.comm.exportBtn.addEventListener('click', () =>
-        this.exportGameLog()
-      );
-    }
-
-    // Communication management methods
-    RaidSystem.ui.addChatMessage = (message, isOwn = false) => {
-      this.addCommMessage(message, 'chat', isOwn);
-    };
-
-    RaidSystem.ui.addGameLogMessage = (message, level = 'info') => {
-      this.addCommMessage(message, 'game-log', false, level);
-    };
-  }
-
-  switchCommTab(tabName) {
-    RaidSystem.state.comm.activeTab = tabName;
-
-    // Update tab buttons
-    document.querySelectorAll('.comm-tab').forEach((tab) => {
-      tab.classList.remove('active');
+    // Create Pokemon cards
+    PokemonRaidSystem.pokemonDatabase.forEach((pokemon) => {
+      const card = this.createPokemonSelectionCard(pokemon);
+      pokemonGrid.appendChild(card);
     });
 
-    document.querySelectorAll('.comm-tab-content').forEach((content) => {
-      content.classList.remove('active');
-    });
-
-    // Activate selected tab
-    if (tabName === 'chat') {
-      RaidSystem.ui.comm.chatTab?.classList.add('active');
-      RaidSystem.ui.comm.chatTabContent?.classList.add('active');
-    } else if (tabName === 'game-log') {
-      RaidSystem.ui.comm.gameLogTab?.classList.add('active');
-      RaidSystem.ui.comm.gameLogTabContent?.classList.add('active');
+    // Load saved team
+    const savedTeam = PokemonRaidSystem.utils.loadPokemonTeam();
+    if (savedTeam) {
+      this.selectPokemon(savedTeam.activeId, 'active');
+      this.selectPokemon(savedTeam.benchId, 'bench');
     }
 
-    this.log(`Switched to ${tabName} tab`);
+    this.log('✅ Pokemon team selection system initialized');
   }
 
-  addCommMessage(message, type = 'chat', isOwn = false, level = 'info') {
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
+  createPokemonSelectionCard(pokemon) {
+    const card = document.createElement('div');
+    card.className = 'pokemon-card-mini';
+    card.dataset.pokemonId = pokemon.id;
+
+    const typeColor = PokemonRaidSystem.utils.getTypeColor(pokemon.type);
+
+    card.innerHTML = `
+      <div class="pokemon-name">${pokemon.name}</div>
+      <div class="pokemon-type type-${pokemon.type}" style="background-color: ${typeColor};">
+        ${pokemon.type.toUpperCase()}
+      </div>
+      <div class="pokemon-hp">HP: ${pokemon.maxHP}</div>
+      <div class="pokemon-moves">
+        ${pokemon.moves
+          .map((move) => `• ${move.name} (${move.damage})`)
+          .join('<br>')}
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      this.handlePokemonSelection(pokemon);
     });
 
-    let targetContainer;
-    let messageClass = 'comm-message';
-    let formattedMessage;
-
-    if (type === 'chat') {
-      targetContainer = RaidSystem.ui.comm.chatMessages;
-      messageClass += ' chat';
-      if (isOwn) messageClass += ' own';
-      formattedMessage = `<span style="color: #95a5a6; font-size: 10px;">[${timestamp}]</span> ${message}`;
-
-      // Store in chat messages
-      RaidSystem.state.comm.chatMessages.push({
-        message,
-        isOwn,
-        timestamp: Date.now(),
-      });
-
-      // Limit messages
-      if (
-        RaidSystem.state.comm.chatMessages.length >
-        RaidSystem.state.comm.maxMessages
-      ) {
-        RaidSystem.state.comm.chatMessages =
-          RaidSystem.state.comm.chatMessages.slice(
-            -RaidSystem.state.comm.maxMessages
-          );
-      }
-    } else if (type === 'game-log') {
-      targetContainer = RaidSystem.ui.comm.gameLogMessages;
-      messageClass += ` game-log ${level}`;
-      formattedMessage = `<span style="color: #95a5a6; font-size: 10px;">[${timestamp}]</span> ${message}`;
-
-      // Store in game log messages
-      RaidSystem.state.comm.gameLogMessages.push({
-        message,
-        level,
-        timestamp: Date.now(),
-      });
-
-      // Limit messages
-      if (
-        RaidSystem.state.comm.gameLogMessages.length >
-        RaidSystem.state.comm.maxMessages
-      ) {
-        RaidSystem.state.comm.gameLogMessages =
-          RaidSystem.state.comm.gameLogMessages.slice(
-            -RaidSystem.state.comm.maxMessages
-          );
-      }
-    }
-
-    if (targetContainer) {
-      const messageEl = document.createElement('div');
-      messageEl.className = messageClass;
-      messageEl.innerHTML = formattedMessage;
-
-      targetContainer.appendChild(messageEl);
-      targetContainer.scrollTop = targetContainer.scrollHeight;
-    }
+    return card;
   }
 
-  toggleCommPanel() {
-    if (!RaidSystem.ui.comm.panel) return;
+  handlePokemonSelection(pokemon) {
+    // Determine which slot to fill (prioritize active, then bench)
+    const activeSlot = PokemonRaidSystem.state.selectedPokemon.active;
+    const benchSlot = PokemonRaidSystem.state.selectedPokemon.bench;
 
-    RaidSystem.state.comm.isOpen = !RaidSystem.state.comm.isOpen;
-    RaidSystem.ui.comm.panel.style.display = RaidSystem.state.comm.isOpen
-      ? 'block'
-      : 'none';
-
-    if (RaidSystem.state.comm.isOpen) {
-      RaidSystem.ui.comm.chatInput?.focus();
-      this.log('Communication panel opened');
+    if (!activeSlot) {
+      this.selectPokemon(pokemon.id, 'active');
+    } else if (!benchSlot && pokemon.id !== activeSlot) {
+      this.selectPokemon(pokemon.id, 'bench');
     } else {
-      this.log('Communication panel closed');
+      // Both slots filled or same Pokemon - allow switching
+      if (pokemon.id === activeSlot) {
+        this.selectPokemon(null, 'active');
+      } else if (pokemon.id === benchSlot) {
+        this.selectPokemon(null, 'bench');
+      } else {
+        // Replace active slot
+        this.selectPokemon(pokemon.id, 'active');
+      }
+    }
+
+    this.updatePokemonSelectionUI();
+  }
+
+  selectPokemon(pokemonId, slot) {
+    // Remove from other slot if already selected
+    if (pokemonId) {
+      if (
+        slot === 'active' &&
+        PokemonRaidSystem.state.selectedPokemon.bench === pokemonId
+      ) {
+        PokemonRaidSystem.state.selectedPokemon.bench = null;
+      } else if (
+        slot === 'bench' &&
+        PokemonRaidSystem.state.selectedPokemon.active === pokemonId
+      ) {
+        PokemonRaidSystem.state.selectedPokemon.active = null;
+      }
+    }
+
+    PokemonRaidSystem.state.selectedPokemon[slot] = pokemonId;
+
+    // Save to localStorage
+    const { active, bench } = PokemonRaidSystem.state.selectedPokemon;
+    if (active || bench) {
+      PokemonRaidSystem.utils.savePokemonTeam(active, bench);
+    }
+
+    this.log(`Selected ${pokemonId || 'none'} for ${slot} slot`);
+  }
+
+  updatePokemonSelectionUI() {
+    const { active, bench } = PokemonRaidSystem.state.selectedPokemon;
+
+    // Update card selections
+    document.querySelectorAll('.pokemon-card-mini').forEach((card) => {
+      const pokemonId = card.dataset.pokemonId;
+      card.classList.toggle(
+        'selected',
+        pokemonId === active || pokemonId === bench
+      );
+    });
+
+    // Update slot displays
+    this.updateSlotDisplay('active', active);
+    this.updateSlotDisplay('bench', bench);
+  }
+
+  updateSlotDisplay(slot, pokemonId) {
+    const slotElement = PokemonRaidSystem.ui[`${slot}Slot`];
+    if (!slotElement) return;
+
+    if (pokemonId) {
+      const pokemon = PokemonRaidSystem.pokemonDatabase.find(
+        (p) => p.id === pokemonId
+      );
+      if (pokemon) {
+        const typeColor = PokemonRaidSystem.utils.getTypeColor(pokemon.type);
+        slotElement.classList.add('filled');
+        slotElement.querySelector('.slot-content').innerHTML = `
+          <div style="font-weight: bold; margin-bottom: 5px;">${pokemon.name}</div>
+          <div class="pokemon-type type-${pokemon.type}" style="background-color: ${typeColor}; margin-bottom: 5px;">
+            ${pokemon.type.toUpperCase()}
+          </div>
+          <div style="font-size: 12px;">HP: ${pokemon.maxHP}</div>
+        `;
+      }
+    } else {
+      slotElement.classList.remove('filled');
+      slotElement.querySelector('.slot-content').textContent =
+        slot === 'active'
+          ? 'Choose your active Pokemon'
+          : 'Choose your bench Pokemon';
     }
   }
 
@@ -511,26 +915,26 @@ class Enhanced3DRaidCore {
   initializeSocket() {
     this.log('Initializing socket connection...');
 
-    RaidSystem.socket = io();
+    PokemonRaidSystem.socket = io();
 
     // Connection events
-    RaidSystem.socket.on('connect', () => {
-      RaidSystem.state.isConnected = true;
-      RaidSystem.state.playerId = RaidSystem.socket.id;
+    PokemonRaidSystem.socket.on('connect', () => {
+      PokemonRaidSystem.state.isConnected = true;
+      PokemonRaidSystem.state.playerId = PokemonRaidSystem.socket.id;
       this.updateConnectionStatus('Connected', 'success');
       this.log(
-        `Connected to server with ID: ${RaidSystem.state.playerId}`,
+        `Connected to server with ID: ${PokemonRaidSystem.state.playerId}`,
         'SUCCESS'
       );
     });
 
-    RaidSystem.socket.on('disconnect', () => {
-      RaidSystem.state.isConnected = false;
+    PokemonRaidSystem.socket.on('disconnect', () => {
+      PokemonRaidSystem.state.isConnected = false;
       this.updateConnectionStatus('Disconnected', 'error');
       this.log('Disconnected from server', 'WARN');
     });
 
-    RaidSystem.socket.on('connect_error', (error) => {
+    PokemonRaidSystem.socket.on('connect_error', (error) => {
       this.updateConnectionStatus('Connection Error', 'error');
       this.log('Connection error', 'ERROR', error);
     });
@@ -541,100 +945,65 @@ class Enhanced3DRaidCore {
 
   setupRaidSocketEvents() {
     // Raid creation and joining
-    RaidSystem.socket.on('raidCreated', (data) => {
+    PokemonRaidSystem.socket.on('raidCreated', (data) => {
       this.log('Raid created successfully!', 'SUCCESS');
       this.handleRaidCreated(data);
     });
 
-    RaidSystem.socket.on('raidJoined', (data) => {
+    PokemonRaidSystem.socket.on('raidJoined', (data) => {
       this.log('Successfully joined raid!', 'SUCCESS');
       this.handleRaidJoined(data);
     });
 
-    RaidSystem.socket.on('playerJoinedRaid', (data) => {
+    PokemonRaidSystem.socket.on('playerJoinedRaid', (data) => {
       this.log(`Player ${data.player?.username || 'Unknown'} joined raid`);
       this.handlePlayerJoined(data);
     });
 
-    RaidSystem.socket.on('playerLeftRaid', (data) => {
+    PokemonRaidSystem.socket.on('playerLeftRaid', (data) => {
       this.log(`Player left raid`);
       this.handlePlayerLeft(data);
     });
 
     // Game state and actions
-    RaidSystem.socket.on('raidActionResult', (data) => {
-      this.log(`Action result: ${data.message}`);
-      this.handleActionResult(data);
+    PokemonRaidSystem.socket.on('raidActionResult', (data) => {
+      this.log(`Action result: ${data.actionType} - ${data.message}`, 'INFO');
+      this.showActionFeedback(data.message, data.actionType);
+      this.renderRaidState();
     });
 
-    RaidSystem.socket.on('gameStateUpdate', (data) => {
+    PokemonRaidSystem.socket.on('gameStateUpdate', (data) => {
       this.log('Game state updated');
       this.handleGameStateUpdate(data);
     });
 
-    // Layout events (server-side, but we use client-side preference)
-    RaidSystem.socket.on('layoutSwitched', (data) => {
-      this.log('Raid layout switched');
-      this.handleLayoutSwitched(data);
-    });
-
     // Error handling
-    RaidSystem.socket.on('raidCreationFailed', (data) => {
+    PokemonRaidSystem.socket.on('raidCreationFailed', (data) => {
       this.log(`Failed to create raid: ${data.message}`, 'ERROR');
     });
 
-    RaidSystem.socket.on('raidJoinFailed', (data) => {
+    PokemonRaidSystem.socket.on('raidJoinFailed', (data) => {
       this.log(`Failed to join raid: ${data.message}`, 'ERROR');
     });
 
-    RaidSystem.socket.on('raidActionFailed', (data) => {
+    PokemonRaidSystem.socket.on('raidActionFailed', (data) => {
       this.log(`Action failed: ${data.error}`, 'ERROR');
-    });
-
-    // Chat events
-    RaidSystem.socket.on('chatMessage', (data) => {
-      this.handleChatMessage(data);
     });
   }
 
   // ================ EVENT HANDLERS ================
   initializeEventHandlers() {
-    this.log('Setting up 3D event handlers...');
+    this.log('Setting up Pokemon raid event handlers...');
 
     // Launcher controls
     this.setupElement('createRaidBtn', () => this.createRaid());
     this.setupElement('joinRaidBtn', () => this.joinRaid());
     this.setupElement('testMultiplayerBtn', () => this.testMultiplayer());
-    this.setupElement('quickTestBtn', () => this.quickTest());
-
-    // Layout controls (CLIENT-SIDE)
-    this.setupElement('launcherToggleLayoutBtn', () =>
-      this.toggleClientLayout()
-    );
-    this.setupElement('controlsSwitchLayoutBtn', () =>
-      this.toggleClientLayout()
-    );
 
     // Game actions
     this.setupElement('attackBtn', () => this.sendAttack());
-    this.setupElement('testKOBtn', () => this.sendTestKO());
+    this.setupElement('defendBtn', () => this.sendDefend());
     this.setupElement('leaveRaidBtn', () => this.leaveRaid());
-
-    // Debug controls
-    this.setupElement('toggleDebugPanelBtn', () => this.toggleDebugPanel());
-    this.setupElement('closeDebugBtn', () => this.toggleDebugPanel());
-
-    // Global debug controls
-    this.setupElement('debugSkipTurnBtn', () => this.debugSkipTurn());
-    this.setupElement('debugForceBossTurnBtn', () => this.debugForceBossTurn());
-    this.setupElement('debugResetRaidBtn', () => this.debugResetRaid());
-    this.setupElement('debugStartGameBtn', () => this.debugStartGame());
-
-    // Log controls
-    this.setupElement('exportLogBtn', () => this.exportGameLog());
-
-    // Boss control system
-    this.setupBossControlSystem();
 
     // Check for URL parameters
     this.checkURLParameters();
@@ -649,22 +1018,16 @@ class Enhanced3DRaidCore {
 
   initializeKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      // Debug panel toggle: Shift+F12
-      if (e.shiftKey && e.key === 'F12') {
-        e.preventDefault();
-        this.toggleDebugPanel();
-      }
-
-      // Layout toggle: Ctrl+L
-      if (e.ctrlKey && e.key === 'l') {
-        e.preventDefault();
-        this.toggleClientLayout();
-      }
-
       // Quick attack: Space (when in game)
-      if (e.key === ' ' && RaidSystem.state.currentRaid) {
+      if (e.key === ' ' && PokemonRaidSystem.state.currentRaid) {
         e.preventDefault();
         this.sendAttack();
+      }
+
+      // Leave raid: Escape
+      if (e.key === 'Escape' && PokemonRaidSystem.state.currentRaid) {
+        e.preventDefault();
+        this.leaveRaid();
       }
     });
   }
@@ -682,7 +1045,7 @@ class Enhanced3DRaidCore {
         if (username) {
           const usernameInput = document.getElementById('usernameInput');
           if (usernameInput) usernameInput.value = username;
-          RaidSystem.state.username = username;
+          PokemonRaidSystem.state.username = username;
         }
 
         const raidInput = document.getElementById('raidIdInput');
@@ -694,288 +1057,368 @@ class Enhanced3DRaidCore {
     }
   }
 
-  // ================ CLIENT-SIDE LAYOUT MANAGEMENT ================
-  toggleClientLayout() {
-    const oldLayout = RaidSystem.state.layoutPreference;
-    RaidSystem.state.layoutPreference =
-      oldLayout === 'versus' ? 'circular' : 'versus';
-
-    // Save preference
-    RaidSystem.utils.saveLayoutPreference(RaidSystem.state.layoutPreference);
-
-    this.log(`Switching raid layout to: ${RaidSystem.state.layoutPreference}`);
-
-    // Update UI
-    this.updateLayoutUI();
-
-    // Re-render if in game
-    if (RaidSystem.state.currentRaid) {
-      this.renderRaidState();
-    }
-  }
-
-  updateLayoutUI() {
-    const elements = [
-      'launcherCurrentLayoutSpan',
-      'controlLayoutDisplay',
-      'layoutNameDisplay',
-    ];
-
-    elements.forEach((id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.textContent = RaidSystem.state.layoutPreference;
-      }
-    });
-  }
-
   // ================ 3D RENDERING SYSTEM ================
   renderRaidState() {
-    if (!RaidSystem.state.currentRaid) return;
+    if (!PokemonRaidSystem.state.currentRaid) return;
 
-    this.log(
-      `Rendering raid table with layout: ${RaidSystem.state.layoutPreference}`
-    );
+    this.log(`Rendering Pokemon raid battlefield`);
 
     // Render all components
-    this.renderRaidTable();
+    this.renderBattlefield();
+    this.renderPlayerZones();
     this.renderPlayerCards();
     this.renderBossDisplay();
     this.renderTurnIndicator();
+    this.renderSpectatorPanel();
     this.updateRaidInfo();
-    this.updateDebugInfo();
-
-    // Update boss control display if active
-    if (
-      document.getElementById('bossControlOverlay')?.style.display === 'block'
-    ) {
-      this.updateBossControlDisplay();
-    }
   }
 
-  renderRaidTable() {
-    const table = RaidSystem.ui.table;
-    if (!table) return;
+  renderBattlefield() {
+    const battlefield = PokemonRaidSystem.ui.battlefield;
+    if (!battlefield) return;
 
-    // Apply 3D perspective with client layout
-    table.className = `raid-table layout-${RaidSystem.state.layoutPreference}`;
-
-    this.log(`Applied ${RaidSystem.state.layoutPreference} layout styling`);
-
-    // Update layout indicator
-    const indicator = RaidSystem.ui.layoutIndicator;
-    if (indicator) {
-      indicator.className = `layout-indicator-gfx layout-${RaidSystem.state.layoutPreference}`;
-    }
+    // Apply 3D perspective styling
+    battlefield.className = 'raid-battlefield';
+    this.log('Applied 3D battlefield perspective');
   }
 
-  renderPlayerCards() {
-    if (!RaidSystem.state.currentRaid?.players) return;
+  renderPlayerZones() {
+    const playerZones = PokemonRaidSystem.ui.playerZones;
+    if (!playerZones || !PokemonRaidSystem.state.currentRaid?.players) return;
 
-    this.log(
-      `Rendering ${RaidSystem.state.currentRaid.players.length} player cards`
-    );
+    // Clear existing zones
+    playerZones.innerHTML = '';
 
-    // Clear existing cards
-    this.clearPlayerCards();
+    // Calculate positions for player zones
+    const players = PokemonRaidSystem.state.currentRaid.players;
+    const positions = this.calculatePlayerZonePositions(players.length);
 
-    // Calculate positions based on CLIENT layout preference
-    const positions = this.calculatePlayerPositions();
-
-    // Create new cards
-    RaidSystem.state.currentRaid.players.forEach((player, index) => {
+    players.forEach((player, index) => {
       const position = positions[index];
       if (!position) return;
 
-      const card = this.createPlayerCard(player, position, index);
-      if (RaidSystem.ui.table) {
-        RaidSystem.ui.table.appendChild(card);
-      }
+      const zone = this.createPlayerZone(player, position, index);
+      playerZones.appendChild(zone);
     });
+
+    this.log(`Rendered ${players.length} player zones`);
   }
 
-  calculatePlayerPositions() {
-    const playerCount = RaidSystem.state.currentRaid.players.length;
+  calculatePlayerZonePositions(playerCount) {
     const positions = [];
 
-    if (RaidSystem.state.layoutPreference === 'versus') {
-      // Versus Layout: Players positioned on bottom side (15-165 degrees)
-      // Boss is at top, so players should be at bottom
-      const startAngle = 195; // Bottom-left
-      const endAngle = 345; // Bottom-right (avoid direct bottom where UI elements are)
-      const angleStep =
-        playerCount > 1 ? (endAngle - startAngle) / (playerCount - 1) : 0;
+    // Position players around the bottom and sides of the battlefield
+    for (let i = 0; i < playerCount; i++) {
+      let x, y;
 
-      for (let i = 0; i < playerCount; i++) {
-        const angle = playerCount === 1 ? 270 : startAngle + angleStep * i; // 270 = bottom center for single player
-        const radians = (angle * Math.PI) / 180;
-        const radius = 38; // Distance from center - increased to avoid overlap
-
-        // Track current player's angle
-        if (
-          RaidSystem.state.currentRaid.players[i].id ===
-          RaidSystem.state.playerId
-        ) {
-          RaidSystem.state.yourAngle = Math.round(angle);
-        }
-
-        positions.push({
-          angle: angle,
-          x: 50 + radius * Math.cos(radians),
-          y: 50 - radius * Math.sin(radians), // Negative because Y increases downward
-        });
+      switch (i) {
+        case 0: // Bottom center
+          x = 45;
+          y = 85;
+          break;
+        case 1: // Bottom right
+          x = 75;
+          y = 80;
+          break;
+        case 2: // Bottom left
+          x = 15;
+          y = 80;
+          break;
+        case 3: // Right side
+          x = 85;
+          y = 60;
+          break;
+        default:
+          x = 10 + i * 20;
+          y = 85;
       }
-    } else {
-      // Circular Layout: Players evenly distributed around circle
-      const angleStep = 360 / playerCount;
-      const radius = 32; // Distance from center
 
-      for (let i = 0; i < playerCount; i++) {
-        const angle = i * angleStep;
-        const radians = (angle * Math.PI) / 180;
-
-        // Track current player's angle
-        if (
-          RaidSystem.state.currentRaid.players[i].id ===
-          RaidSystem.state.playerId
-        ) {
-          RaidSystem.state.yourAngle = Math.round(angle);
-        }
-
-        positions.push({
-          angle: angle,
-          x: 50 + radius * Math.cos(radians),
-          y: 50 - radius * Math.sin(radians),
-        });
-      }
+      positions.push({ x, y });
     }
 
     return positions;
   }
 
-  createPlayerCard(player, position, index) {
-    const card = document.createElement('div');
-    card.className = 'raid-player-card';
-    card.id = `player-card-${player.id}`;
+  createPlayerZone(player, position, index) {
+    const zone = document.createElement('div');
+    zone.className = 'player-zone';
+    zone.id = `player-zone-${player.id}`;
 
-    // Position the card
-    card.style.left = `${position.x}%`;
-    card.style.top = `${position.y}%`;
-    card.style.transform = 'translate(-50%, -50%)';
+    // Position the zone
+    zone.style.left = `${position.x}%`;
+    zone.style.top = `${position.y}%`;
 
-    // Set player color
-    const colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12'];
-    const playerColor = colors[index % colors.length];
-    const darkerColor = RaidSystem.utils.adjustColor(playerColor, -20);
-    card.style.background = `linear-gradient(45deg, ${playerColor}, ${darkerColor})`;
-
-    // Current player highlighting
-    if (RaidSystem.state.currentRaid.currentTurnPlayerId === player.id) {
-      card.classList.add('current-player');
+    // Check if it's current turn
+    const isCurrentTurn =
+      PokemonRaidSystem.state.currentRaid.currentTurnPlayerId === player.id;
+    if (isCurrentTurn) {
+      zone.classList.add('current-turn');
     }
 
-    // KO status
-    if (player.status === 'ko') {
-      card.classList.add('ko');
+    // Check if player is KO'd
+    const isKO = player.status === 'ko' || player.status === 'spectator';
+    if (isKO) {
+      zone.classList.add('ko');
     }
 
-    // Calculate HP percentage
-    const hpPercentage =
-      (player.activePokemon.currentHP / player.activePokemon.maxHP) * 100;
-
-    // Card content
-    card.innerHTML = `
-      <div class="player-name">${player.username}</div>
-      <div class="player-hp-bar">
-        <div class="player-hp-fill" style="width: ${hpPercentage}%;"></div>
+    zone.innerHTML = `
+      <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">
+        ${isCurrentTurn ? '⭐' : ''} ${player.username}
       </div>
-      <div class="player-angle-display">${Math.round(position.angle)}°</div>
+      <div style="font-size: 12px; opacity: 0.8;">
+        ${isKO ? "KO'd" : 'Active'}
+      </div>
     `;
 
-    // Store card reference
-    RaidSystem.ui.playerCards.set(player.id, card);
+    // Add click event for focusing on player
+    zone.addEventListener('click', () => {
+      this.focusOnPlayer(player.id);
+    });
+
+    return zone;
+  }
+
+  renderPlayerCards() {
+    const container = PokemonRaidSystem.ui.playerCardsContainer;
+    if (!container || !PokemonRaidSystem.state.currentRaid?.players) return;
+
+    // Clear existing cards
+    container.innerHTML = '';
+    PokemonRaidSystem.ui.playerCards.clear();
+
+    // Create player cards
+    PokemonRaidSystem.state.currentRaid.players.forEach((player) => {
+      const card = this.createPlayerCard(player);
+      container.appendChild(card);
+      PokemonRaidSystem.ui.playerCards.set(player.id, card);
+    });
+
+    this.log(
+      `Rendered ${PokemonRaidSystem.state.currentRaid.players.length} player cards`
+    );
+  }
+
+  createPlayerCard(player) {
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    card.id = `player-card-${player.id}`;
+
+    // Check if it's current turn
+    const isCurrentTurn =
+      PokemonRaidSystem.state.currentRaid.currentTurnPlayerId === player.id;
+    if (isCurrentTurn) {
+      card.classList.add('current-turn');
+    }
+
+    // Get player's Pokemon data
+    const activePokemon =
+      player.pokemon?.active || this.getDefaultPokemon('active');
+    const benchPokemon =
+      player.pokemon?.bench || this.getDefaultPokemon('bench');
+
+    // Player avatar based on their selected Pokemon or default
+    const avatarIcon = this.getPokemonIcon(activePokemon.name);
+
+    card.innerHTML = `
+      <div class="player-header">
+        <div class="player-avatar">${avatarIcon}</div>
+        <div class="player-info">
+          <div class="player-name">${player.username}</div>
+          <div class="player-status">${isCurrentTurn ? 'Current Turn' : player.status || 'Active'}</div>
+        </div>
+      </div>
+      
+      <div class="pokemon-layout">
+        ${this.createPokemonSlotHTML(activePokemon, 'active')}
+        ${this.createPokemonSlotHTML(benchPokemon, 'bench')}
+      </div>
+      
+      <div class="player-stats">
+        <div class="stat-item">
+          <div class="stat-value">${player.raidData?.damageDealt || 0}</div>
+          <div class="stat-label">Damage</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${player.raidData?.actionsUsed || 0}</div>
+          <div class="stat-label">Actions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${player.raidData?.turnsPlayed || 0}</div>
+          <div class="stat-label">Turns</div>
+        </div>
+      </div>
+    `;
+
+    // Add click event for detailed view
+    card.addEventListener('click', () => {
+      this.showPlayerDetails(player);
+    });
 
     return card;
   }
 
-  clearPlayerCards() {
-    // Remove all existing player cards
-    const existingCards = document.querySelectorAll('.raid-player-card');
-    existingCards.forEach((card) => card.remove());
+  createPokemonSlotHTML(pokemon, slotType) {
+    const typeColor = PokemonRaidSystem.utils.getTypeColor(pokemon.type);
+    const hpPercentage = (pokemon.currentHP / pokemon.maxHP) * 100;
+    const isKO = pokemon.currentHP <= 0;
 
-    // Clear card references
-    RaidSystem.ui.playerCards.clear();
+    const slotHTML = `
+      <div class="pokemon-slot ${slotType} ${isKO ? 'ko' : ''}" data-pokemon-id="${pokemon.id || pokemon.name.toLowerCase()}">
+        <div class="slot-label">${slotType === 'active' ? 'Active' : 'Bench'}</div>
+        <div class="pokemon-card-content">
+          <div class="pokemon-name">${pokemon.name}</div>
+          <div class="pokemon-type-badge type-${pokemon.type}" style="background-color: ${typeColor};">
+            ${pokemon.type.toUpperCase()}
+          </div>
+          <div class="hp-section">
+            <div class="hp-bar">
+              <div class="hp-fill ${hpPercentage <= 25 ? 'critical' : ''}" style="width: ${hpPercentage}%;"></div>
+            </div>
+            <div class="hp-text">${pokemon.currentHP}/${pokemon.maxHP} HP</div>
+          </div>
+          <div class="moves-section">
+            ${
+              pokemon.moves
+                ? pokemon.moves
+                    .slice(0, 2)
+                    .map((move) => `• ${move.name}`)
+                    .join('<br>')
+                : ''
+            }
+          </div>
+        </div>
+        <div class="status-indicator status-${isKO ? 'ko' : 'active'}"></div>
+      </div>
+    `;
+
+    return slotHTML;
+  }
+
+  // Enhanced method to create Pokemon slot with click handlers
+  createPokemonSlotElement(pokemon, slotType) {
+    const slotContainer = document.createElement('div');
+    slotContainer.innerHTML = this.createPokemonSlotHTML(pokemon, slotType);
+    const slot = slotContainer.firstElementChild;
+
+    // Add click handler for Pokemon details
+    slot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showPokemonDetails(pokemon);
+    });
+
+    // Add hover effects
+    slot.addEventListener('mouseenter', () => {
+      slot.style.transform = 'scale(1.02)';
+      slot.style.transition = 'all 0.2s ease';
+    });
+
+    slot.addEventListener('mouseleave', () => {
+      slot.style.transform = 'scale(1)';
+    });
+
+    return slot;
+  }
+
+  showPokemonDetails(pokemon) {
+    this.log(`Showing details for ${pokemon.name}`);
+
+    // Enhance pokemon data with additional info if needed
+    const enhancedPokemon = {
+      ...pokemon,
+      description: PokemonRaidSystem.utils.getRandomDescription(pokemon),
+    };
+
+    PokemonRaidSystem.modals.show('pokemon', enhancedPokemon);
+
+    // Show notification
+    PokemonRaidSystem.notifications.show(
+      'Pokemon Details',
+      `Viewing ${pokemon.name} information`,
+      'info',
+      2000
+    );
+  }
+
+  getDefaultPokemon(slot) {
+    // Return default Pokemon data for players who haven't selected yet
+    const defaults = {
+      active: {
+        name: 'Pikachu',
+        type: 'electric',
+        currentHP: 120,
+        maxHP: 120,
+        moves: [{ name: 'Thunder Shock' }],
+      },
+      bench: {
+        name: 'Squirtle',
+        type: 'water',
+        currentHP: 100,
+        maxHP: 100,
+        moves: [{ name: 'Water Gun' }],
+      },
+    };
+    return defaults[slot];
+  }
+
+  getPokemonIcon(pokemonName) {
+    const icons = {
+      Pikachu: '⚡',
+      Charizard: '🔥',
+      Blastoise: '💧',
+      Venusaur: '🌿',
+      Lucario: '👊',
+      Gardevoir: '🔮',
+      Dragonite: '🐉',
+      Mewtwo: '🧠',
+    };
+    return icons[pokemonName] || '🎮';
   }
 
   renderBossDisplay() {
-    const boss = RaidSystem.state.currentRaid?.boss;
+    const boss = PokemonRaidSystem.state.currentRaid?.boss;
     if (!boss) return;
 
-    // Debug logging
     this.log(
       `🎯 Rendering boss: ${boss.name} - HP: ${boss.currentHP}/${boss.maxHP}`,
       'DEBUG'
     );
 
     // Update boss info
-    if (RaidSystem.ui.bossName) {
-      RaidSystem.ui.bossName.textContent = boss.name;
+    if (PokemonRaidSystem.ui.bossName) {
+      PokemonRaidSystem.ui.bossName.textContent = boss.name;
     }
 
-    if (RaidSystem.ui.bossHPText) {
-      RaidSystem.ui.bossHPText.textContent = `HP: ${boss.currentHP} / ${boss.maxHP}`;
+    if (PokemonRaidSystem.ui.bossHPText) {
+      PokemonRaidSystem.ui.bossHPText.textContent = `HP: ${boss.currentHP} / ${boss.maxHP}`;
     }
 
     // Update HP bar
-    if (RaidSystem.ui.bossHPFill) {
+    if (PokemonRaidSystem.ui.bossHPFill) {
       const percentage = (boss.currentHP / boss.maxHP) * 100;
-      RaidSystem.ui.bossHPFill.style.width = `${percentage}%`;
+      PokemonRaidSystem.ui.bossHPFill.style.width = `${percentage}%`;
 
-      // Debug logging for HP bar
       this.log(`🎯 Boss HP bar updated: ${percentage.toFixed(1)}%`, 'DEBUG');
-
-      // Dynamic color based on HP
-      if (percentage > 60) {
-        RaidSystem.ui.bossHPFill.style.background =
-          'linear-gradient(90deg, #c0392b, #e74c3c)';
-      } else if (percentage > 30) {
-        RaidSystem.ui.bossHPFill.style.background =
-          'linear-gradient(90deg, #f39c12, #e67e22)';
-      } else {
-        RaidSystem.ui.bossHPFill.style.background =
-          'linear-gradient(90deg, #e74c3c, #c0392b)';
-      }
     }
   }
 
   renderTurnIndicator() {
-    const container = RaidSystem.ui.turnIndicator;
-    const turnData = RaidSystem.state.currentRaid?.turnIndicator;
+    const turnDisplay = document.getElementById('turnDisplay');
+    const turnData = PokemonRaidSystem.state.currentRaid?.turnIndicator;
 
-    if (!container || !turnData?.elements) {
-      if (container) container.style.display = 'none';
+    if (!turnDisplay || !turnData?.elements) {
+      if (turnDisplay) {
+        turnDisplay.innerHTML =
+          '<div class="turn-element">Waiting for players...</div>';
+      }
       return;
     }
 
-    container.style.display = 'flex';
-    container.innerHTML = '';
+    turnDisplay.innerHTML = '';
 
     // Create turn elements
     turnData.elements.forEach((element, index) => {
       const turnEl = document.createElement('div');
-      turnEl.className = `turn-indicator-element ${element.status} ${element.type}`;
-
-      // Visual styling
-      if (element.status === 'current') {
-        turnEl.style.background = '#f39c12';
-        turnEl.style.color = '#333';
-      } else if (element.type === 'boss') {
-        turnEl.style.background = '#e74c3c';
-        turnEl.style.color = 'white';
-      } else {
-        turnEl.style.background = 'rgba(255, 255, 255, 0.1)';
-        turnEl.style.color = 'white';
-      }
+      turnEl.className = `turn-element ${element.status} ${element.type}`;
 
       // Content
       turnEl.innerHTML = `
@@ -983,67 +1426,139 @@ class Enhanced3DRaidCore {
         <span>${element.username || element.name}</span>
       `;
 
-      // Debug mode: make interactive
-      if (RaidSystem.state.debugMode) {
-        turnEl.style.cursor = 'pointer';
-        turnEl.title = `Debug: Click to force turn (${element.username || element.name})`;
-        turnEl.addEventListener('click', () => {
-          this.log(
-            `Debug: Forcing turn to ${element.username || element.name}`
-          );
-          this.sendRaidAction('forceNextTurn', {});
-        });
-      }
-
-      container.appendChild(turnEl);
+      turnDisplay.appendChild(turnEl);
     });
+  }
+
+  renderSpectatorPanel() {
+    const spectators = PokemonRaidSystem.state.currentRaid?.spectators || [];
+    const section = PokemonRaidSystem.ui.spectatorSection;
+    const list = PokemonRaidSystem.ui.spectatorList;
+
+    if (!section || !list) return;
+
+    if (spectators.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    spectators.forEach((spectator) => {
+      const spectatorEl = document.createElement('div');
+      spectatorEl.className = `spectator-item ${spectator.wasPlayer ? 'was-player' : ''}`;
+      spectatorEl.innerHTML = `
+        <span>${spectator.wasPlayer ? '💀' : '👻'}</span>
+        <span>${spectator.username}</span>
+      `;
+      list.appendChild(spectatorEl);
+    });
+
+    this.log(`Rendered ${spectators.length} spectators`);
   }
 
   // ================ RAID ACTIONS ================
   createRaid() {
-    const raidId = RaidSystem.utils.generateRaidId();
+    const { active, bench } = PokemonRaidSystem.state.selectedPokemon;
+
+    if (!active || !bench) {
+      this.log(
+        'Please select both active and bench Pokemon before creating a raid',
+        'ERROR'
+      );
+      alert(
+        'Please select both active and bench Pokemon before creating a raid!'
+      );
+      return;
+    }
+
+    const raidId = PokemonRaidSystem.utils.generateRaidId();
     this.log(`Creating raid: ${raidId}`);
 
-    RaidSystem.socket.emit('createRaid', {
+    const playerData = this.createPlayerData();
+
+    PokemonRaidSystem.socket.emit('createRaid', {
       raidId: raidId,
-      raidType: 'tcg-official',
+      raidType: 'pokemon-tcg',
       maxPlayers: 4,
       minPlayers: 1,
-      layout: 'versus', // Server layout (ignored by client rendering)
+      playerData: playerData,
     });
   }
 
   joinRaid() {
     const raidId = document.getElementById('raidIdInput')?.value?.trim();
     const username =
-      document.getElementById('usernameInput')?.value?.trim() || 'Player';
+      document.getElementById('usernameInput')?.value?.trim() || 'Trainer';
 
     if (!raidId) {
       this.log('Please enter a raid ID', 'ERROR');
       return;
     }
 
-    RaidSystem.state.username = username;
+    const { active, bench } = PokemonRaidSystem.state.selectedPokemon;
+
+    if (!active || !bench) {
+      this.log(
+        'Please select both active and bench Pokemon before joining a raid',
+        'ERROR'
+      );
+      alert(
+        'Please select both active and bench Pokemon before joining a raid!'
+      );
+      return;
+    }
+
+    PokemonRaidSystem.state.username = username;
     this.log(`Joining raid: ${raidId} as ${username}`);
 
-    RaidSystem.socket.emit('joinRaid', {
+    const playerData = this.createPlayerData();
+
+    PokemonRaidSystem.socket.emit('joinRaid', {
       raidId: raidId,
-      playerData: {
-        username: username,
-        activePokemon: {
-          name: 'Pikachu',
-          maxHP: 120,
-          attacks: [{ name: 'Thunder Shock', damage: 60 }],
-        },
-      },
+      playerData: playerData,
     });
   }
 
+  createPlayerData() {
+    const { active, bench } = PokemonRaidSystem.state.selectedPokemon;
+    const activePokemon = PokemonRaidSystem.pokemonDatabase.find(
+      (p) => p.id === active
+    );
+    const benchPokemon = PokemonRaidSystem.pokemonDatabase.find(
+      (p) => p.id === bench
+    );
+
+    return {
+      username: PokemonRaidSystem.state.username,
+      pokemon: {
+        active: {
+          ...activePokemon,
+          currentHP: activePokemon.maxHP,
+          status: 'active',
+        },
+        bench: {
+          ...benchPokemon,
+          currentHP: benchPokemon.maxHP,
+          status: 'bench',
+        },
+      },
+      profile: {
+        icon: this.getPokemonIcon(activePokemon.name),
+        favoriteType: activePokemon.type,
+        level: Math.floor(Math.random() * 50) + 1,
+        wins: Math.floor(Math.random() * 100),
+        losses: Math.floor(Math.random() * 50),
+      },
+    };
+  }
+
   testMultiplayer() {
-    const raidId = RaidSystem.utils.generateRaidId();
+    const raidId = PokemonRaidSystem.utils.generateRaidId();
     this.log(`Creating multiplayer test: ${raidId}`);
 
-    const testUrl = `${window.location.origin}/raid-isolated.html?raid=${raidId}&username=Envoy&join=auto`;
+    const testUrl = `${window.location.origin}/raid-isolated.html?raid=${raidId}&username=TestTrainer&join=auto`;
 
     // Copy to clipboard
     navigator.clipboard
@@ -1056,50 +1571,83 @@ class Enhanced3DRaidCore {
       });
 
     // Create the raid
-    RaidSystem.socket.emit('createRaid', {
+    const playerData = this.createPlayerData();
+    PokemonRaidSystem.socket.emit('createRaid', {
       raidId: raidId,
-      raidType: 'tcg-official',
+      raidType: 'pokemon-tcg',
       maxPlayers: 4,
-      layout: 'circular',
-    });
-  }
-
-  quickTest() {
-    const raidId = RaidSystem.utils.generateRaidId();
-    this.log(`Starting quick test: ${raidId}`);
-
-    RaidSystem.socket.emit('createRaid', {
-      raidId: raidId,
-      raidType: 'tcg-official',
-      maxPlayers: 4,
-      layout: 'versus',
+      playerData: playerData,
     });
   }
 
   sendAttack() {
-    if (!RaidSystem.state.currentRaid) return;
+    if (!PokemonRaidSystem.state.currentRaid) {
+      PokemonRaidSystem.notifications.show(
+        'Cannot Attack',
+        'You are not in an active raid battle!',
+        'warning'
+      );
+      return;
+    }
 
-    this.log('Sending action: playerAttack');
-    this.sendRaidAction('playerAttack', {
-      damage: 60,
-      attackName: 'Thunder Shock',
-    });
+    const activePokemon = PokemonRaidSystem.state.selectedPokemon.active;
+    if (!activePokemon) {
+      PokemonRaidSystem.notifications.show(
+        'No Active Pokemon',
+        'Please select an active Pokemon first!',
+        'warning'
+      );
+      return;
+    }
+
+    const pokemon = PokemonRaidSystem.pokemonDatabase.find(
+      (p) => p.id === activePokemon
+    );
+
+    if (!pokemon || !pokemon.moves || pokemon.moves.length === 0) {
+      PokemonRaidSystem.notifications.show(
+        'No Moves Available',
+        'Your Pokemon has no available moves!',
+        'error'
+      );
+      return;
+    }
+
+    // Show attack selection modal instead of auto-using first move
+    this.log(`Opening attack selection for ${pokemon.name}`);
+    PokemonRaidSystem.modals.show('attack', pokemon);
   }
 
-  sendTestKO() {
-    if (!RaidSystem.state.currentRaid) return;
+  sendDefend() {
+    if (!PokemonRaidSystem.state.currentRaid) {
+      PokemonRaidSystem.notifications.show(
+        'Cannot Defend',
+        'You are not in an active raid battle!',
+        'warning'
+      );
+      return;
+    }
 
-    this.log('Sending action: testKO');
-    this.sendRaidAction('testKO', {
-      pokemon: 'active',
+    this.log('Using defensive action');
+
+    PokemonRaidSystem.notifications.show(
+      'Defending!',
+      'Your Pokemon is taking a defensive stance!',
+      'info'
+    );
+
+    this.sendRaidAction('playerDefend', {
+      defenseType: 'guard',
+      damageReduction: 50,
     });
   }
 
   sendRaidAction(actionType, actionData = {}) {
-    if (!RaidSystem.socket || !RaidSystem.state.currentRaid) return;
+    if (!PokemonRaidSystem.socket || !PokemonRaidSystem.state.currentRaid)
+      return;
 
-    RaidSystem.socket.emit('raidAction', {
-      raidId: RaidSystem.state.currentRaid.id,
+    PokemonRaidSystem.socket.emit('raidAction', {
+      raidId: PokemonRaidSystem.state.currentRaid.id,
       action: {
         type: actionType,
         ...actionData,
@@ -1108,109 +1656,156 @@ class Enhanced3DRaidCore {
   }
 
   leaveRaid() {
-    if (!RaidSystem.state.currentRaid) return;
+    if (!PokemonRaidSystem.state.currentRaid) return;
 
-    RaidSystem.socket.emit('leaveRaid', {
-      raidId: RaidSystem.state.currentRaid.id,
+    PokemonRaidSystem.socket.emit('leaveRaid', {
+      raidId: PokemonRaidSystem.state.currentRaid.id,
     });
 
-    RaidSystem.state.currentRaid = null;
-    RaidSystem.ui.switchView('launcher');
+    PokemonRaidSystem.state.currentRaid = null;
+    PokemonRaidSystem.ui.switchView('launcher');
     this.log('Left raid');
   }
 
   // ================ EVENT HANDLERS ================
   handleRaidCreated(data) {
-    RaidSystem.state.currentRaid = data.raidState;
-    RaidSystem.state.playerId = data.playerId;
-    RaidSystem.ui.switchView('game');
+    PokemonRaidSystem.state.currentRaid = data.raidState;
+    PokemonRaidSystem.state.playerId = data.playerId;
+    PokemonRaidSystem.ui.switchView('game');
     this.renderRaidState();
+
+    // Show success notification
+    PokemonRaidSystem.notifications.show(
+      'Raid Created!',
+      `Successfully created raid: ${data.raidState.id}`,
+      'success'
+    );
   }
 
   handleRaidJoined(data) {
-    RaidSystem.state.currentRaid = data.raidState;
-    RaidSystem.state.playerId = data.playerId;
-    RaidSystem.ui.switchView('game');
+    PokemonRaidSystem.state.currentRaid = data.raidState;
+    PokemonRaidSystem.state.playerId = data.playerId;
+    PokemonRaidSystem.ui.switchView('game');
     this.renderRaidState();
+
+    // Show success notification
+    PokemonRaidSystem.notifications.show(
+      'Joined Raid!',
+      `Successfully joined raid: ${data.raidState.id}`,
+      'success'
+    );
   }
 
   handlePlayerJoined(data) {
-    RaidSystem.state.currentRaid = data.updatedRaidState;
+    this.log(`${data.player?.username || 'Player'} joined the raid`);
     this.renderRaidState();
+
+    // Show player joined notification
+    PokemonRaidSystem.notifications.show(
+      'Player Joined',
+      `${data.player?.username || 'A trainer'} joined the raid!`,
+      'info'
+    );
   }
 
   handlePlayerLeft(data) {
-    if (data.updatedRaidState) {
-      RaidSystem.state.currentRaid = data.updatedRaidState;
-      this.renderRaidState();
-    }
-  }
-
-  handleActionResult(data) {
-    // Enhanced logging for debugging
-    this.log(`🔥 Action result received:`, 'DEBUG');
-    this.log(`  Action: ${data.actionType}`, 'DEBUG');
-    this.log(`  Message: ${data.message}`, 'DEBUG');
-    this.log(`  Player: ${data.playerId}`, 'DEBUG');
-
-    if (data.actionType === 'playerAttack') {
-      const oldBoss = RaidSystem.state.currentRaid?.boss;
-      const newBoss = data.updatedRaidState?.boss;
-
-      if (oldBoss && newBoss) {
-        this.log(
-          `  🎯 Boss HP Change: ${oldBoss.currentHP} → ${newBoss.currentHP}`,
-          'DEBUG'
-        );
-        this.log(
-          `  💥 Damage Applied: ${oldBoss.currentHP - newBoss.currentHP}`,
-          'DEBUG'
-        );
-      }
-    }
-
-    RaidSystem.state.currentRaid = data.updatedRaidState;
+    this.log(`${data.playerUsername || 'Player'} left the raid`);
     this.renderRaidState();
-    this.showActionFeedback(data.message, data.actionType);
+
+    // Show player left notification
+    PokemonRaidSystem.notifications.show(
+      'Player Left',
+      `${data.playerUsername || 'A trainer'} left the raid`,
+      'warning'
+    );
   }
 
   handleGameStateUpdate(data) {
-    RaidSystem.state.currentRaid = data.raidState;
+    PokemonRaidSystem.state.currentRaid = data.raidState;
     this.renderRaidState();
-  }
+    this.log('Game state updated');
 
-  handleLayoutSwitched(data) {
-    // Server layout switched, but we maintain client preference
-    RaidSystem.state.currentRaid = data.updatedRaidState;
-    this.renderRaidState(); // Re-render with client layout
+    // Check for significant game events
+    if (data.raidState.gamePhase !== PokemonRaidSystem.state.gamePhase) {
+      PokemonRaidSystem.state.gamePhase = data.raidState.gamePhase;
+
+      let phaseMessage = '';
+      switch (data.raidState.gamePhase) {
+        case 'battle':
+          phaseMessage = 'Battle phase has begun!';
+          break;
+        case 'victory':
+          phaseMessage = 'Victory! The raid boss has been defeated!';
+          break;
+        case 'defeat':
+          phaseMessage = 'Defeat... The raid boss was too strong.';
+          break;
+        default:
+          phaseMessage = `Game phase changed to: ${data.raidState.gamePhase}`;
+      }
+
+      PokemonRaidSystem.notifications.show(
+        'Game Update',
+        phaseMessage,
+        data.raidState.gamePhase === 'victory'
+          ? 'success'
+          : data.raidState.gamePhase === 'defeat'
+            ? 'error'
+            : 'info'
+      );
+    }
   }
 
   showActionFeedback(message, actionType) {
     this.log(`Action feedback: ${message}`);
-    // Future: Add visual feedback animations
+
+    // Determine notification type based on action
+    let notificationType = 'info';
+    if (actionType === 'playerAttack') {
+      notificationType = 'pokemon';
+    } else if (actionType === 'playerDefend') {
+      notificationType = 'info';
+    } else if (message.includes('failed') || message.includes('error')) {
+      notificationType = 'error';
+    } else if (message.includes('success')) {
+      notificationType = 'success';
+    }
+
+    PokemonRaidSystem.notifications.show(
+      'Action Result',
+      message,
+      notificationType
+    );
+  }
+
+  focusOnPlayer(playerId) {
+    this.log(`Focusing on player: ${playerId}`);
+    // Future: Add camera animation to focus on specific player
+  }
+
+  showPlayerDetails(player) {
+    this.log(`Showing details for player: ${player.username}`);
+    // Future: Show detailed modal with Pokemon information
   }
 
   // ================ UI UPDATES ================
   updateConnectionStatus(status, type = 'info') {
-    if (RaidSystem.ui.connectionStatus) {
-      RaidSystem.ui.connectionStatus.textContent = status;
-      RaidSystem.ui.connectionStatus.className = type;
+    const statusEl = document.getElementById('connectionStatusDisplay');
+    if (statusEl) {
+      statusEl.textContent = status;
+      statusEl.className = type;
     }
   }
 
   updateRaidInfo() {
-    if (!RaidSystem.state.currentRaid) return;
-
-    this.log(
-      `Raid info updated - ${RaidSystem.state.currentRaid.players.length} players`
-    );
+    if (!PokemonRaidSystem.state.currentRaid) return;
 
     const updates = {
-      controlRaidId: RaidSystem.state.currentRaid.id,
-      controlPlayerCount: `${RaidSystem.state.currentRaid.players.length}/${RaidSystem.state.currentRaid.config.maxPlayers}`,
-      controlLayoutDisplay: RaidSystem.state.layoutPreference,
-      controlYourAngle: `${RaidSystem.state.yourAngle}`,
-      controlRaidPhase: RaidSystem.state.currentRaid.gamePhase,
+      raidIdDisplay: PokemonRaidSystem.state.currentRaid.id,
+      playerCountDisplay: `${PokemonRaidSystem.state.currentRaid.players.length}/${PokemonRaidSystem.state.currentRaid.config.maxPlayers}`,
+      gamePhaseDisplay: PokemonRaidSystem.state.currentRaid.gamePhase,
+      currentTurnDisplay:
+        PokemonRaidSystem.state.currentRaid.currentTurnPlayer?.username || '-',
     };
 
     Object.entries(updates).forEach(([id, value]) => {
@@ -1219,478 +1814,59 @@ class Enhanced3DRaidCore {
         element.textContent = value;
       }
     });
-  }
 
-  updateUILog() {
-    if (!RaidSystem.ui.comm?.gameLogMessages) return;
-
-    // Show recent entries (newest at bottom, like normal chat)
-    const recentEntries = RaidSystem.log.entries.slice(-50);
-
-    // Clear and rebuild the game log
-    RaidSystem.ui.comm.gameLogMessages.innerHTML = '';
-
-    recentEntries.forEach((entry) => {
-      const levelClass = entry.level.toLowerCase();
-      const timestamp = entry.timestamp.split('T')[1].split('.')[0];
-      RaidSystem.ui.addGameLogMessage(`${entry.message}`, levelClass);
-    });
-  }
-
-  // ================ DEBUG SYSTEM ================
-  toggleDebugPanel() {
-    const panel = RaidSystem.ui.debugPanel;
-    if (!panel) return;
-
-    const isVisible = panel.style.display !== 'none';
-    panel.style.display = isVisible ? 'none' : 'block';
-
-    if (!isVisible) {
-      // Enabling debug mode
-      RaidSystem.state.debugMode = true;
-      this.updateDebugInfo();
-      this.renderTurnIndicator(); // Re-render with debug functionality
-
-      // Sync debug mode with server if in a raid
-      if (RaidSystem.state.currentRaid) {
-        this.sendRaidAction('toggleDebugMode', {});
-      }
-
-      this.log('Debug mode enabled', 'DEBUG');
-    } else {
-      // Disabling debug mode
-      RaidSystem.state.debugMode = false;
-      this.renderTurnIndicator(); // Re-render without debug functionality
-
-      // Sync debug mode with server if in a raid (only if it was enabled)
-      if (RaidSystem.state.currentRaid) {
-        this.sendRaidAction('toggleDebugMode', {});
-      }
-
-      this.log('Debug mode disabled', 'DEBUG');
-    }
-  }
-
-  updateDebugInfo() {
-    const stateEl = document.getElementById('debugClientCoreState');
-    const raidEl = document.getElementById('debugLastRaidState');
-    const errorsEl = document.getElementById('debugRecentErrors');
-
-    if (stateEl) {
-      stateEl.textContent = JSON.stringify(
-        {
-          isConnected: RaidSystem.state.isConnected,
-          currentRaid: RaidSystem.state.currentRaid
-            ? {
-                id: RaidSystem.state.currentRaid.id,
-                players: RaidSystem.state.currentRaid.players?.length || 0,
-                gamePhase: RaidSystem.state.currentRaid.gamePhase,
-              }
-            : null,
-          playerId: RaidSystem.state.playerId,
-          username: RaidSystem.state.username,
-          layoutPreference: RaidSystem.state.layoutPreference,
-          yourAngle: RaidSystem.state.yourAngle,
-          debugMode: RaidSystem.state.debugMode,
-          isInitialized: RaidSystem.state.isInitialized,
-        },
-        null,
-        2
-      );
-    }
-
-    if (raidEl) {
-      raidEl.textContent = JSON.stringify(
-        RaidSystem.state.currentRaid,
-        null,
-        2
-      );
-    }
-
-    if (errorsEl) {
-      const errors = RaidSystem.log.entries
-        .filter((e) => e.level === 'ERROR')
-        .slice(-10);
-      errorsEl.textContent = JSON.stringify(errors, null, 2);
-    }
-
-    // Update player control buttons
-    this.updatePlayerControlButtons();
-  }
-
-  updatePlayerControlButtons() {
-    const container = document.getElementById('playerControlButtons');
-    if (!container || !RaidSystem.state.currentRaid) return;
-
-    container.innerHTML = '';
-
-    // Generate buttons for each player
-    RaidSystem.state.currentRaid.players.forEach((player) => {
-      const playerDiv = document.createElement('div');
-      playerDiv.style.cssText =
-        'margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 5px;';
-
-      const playerName = document.createElement('div');
-      playerName.style.cssText =
-        'font-size: 11px; margin-bottom: 3px; color: #f39c12;';
-      playerName.textContent = `${player.username} (${player.status})`;
-
-      const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'debug-buttons';
-
-      // Resurrect button
-      const resurrectBtn = document.createElement('button');
-      resurrectBtn.className = 'debug-player-btn resurrect';
-      resurrectBtn.textContent = '♻️ Resurrect';
-      resurrectBtn.onclick = () => this.debugResurrectPlayer(player.id);
-
-      // Kill active button
-      const killActiveBtn = document.createElement('button');
-      killActiveBtn.className = 'debug-player-btn kill';
-      killActiveBtn.textContent = '💀 KO Active';
-      killActiveBtn.onclick = () => this.debugKillPlayer(player.id, 'active');
-
-      // Kill bench button
-      const killBenchBtn = document.createElement('button');
-      killBenchBtn.className = 'debug-player-btn kill';
-      killBenchBtn.textContent = '💀 KO Bench';
-      killBenchBtn.onclick = () => this.debugKillPlayer(player.id, 'bench');
-
-      // Set HP button
-      const setHPBtn = document.createElement('button');
-      setHPBtn.className = 'debug-player-btn';
-      setHPBtn.textContent = '❤️ Set HP';
-      setHPBtn.onclick = () => this.debugSetPlayerHP(player.id);
-
-      // Heal button
-      const healBtn = document.createElement('button');
-      healBtn.className = 'debug-player-btn resurrect';
-      healBtn.textContent = '💚 Heal 50';
-      healBtn.onclick = () => this.debugHealPlayer(player.id, 'active', 50);
-
-      buttonContainer.appendChild(resurrectBtn);
-      buttonContainer.appendChild(killActiveBtn);
-      buttonContainer.appendChild(killBenchBtn);
-      buttonContainer.appendChild(setHPBtn);
-      buttonContainer.appendChild(healBtn);
-
-      playerDiv.appendChild(playerName);
-      playerDiv.appendChild(buttonContainer);
-      container.appendChild(playerDiv);
-    });
-  }
-
-  debugResurrectPlayer(playerId) {
-    this.log(`Debug: Resurrecting player ${playerId}`, 'DEBUG');
-    this.sendRaidAction('debugResurrectPlayer', { playerId });
-  }
-
-  debugKillPlayer(playerId, pokemon) {
     this.log(
-      `Debug: Killing ${pokemon} Pokemon of player ${playerId}`,
-      'DEBUG'
+      `Raid info updated - ${PokemonRaidSystem.state.currentRaid.players.length} players`
     );
-    this.sendRaidAction('debugKillPlayer', { playerId, pokemon });
   }
 
-  debugSetPlayerHP(playerId) {
-    const newHP = prompt('Enter new HP for active Pokemon:', '120');
-    if (newHP && !isNaN(parseInt(newHP))) {
-      this.log(`Debug: Setting player ${playerId} HP to ${newHP}`, 'DEBUG');
-      this.sendRaidAction('debugSetHP', {
-        target: `player-${playerId}`,
-        value: parseInt(newHP),
-      });
-    }
-  }
+  // ================ NEW SYSTEM INITIALIZATION ================
+  initializeNotifications() {
+    this.log('Initializing notification system...');
+    PokemonRaidSystem.notifications.container =
+      document.getElementById('gameNotifications');
 
-  debugHealPlayer(playerId, pokemon, amount) {
-    this.log(
-      `Debug: Healing ${pokemon} Pokemon of player ${playerId} by ${amount} HP`,
-      'DEBUG'
-    );
-    this.sendRaidAction('debugHealPlayer', {
-      playerId: playerId,
-      pokemon: pokemon,
-      amount: amount,
-    });
-  }
-
-  debugSkipTurn() {
-    this.log('Debug: Skipping turn', 'DEBUG');
-    this.sendRaidAction('debugSkipTurn', {});
-  }
-
-  debugResetRaid() {
-    this.log('Debug: Resetting raid', 'DEBUG');
-    this.sendRaidAction('debugResetRaid', {});
-  }
-
-  debugForceBossTurn() {
-    this.log('Debug: Forcing boss turn', 'DEBUG');
-    this.sendRaidAction('debugForceBossTurn', {});
-  }
-
-  debugStartGame() {
-    this.log('Debug: Starting game', 'DEBUG');
-    this.sendRaidAction('debugStartGame', {});
-  }
-
-  setupBossControlSystem() {
-    // Boss control toggle
-    this.setupElement('bossControlCheckbox', () => this.toggleBossControl());
-    this.setupElement('closeBossControlBtn', () => this.closeBossControl());
-
-    // Boss HP controls
-    this.setupElement('setBossHPBtn', () => this.setBossHP());
-    this.setupElement('healBossBtn', () => this.healBoss());
-
-    // Boss attack buttons
-    const attackButtons = document.querySelectorAll('.boss-attack-btn');
-    attackButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const attackType = button.getAttribute('data-attack');
-        this.executeBossAttack(attackType);
-      });
-    });
-  }
-
-  toggleBossControl() {
-    const checkbox = document.getElementById('bossControlCheckbox');
-    const overlay = document.getElementById('bossControlOverlay');
-
-    if (checkbox && overlay) {
-      if (checkbox.checked) {
-        overlay.style.display = 'block';
-        this.updateBossControlDisplay();
-        this.log('Boss control mode enabled', 'DEBUG');
-      } else {
-        overlay.style.display = 'none';
-        this.log('Boss control mode disabled', 'DEBUG');
-      }
-    }
-  }
-
-  closeBossControl() {
-    const checkbox = document.getElementById('bossControlCheckbox');
-    const overlay = document.getElementById('bossControlOverlay');
-
-    if (checkbox) checkbox.checked = false;
-    if (overlay) overlay.style.display = 'none';
-    this.log('Boss control closed', 'DEBUG');
-  }
-
-  updateBossControlDisplay() {
-    if (!RaidSystem.state.currentRaid) return;
-
-    // Update boss HP display
-    const bossHPDisplay = document.getElementById('bossControlCurrentHP');
-    const boss = RaidSystem.state.currentRaid.boss;
-    if (bossHPDisplay && boss) {
-      bossHPDisplay.textContent = `${boss.currentHP}/${boss.maxHP}`;
-    }
-
-    // Update target buttons
-    this.updateBossTargetButtons();
-  }
-
-  updateBossTargetButtons() {
-    const container = document.getElementById('bossTargetButtons');
-    if (!container || !RaidSystem.state.currentRaid) return;
-
-    container.innerHTML = '';
-
-    // Add target buttons for each active player
-    RaidSystem.state.currentRaid.players.forEach((player) => {
-      if (player.status === 'active') {
-        const button = document.createElement('button');
-        button.className = 'boss-attack-btn';
-        button.innerHTML = `🎯 ${player.username}<br><small>HP: ${player.activePokemon.currentHP}/${player.activePokemon.maxHP}</small>`;
-        button.onclick = () => this.setBossTarget(player.id);
-        container.appendChild(button);
-      }
-    });
-  }
-
-  setBossTarget(playerId) {
-    RaidSystem.state.bossTarget = playerId;
-    const player = RaidSystem.state.currentRaid.players.find(
-      (p) => p.id === playerId
-    );
-    this.log(`Boss target set to: ${player?.username || 'Unknown'}`, 'DEBUG');
-  }
-
-  setBossHP() {
-    const input = document.getElementById('bossHPInput');
-    if (!input || !RaidSystem.state.currentRaid) return;
-
-    const newHP = parseInt(input.value);
-    if (isNaN(newHP) || newHP < 0) {
-      this.log('Invalid HP value', 'ERROR');
-      return;
-    }
-
-    this.log(`Setting boss HP to: ${newHP}`, 'DEBUG');
-
-    this.sendRaidAction('debugSetHP', {
-      target: 'boss',
-      value: newHP,
-    });
-  }
-
-  healBoss() {
-    if (!RaidSystem.state.currentRaid) return;
-
-    this.log('Healing boss to full HP', 'DEBUG');
-
-    this.sendRaidAction('debugSetHP', {
-      target: 'boss',
-      value: RaidSystem.state.currentRaid.boss.maxHP,
-    });
-  }
-
-  executeBossAttack(attackType) {
-    if (!RaidSystem.state.currentRaid || !RaidSystem.state.bossTarget) {
-      this.log('No target selected for boss attack', 'ERROR');
-      return;
-    }
-
-    let damage = 60;
-    let attackName = 'Boss Attack';
-
-    switch (attackType) {
-      case 'slash':
-        damage = 30;
-        attackName = 'Slash';
-        break;
-      case 'megaPunch':
-        damage = 60;
-        attackName = 'Mega Punch';
-        break;
-      case 'hyperBeam':
-        damage = 100;
-        attackName = 'Hyper Beam';
-        break;
-      case 'custom':
-        const customDamage = prompt('Enter custom damage amount:', '50');
-        if (customDamage && !isNaN(parseInt(customDamage))) {
-          damage = parseInt(customDamage);
-          attackName = 'Custom Attack';
-        } else {
-          return;
+    // Add slideOutRight animation if not already present
+    if (!document.querySelector('style[data-animations]')) {
+      const style = document.createElement('style');
+      style.setAttribute('data-animations', 'true');
+      style.textContent = `
+        @keyframes slideOutRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
         }
-        break;
+      `;
+      document.head.appendChild(style);
     }
-
-    const targetPlayer = RaidSystem.state.currentRaid.players.find(
-      (p) => p.id === RaidSystem.state.bossTarget
-    );
-    this.log(
-      `Boss using ${attackName} on ${targetPlayer?.username || 'Unknown'} for ${damage} damage`,
-      'DEBUG'
-    );
-
-    this.sendRaidAction('bossAttack', {
-      target: RaidSystem.state.bossTarget,
-      attackName: attackName,
-      damage: damage,
-    });
   }
 
-  exportGameLog() {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const raidId = RaidSystem.state.currentRaid?.id || 'unknown-raid';
-    const filename = `raid-log-${raidId}-${timestamp}.txt`;
-
-    // Format log entries
-    const logText = RaidSystem.log.entries
-      .map((entry) => {
-        const time = entry.timestamp.split('T')[1].split('.')[0];
-        return `[${time}] [${entry.level}] ${entry.message}`;
-      })
-      .join('\n');
-
-    // Create download
-    const blob = new Blob([logText], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    this.log(`Game log exported as: ${filename}`, 'SUCCESS');
-  }
-
-  handleChatMessage(data) {
-    const isOwn = data.playerId === RaidSystem.state.playerId;
-    const username = data.username || 'Unknown';
-    const message = data.message || '';
-
-    if (data.type === 'system') {
-      // System messages go to both chat and game log
-      RaidSystem.ui.addChatMessage(message, false);
-      RaidSystem.ui.addGameLogMessage(`SYSTEM: ${message}`, 'info');
-    } else {
-      // Player messages go to chat tab
-      const displayMessage = isOwn
-        ? `<strong>You:</strong> ${message}`
-        : `<strong>${username}:</strong> ${message}`;
-
-      RaidSystem.ui.addChatMessage(displayMessage, isOwn);
-
-      // Add a note to game log
-      RaidSystem.ui.addGameLogMessage(
-        `💬 Chat: ${username}: ${message}`,
-        'debug'
-      );
-    }
-
-    this.log(`Chat received: ${username}: ${message}`, 'DEBUG');
-  }
-
-  sendChatMessage() {
-    const input = RaidSystem.ui.comm?.chatInput;
-    if (!input || !input.value.trim()) return;
-
-    const message = input.value.trim();
-    input.value = '';
-
-    // Send to server if in raid
-    if (RaidSystem.state.currentRaid && RaidSystem.socket) {
-      RaidSystem.socket.emit('chatMessage', {
-        raidId: RaidSystem.state.currentRaid.id,
-        message: message,
-        username: RaidSystem.state.username,
-      });
-    }
-
-    // Add to local chat (will be echoed from server)
-    this.log(`Chat sent: ${message}`, 'DEBUG');
+  initializeModals() {
+    this.log('Initializing modal systems...');
+    PokemonRaidSystem.modals.init();
   }
 }
 
 // ================ AUTO-INITIALIZATION ================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Initialize the enhanced 3D raid system
-    window.RaidSystem.core = new Enhanced3DRaidCore();
-    window.RaidSystem.initialized = true;
+    // Initialize the Pokemon Raid Battle System
+    window.PokemonRaidSystem.core = new PokemonRaidCore();
+    window.PokemonRaidSystem.initialized = true;
 
-    console.log('✅ 3D Enhanced Raid System fully initialized and ready!');
+    console.log('✅ Pokemon Raid Battle System fully initialized and ready!');
   } catch (error) {
-    console.error('❌ Failed to initialize 3D Enhanced Raid System:', error);
+    console.error('❌ Failed to initialize Pokemon Raid Battle System:', error);
   }
 });
 
 /* ===================================================================
  * END OF FILE: client/js/raid-core.js
  *
- * Enhanced raid system with:
- * - Player card rendering and positioning
- * - Visual action feedback and damage effects
- * - Improved layout switching
- * - Better multiplayer synchronization
- * - Enhanced boss display with dynamic HP colors
- * - Real-time player updates
+ * Pokemon Raid Battle System with:
+ * - Authentic Pokemon TCG playmat design
+ * - Pokemon team selection system
+ * - Enhanced player cards with detailed Pokemon info
+ * - 3D battlefield perspective
+ * - Real-time multiplayer synchronization
+ * - Advanced visual effects and animations
  * ===================================================================*/

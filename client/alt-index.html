@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Page Metadata -->
+    <title>Meta-PTCG | Pokémon TCG Tabletop Simulator</title>
+    <meta name="description" content="PTCG-sim-meta is an open-source Pokémon Trading Card Game (Pokémon TCG) tabletop simulator supporting single player and online multiplayer. With a focused emphasis on added features for custom Meta!">
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
+    
+    <!-- Modern Raid-Style CSS -->
+    <link rel="stylesheet" href="css/raid-launcher.css">
+    <link rel="stylesheet" href="css/raid-components.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    <link rel="stylesheet" href="src/css/modernized-game.css">
+    <link rel="stylesheet" href="src/css/glow.css">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    
+    <!-- Main Application Script -->
+    <script type="module" src="/src/front-end.js"></script>
+</head>
+<body>
+    <!-- Modern 3D Game Table Container -->
+    <div id="gameTableContainer" class="game-table-container">
+        <div id="gameTable" class="game-table">
+            
+            <!-- Player Areas with Angular Positioning -->
+            <div id="playerAreas" class="player-areas">
+                
+                <!-- Self Player Area (Bottom) -->
+                <div id="selfPlayerArea" class="player-area self-player" style="--angle: 45deg; --distance: 35%;">
+                    
+                    <!-- Hand Area -->
+                    <div id="selfHand" class="hand-area self-hand">
+                        <div class="zone-label">Hand (<span id="selfHandCount">0</span>)</div>
+                    </div>
+                    
+                    <!-- Active Pokemon Area -->
+                    <div id="selfActive" class="pokemon-area active-area self-active">
+                        <div class="zone-label">Active</div>
+                    </div>
+                    
+                    <!-- Bench Area -->
+                    <div id="selfBench" class="pokemon-area bench-area self-bench">
+                        <div class="zone-label">Bench</div>
+                    </div>
+                    
+                    <!-- Deck Area -->
+                    <div id="selfDeck" class="deck-area self-deck">
+                        <div class="zone-label">Deck (<span id="selfDeckCount">0</span>)</div>
+                        <div class="zone-controls">
+                            <button class="zone-btn" id="selfShuffleDeck">Shuffle</button>
+                            <button class="zone-btn" id="selfDrawCard">Draw</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Discard Area -->
+                    <div id="selfDiscard" class="discard-area self-discard">
+                        <div class="zone-label">Discard (<span id="selfDiscardCount">0</span>)</div>
+                    </div>
+                    
+                    <!-- Prizes Area -->
+                    <div id="selfPrizes" class="prizes-area self-prizes">
+                        <div class="zone-label">Prizes</div>
+                    </div>
+                    
+                    <!-- Lost Zone -->
+                    <div id="selfLostZone" class="lost-zone-area self-lost-zone">
+                        <div class="zone-label">Lost Zone (<span id="selfLostZoneCount">0</span>)</div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Opponent Player Area (Top) -->
+                <div id="oppPlayerArea" class="player-area opp-player" style="--angle: 225deg; --distance: 35%;">
+                    
+                    <!-- Hand Area -->
+                    <div id="oppHand" class="hand-area opp-hand">
+                        <div class="zone-label">Hand (<span id="oppHandCount">0</span>)</div>
+                    </div>
+                    
+                    <!-- Active Pokemon Area -->
+                    <div id="oppActive" class="pokemon-area active-area opp-active">
+                        <div class="zone-label">Active</div>
+                    </div>
+                    
+                    <!-- Bench Area -->
+                    <div id="oppBench" class="pokemon-area bench-area opp-bench">
+                        <div class="zone-label">Bench</div>
+                    </div>
+                    
+                    <!-- Deck Area -->
+                    <div id="oppDeck" class="deck-area opp-deck">
+                        <div class="zone-label">Deck (<span id="oppDeckCount">0</span>)</div>
+                    </div>
+                    
+                    <!-- Discard Area -->
+                    <div id="oppDiscard" class="discard-area opp-discard">
+                        <div class="zone-label">Discard (<span id="oppDiscardCount">0</span>)</div>
+                    </div>
+                    
+                    <!-- Prizes Area -->
+                    <div id="oppPrizes" class="prizes-area opp-prizes">
+                        <div class="zone-label">Prizes</div>
+                    </div>
+                    
+                    <!-- Lost Zone -->
+                    <div id="oppLostZone" class="lost-zone-area opp-lost-zone">
+                        <div class="zone-label">Lost Zone (<span id="oppLostZoneCount">0</span>)</div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Stadium Area (Center) -->
+            <div id="stadiumArea" class="stadium-area">
+                <div class="zone-label">Stadium</div>
+            </div>
+            
+            <!-- Board Center Design (from raid system) -->
+            <div id="boardCenterDesign" class="board-center-design">
+                <div id="boardCircle" class="board-circle"></div>
+                <div id="innerCircle" class="inner-circle"></div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Turn Indicator Bar (from raid system) -->
+    <div id="turnIndicatorContainer" class="turn-indicator-container">
+        <div class="turn-indicator-header">
+            <h4>Turn Order</h4>
+        </div>
+        <div id="turnIndicatorBar" class="turn-indicator-bar">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Modern Control Panel -->
+    <div id="modernControlPanel" class="modern-control-panel">
+        <div class="control-section">
+            <h3>Game Controls</h3>
+            <div class="control-buttons">
+                <button id="setupButton" class="control-btn primary">Set Up</button>
+                <button id="resetButton" class="control-btn secondary">Reset</button>
+                <button id="turnButton" class="control-btn accent">+Turn</button>
+                <button id="flipCoinButton" class="control-btn">Coin</button>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h3>View Options</h3>
+            <div class="control-toggles">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="toggle-slider"></span>
+                    Dark Mode
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hideZonesToggle">
+                    <span class="toggle-slider"></span>
+                    Hide Zones
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs (Modernized) -->
+    <div id="modernTabs" class="modern-tabs">
+        <button class="tab-btn active" data-tab="game">Game</button>
+        <button class="tab-btn" data-tab="multiplayer">Multiplayer</button>
+        <button class="tab-btn" data-tab="import">Import</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Side Panel (Modernized) -->
+    <div id="modernSidePanel" class="modern-side-panel">
+        
+        <!-- Game Tab Content -->
+        <div id="gameTab" class="tab-content active">
+            <div class="welcome-section">
+                <h2>Welcome to Meta PTCG-sim!</h2>
+                <p>Modern 3D tabletop simulator with enhanced visuals.</p>
+            </div>
+            
+            <div class="chat-section">
+                <div id="gameChat" class="game-chat">
+                    <!-- Chat messages -->
+                </div>
+                <div class="chat-controls">
+                    <input type="text" id="chatInput" placeholder="Type message...">
+                    <button id="sendChat" class="chat-btn">Send</button>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="attackButton" class="action-btn attack">Attack</button>
+                <button id="passButton" class="action-btn pass">Pass</button>
+                <button id="undoButton" class="action-btn undo">Undo</button>
+            </div>
+        </div>
+        
+        <!-- Multiplayer Tab Content -->
+        <div id="multiplayerTab" class="tab-content">
+            <div class="multiplayer-section">
+                <h3>Online Multiplayer</h3>
+                <input type="text" id="playerName" placeholder="Your name" class="modern-input">
+                <input type="text" id="roomId" placeholder="Room ID" class="modern-input">
+                <div class="multiplayer-buttons">
+                    <button id="joinRoom" class="multiplayer-btn primary">Join Room</button>
+                    <button id="generateRoom" class="multiplayer-btn secondary">Generate ID</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Import Tab Content -->
+        <div id="importTab" class="tab-content">
+            <div class="import-section">
+                <h3>Deck Import</h3>
+                <textarea id="deckImportArea" placeholder="Paste your decklist here..."></textarea>
+                <div class="import-buttons">
+                    <button id="importDeck" class="import-btn primary">Import Deck</button>
+                    <button id="clearDeck" class="import-btn secondary">Clear</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab Content -->
+        <div id="settingsTab" class="tab-content">
+            <div class="settings-section">
+                <h3>Game Settings</h3>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="animationsEnabled">
+                        Enable Animations
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="soundEnabled">
+                        Enable Sound Effects
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="range" id="tableAngle" min="0" max="30" value="15">
+                        Table Angle: <span id="angleValue">15°</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Notification System (from raid system) -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Modal Overlay for Dialogs -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent">
+            <!-- Dynamic modal content -->
+        </div>
+    </div>
+
+    <!-- Card Context Menu (Preserved) -->
+    <div id="cardContextMenu" class="card-context-menu">
+        <ul>
+            <li id="abilityCounterButton">Toggle ability/effect</li>
+            <li id="damageCounterButton">Damage counter</li>
+            <li id="specialConditionButton">Special condition</li>
+            <li id="miscCounterButton">Misc Markers</li>
+            <li id="moveButton">Move card...
+                <ul class="card-sub-menu">
+                    <li id="moveToBoardButton">to Board</li>
+                    <li id="moveToTopButton">to Deck (top)</li>
+                    <li id="moveToBottomButton">to Deck (bottom)</li>
+                </ul>
+            </li>
+            <li id="revealHideButton">Reveal/hide card</li>
+        </ul>
+    </div>
+
+    <!-- Raid Test Button (Preserved) -->
+    <button id="raidTestButton" class="raid-test-btn">🏴‍☠️ Test Raid Battle</button>
+
+    <script>
+        // Initialize modern table positioning
+        class ModernTableManager {
+            constructor() {
+                this.initializePositioning();
+                this.setupEventListeners();
+            }
+            
+            initializePositioning() {
+                // Use raid geometry for player positioning
+                this.updatePlayerPositions();
+                this.setupTableAngle();
+            }
+            
+            updatePlayerPositions() {
+                const selfPlayer = document.getElementById('selfPlayerArea');
+                const oppPlayer = document.getElementById('oppPlayerArea');
+                
+                // Position using CSS custom properties
+                selfPlayer.style.setProperty('--x', '50%');
+                selfPlayer.style.setProperty('--y', '75%');
+                
+                oppPlayer.style.setProperty('--x', '50%');
+                oppPlayer.style.setProperty('--y', '25%');
+            }
+            
+            setupTableAngle() {
+                const table = document.getElementById('gameTable');
+                const angleSlider = document.getElementById('tableAngle');
+                
+                if (angleSlider) {
+                    angleSlider.addEventListener('input', (e) => {
+                        const angle = e.target.value;
+                        table.style.transform = `translate(-50%, -50%) perspective(1000px) rotateX(${angle}deg)`;
+                        document.getElementById('angleValue').textContent = `${angle}°`;
+                    });
+                }
+            }
+            
+            setupEventListeners() {
+                // Tab switching
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.tab);
+                    });
+                });
+            }
+            
+            switchTab(tabName) {
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Show selected tab
+                document.getElementById(tabName + 'Tab').classList.add('active');
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            }
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.modernTable = new ModernTableManager();
+            console.log('🎮 Modern PTCG Table initialized');
+        });
+    </script>
+</body>
+</html>

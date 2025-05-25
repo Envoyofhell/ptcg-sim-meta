@@ -100,44 +100,133 @@ class RaidGameEngine {
     const raid = this.raids.get(raidId);
     if (!raid) return { error: 'Raid not found' };
 
-    if (raid.players.length >= raid.config.maxPlayers) {
+    // Enhanced: Allow joining as spectator
+    const joinAsSpectator = playerData.joinAsSpectator || false;
+
+    if (!joinAsSpectator && raid.players.length >= raid.config.maxPlayers) {
       return { error: 'Raid is full' };
     }
 
-    // Create player with game data
+    // Enhanced: Create player with comprehensive card system
     const player = {
       id: playerId,
       username: playerData.username || 'Anonymous',
-      status: 'active', // active, ko, spectator
+      status: joinAsSpectator ? 'spectator' : 'active',
 
-      // Pokemon data
-      activePokemon: {
-        name: playerData.activePokemon?.name || 'Pikachu',
-        currentHP: playerData.activePokemon?.maxHP || 120,
-        maxHP: playerData.activePokemon?.maxHP || 120,
-        attacks: playerData.activePokemon?.attacks || [
-          { name: 'Thunder Shock', damage: 60 },
-        ],
-        status: 'active', // active, ko
+      // Enhanced: Player profile information
+      profile: {
+        icon: playerData.profile?.icon || '🎮',
+        badge: playerData.profile?.badge || 'Novice',
+        level: playerData.profile?.level || 1,
+        experience: playerData.profile?.experience || 0,
+        wins: playerData.profile?.wins || 0,
+        losses: playerData.profile?.losses || 0,
+        favoriteType: playerData.profile?.favoriteType || 'Electric',
       },
 
-      benchPokemon: {
-        name: 'Squirtle',
-        currentHP: 100,
-        maxHP: 100,
-        attacks: [{ name: 'Water Gun', damage: 50 }],
-        status: 'benched',
+      // Enhanced: Card-based system with placeholder test cards
+      cards: {
+        active: {
+          id: 'test-card-1',
+          name: playerData.cards?.active?.name || 'Pikachu',
+          type: 'Electric',
+          currentHP: playerData.cards?.active?.maxHP || 120,
+          maxHP: playerData.cards?.active?.maxHP || 120,
+          attacks: playerData.cards?.active?.attacks || [
+            {
+              name: 'Thunder Shock',
+              damage: 60,
+              energyCost: ['Electric'],
+              description: 'Basic electric attack',
+            },
+          ],
+          abilities: playerData.cards?.active?.abilities || [],
+          weakness: 'Fighting',
+          resistance: 'Metal',
+          retreatCost: ['Colorless'],
+          status: 'active',
+          statusEffects: [], // poisoned, burned, paralyzed, etc.
+          attachedEnergy: ['Electric'],
+          isGX: false,
+          rarity: 'Common',
+        },
+
+        bench: {
+          id: 'test-card-2',
+          name: playerData.cards?.bench?.name || 'Squirtle',
+          type: 'Water',
+          currentHP: playerData.cards?.bench?.maxHP || 100,
+          maxHP: playerData.cards?.bench?.maxHP || 100,
+          attacks: playerData.cards?.bench?.attacks || [
+            {
+              name: 'Water Gun',
+              damage: 50,
+              energyCost: ['Water'],
+              description: 'Basic water attack',
+            },
+          ],
+          abilities: playerData.cards?.bench?.abilities || [],
+          weakness: 'Grass',
+          resistance: 'Fire',
+          retreatCost: ['Colorless'],
+          status: 'benched',
+          statusEffects: [],
+          attachedEnergy: ['Water'],
+          isGX: false,
+          rarity: 'Common',
+        },
+
+        // Enhanced: Additional card slots for future deck system
+        deck: [], // Future: Full 60-card deck
+        hand: [], // Future: Current hand of cards
+        discard: [], // Future: Discard pile
+        prizes: [], // Future: Prize cards
       },
 
-      // Player stats
-      koCount: 0,
-      canCheer: false,
-      hasUsedGX: false,
+      // Enhanced: Game state tracking
+      gameState: {
+        energyPerTurn: 1,
+        hasPlayedEnergy: false,
+        hasAttacked: false,
+        canRetreat: true,
+        koCount: 0,
+        canCheer: false,
+        hasUsedGX: false,
+        turnActions: [],
+      },
 
-      joinedAt: Date.now(),
+      // Enhanced: Raid-specific data
+      raidData: {
+        angle: 0, // Will be calculated
+        position: { x: 0, y: 0 },
+        joinedAt: Date.now(),
+        lastAction: null,
+        damageDealt: 0,
+        damageTaken: 0,
+        turnsPlayed: 0,
+      },
     };
 
-    raid.players.push(player);
+    // Enhanced: Add to appropriate list
+    if (joinAsSpectator) {
+      raid.spectators.push({
+        id: playerId,
+        username: player.username,
+        profile: player.profile,
+        joinedAt: Date.now(),
+        wasPlayer: false,
+        reason: 'Joined as spectator',
+      });
+
+      return {
+        success: true,
+        raid,
+        joinedAsSpectator: true,
+        spectatorData: raid.spectators[raid.spectators.length - 1],
+      };
+    } else {
+      raid.players.push(player);
+    }
 
     // Recalculate positions
     this.updateRaidPositions(raid);
@@ -383,79 +472,103 @@ class RaidGameEngine {
     }
 
     // First, check if player is already marked as KO/spectator
-    if (player.status === 'ko') {
-      return { error: 'Cannot attack while knocked out! You are a spectator.' };
+    if (player.status === 'ko' || player.status === 'spectator') {
+      return { error: 'Cannot attack while knocked out or as spectator!' };
     }
 
-    // Check if both Pokemon are KO'd - immediate spectator move
+    // Enhanced: Check card-based KO status
     if (
-      player.activePokemon.status === 'ko' &&
-      player.benchPokemon.status === 'ko'
+      player.cards.active.status === 'ko' &&
+      player.cards.bench.status === 'ko'
     ) {
       console.log(
-        `👻 ATTACK BLOCKED: ${player.username} - both Pokemon KO'd, moving to spectator`
+        `👻 ATTACK BLOCKED: ${player.username} - both cards KO'd, moving to spectator`
       );
       return this.movePlayerToSpectator(raid, player);
     }
 
-    // Handle active Pokemon KO situation
-    if (player.activePokemon.status === 'ko') {
-      // Check if bench Pokemon is available for auto-retreat
-      if (player.benchPokemon.status !== 'ko') {
-        // Auto-retreat to bench Pokemon
+    // Enhanced: Handle active card KO situation
+    if (player.cards.active.status === 'ko') {
+      // Check if bench card is available for auto-retreat
+      if (player.cards.bench.status !== 'ko') {
+        // Auto-retreat to bench card
         console.log(
-          `🔄 AUTO-RETREAT: ${player.username} swapping ${player.activePokemon.name} → ${player.benchPokemon.name}`
+          `🔄 AUTO-RETREAT: ${player.username} swapping ${player.cards.active.name} → ${player.cards.bench.name}`
         );
 
-        const temp = player.activePokemon;
-        player.activePokemon = player.benchPokemon;
-        player.benchPokemon = temp;
+        const temp = player.cards.active;
+        player.cards.active = player.cards.bench;
+        player.cards.bench = temp;
 
-        // Make sure the newly active Pokemon is set to active status
-        player.activePokemon.status = 'active';
+        // Make sure the newly active card is set to active status
+        player.cards.active.status = 'active';
 
         console.log(
-          `✅ AUTO-RETREAT COMPLETE: ${player.username} now has ${player.activePokemon.name} active (${player.activePokemon.currentHP}/${player.activePokemon.maxHP} HP)`
+          `✅ AUTO-RETREAT COMPLETE: ${player.username} now has ${player.cards.active.name} active (${player.cards.active.currentHP}/${player.cards.active.maxHP} HP)`
         );
       } else {
-        // Both Pokemon are KO'd - move to spectator
+        // Both cards are KO'd - move to spectator
         console.log(`👻 BOTH KO'D: ${player.username} - moving to spectator`);
         return this.movePlayerToSpectator(raid, player);
       }
     }
 
-    // Final safety check - don't allow attacks if active Pokemon is still KO'd
-    if (player.activePokemon.status === 'ko') {
-      return { error: 'Cannot attack with a knocked out Pokemon!' };
+    // Final safety check - don't allow attacks if active card is still KO'd
+    if (player.cards.active.status === 'ko') {
+      return { error: 'Cannot attack with a knocked out card!' };
     }
 
-    const damage = action.damage || 60;
+    // Enhanced: Calculate damage with card-based system
+    const selectedAttack = player.cards.active.attacks[action.attackIndex || 0];
+    const damage = action.damage || selectedAttack?.damage || 60;
+    const attackName = selectedAttack?.name || 'Basic Attack';
+
     const oldBossHP = raid.boss.currentHP;
     raid.boss.currentHP = Math.max(0, raid.boss.currentHP - damage);
     const newBossHP = raid.boss.currentHP;
 
+    // Enhanced: Update player statistics
+    player.raidData.damageDealt += oldBossHP - newBossHP;
+    player.raidData.turnsPlayed++;
+    player.raidData.lastAction = {
+      type: 'attack',
+      attackName: attackName,
+      damage: damage,
+      timestamp: Date.now(),
+    };
+
+    // Mark that player has attacked this turn
+    player.gameState.hasAttacked = true;
+
     // Enhanced logging for debugging
-    console.log(`💥 ATTACK DEBUG:`);
+    console.log(`💥 ENHANCED ATTACK DEBUG:`);
     console.log(`  Player: ${player.username} (ID: ${player.id})`);
     console.log(`  Player Status: ${player.status}`);
     console.log(
-      `  Active Pokemon: ${player.activePokemon.name} (${player.activePokemon.currentHP}/${player.activePokemon.maxHP}) - ${player.activePokemon.status}`
+      `  Active Card: ${player.cards.active.name} (${player.cards.active.currentHP}/${player.cards.active.maxHP}) - ${player.cards.active.status}`
     );
     console.log(
-      `  Bench Pokemon: ${player.benchPokemon.name} (${player.benchPokemon.currentHP}/${player.benchPokemon.maxHP}) - ${player.benchPokemon.status}`
+      `  Bench Card: ${player.cards.bench.name} (${player.cards.bench.currentHP}/${player.cards.bench.maxHP}) - ${player.cards.bench.status}`
     );
+    console.log(`  Attack: ${attackName}`);
     console.log(`  Damage: ${damage}`);
     console.log(`  Boss HP: ${oldBossHP} → ${newBossHP}`);
+    console.log(`  Total Damage Dealt: ${player.raidData.damageDealt}`);
 
     const result = {
       success: true,
-      message: `${player.username}'s ${player.activePokemon.name} dealt ${damage} damage!`,
+      message: `${player.username}'s ${player.cards.active.name} used ${attackName} for ${damage} damage!`,
+      attackName: attackName,
       damage: damage,
       target: 'boss',
       oldBossHP: oldBossHP,
       newBossHP: newBossHP,
       actualDamage: oldBossHP - newBossHP,
       bossDefeated: raid.boss.currentHP <= 0,
+      playerStats: {
+        totalDamage: player.raidData.damageDealt,
+        turnsPlayed: player.raidData.turnsPlayed,
+      },
     };
 
     // Check victory
@@ -474,18 +587,18 @@ class RaidGameEngine {
 
   movePlayerToSpectator(raid, player) {
     console.log(
-      `👻 SPECTATOR: Moving ${player.username} to spectator mode (both Pokemon KO'd)`
+      `👻 SPECTATOR: Moving ${player.username} to spectator mode (both cards KO'd)`
     );
 
     // Mark player as KO'd/spectator
     player.status = 'ko';
     player.canCheer = true;
 
-    // Ensure both Pokemon are marked as KO'd
-    player.activePokemon.status = 'ko';
-    player.benchPokemon.status = 'ko';
-    player.activePokemon.currentHP = 0;
-    player.benchPokemon.currentHP = 0;
+    // Ensure both cards are marked as KO'd
+    player.cards.active.status = 'ko';
+    player.cards.bench.status = 'ko';
+    player.cards.active.currentHP = 0;
+    player.cards.bench.currentHP = 0;
 
     // Add to spectators list if not already there
     if (!raid.spectators.some((s) => s.id === player.id)) {
@@ -494,7 +607,7 @@ class RaidGameEngine {
         username: player.username,
         wasPlayer: true,
         joinedAt: Date.now(),
-        reason: 'Both Pokemon knocked out',
+        reason: 'Both cards knocked out',
       });
     }
 
@@ -519,7 +632,7 @@ class RaidGameEngine {
 
     const result = {
       success: true,
-      message: `${player.username} has been moved to spectator mode - both Pokemon are knocked out!`,
+      message: `${player.username} has been moved to spectator mode - both cards are knocked out!`,
       playerBecameSpectator: true,
       spectatorCount: raid.spectators.length,
       remainingPlayers: raid.players.filter((p) => p.status === 'active')
@@ -534,50 +647,50 @@ class RaidGameEngine {
   }
 
   handleRetreat(raid, player) {
-    if (player.benchPokemon.status === 'ko') {
-      return { error: 'Bench Pokemon is knocked out!' };
+    if (player.cards.bench.status === 'ko') {
+      return { error: 'Bench card is knocked out!' };
     }
 
     // Swap active and bench
-    const temp = player.activePokemon;
-    player.activePokemon = player.benchPokemon;
-    player.benchPokemon = temp;
+    const temp = player.cards.active;
+    player.cards.active = player.cards.bench;
+    player.cards.bench = temp;
 
     return {
       success: true,
-      message: `${player.username} retreated! ${player.activePokemon.name} is now active.`,
+      message: `${player.username} retreated! ${player.cards.active.name} is now active.`,
     };
   }
 
   handleTestKO(raid, player, action) {
     const target =
-      action.pokemon === 'bench' ? player.benchPokemon : player.activePokemon;
+      action.pokemon === 'bench' ? player.cards.bench : player.cards.active;
 
     if (target.status === 'ko') {
-      return { error: `${action.pokemon} Pokemon is already knocked out` };
+      return { error: `${action.pokemon} card is already knocked out` };
     }
 
-    // KO the target Pokemon
-    const pokemonName = target.name;
+    // KO the target card
+    const cardName = target.name;
     target.currentHP = 0;
     target.status = 'ko';
     player.koCount++;
     raid.koCount++;
 
     console.log(
-      `🔥 TEST KO: ${player.username}'s ${pokemonName} was knocked out!`
+      `🔥 TEST KO: ${player.username}'s ${cardName} was knocked out!`
     );
     console.log(
-      `🔍 KO Status Check: Active=${player.activePokemon.status}, Bench=${player.benchPokemon.status}`
+      `🔍 KO Status Check: Active=${player.cards.active.status}, Bench=${player.cards.bench.status}`
     );
 
-    // CRITICAL: Check if both Pokemon are KO'd - if so, move to spectator immediately
-    if (
-      player.activePokemon.status === 'ko' &&
-      player.benchPokemon.status === 'ko'
-    ) {
+    // CRITICAL: Check if player has no viable cards left
+    const hasViableCards =
+      player.cards.active.status !== 'ko' || player.cards.bench.status !== 'ko';
+
+    if (!hasViableCards) {
       console.log(
-        `👻 BOTH POKEMON KO'D: ${player.username} - forcing spectator move`
+        `👻 NO VIABLE CARDS: ${player.username} - both cards are KO'd, forcing spectator move`
       );
 
       // Force spectator move and update raid state
@@ -585,11 +698,18 @@ class RaidGameEngine {
 
       return {
         success: true,
-        message: `${pokemonName} was knocked out! ${player.username} moved to spectator - both Pokemon are KO'd!`,
+        message: `${cardName} was knocked out! ${player.username} moved to spectator - no viable cards remaining!`,
         playerBecameSpectator: true,
         koCount: raid.koCount,
         spectatorResult: spectatorResult,
       };
+    }
+
+    // If the active card was KO'd but bench is available, auto-retreat
+    if (action.pokemon === 'active' && player.cards.bench.status !== 'ko') {
+      console.log(
+        `🔄 AUTO-RETREAT AVAILABLE: ${player.username} can retreat to ${player.cards.bench.name}`
+      );
     }
 
     // Check global loss condition
@@ -597,18 +717,19 @@ class RaidGameEngine {
       raid.gamePhase = 'ended';
       return {
         success: true,
-        message: `${pokemonName} was knocked out! Too many KOs - Defeat!`,
+        message: `${cardName} was knocked out! Too many KOs - Defeat!`,
         defeat: true,
       };
     }
 
     return {
       success: true,
-      message: `${pokemonName} was knocked out!`,
+      message: `${cardName} was knocked out!`,
       koCount: raid.koCount,
       playerStatus: player.status,
-      activePokemonStatus: player.activePokemon.status,
-      benchPokemonStatus: player.benchPokemon.status,
+      activeCardStatus: player.cards.active.status,
+      benchCardStatus: player.cards.bench.status,
+      hasViableCards: hasViableCards,
     };
   }
 
@@ -634,19 +755,19 @@ class RaidGameEngine {
         effect = 'Next attack deals double damage!';
         break;
       case 2:
-        effect = 'All active Pokemon healed for 80 HP!';
+        effect = 'All active cards healed for 80 HP!';
         raid.players.forEach((p) => {
-          if (p.activePokemon.status === 'active') {
-            p.activePokemon.currentHP = Math.min(
-              p.activePokemon.maxHP,
-              p.activePokemon.currentHP + 80
+          if (p.cards.active.status === 'active') {
+            p.cards.active.currentHP = Math.min(
+              p.cards.active.maxHP,
+              p.cards.active.currentHP + 80
             );
           }
         });
         break;
       case 3:
-        effect = 'One Pokemon fully healed!';
-        player.activePokemon.currentHP = player.activePokemon.maxHP;
+        effect = 'One card fully healed!';
+        player.cards.active.currentHP = player.cards.active.maxHP;
         break;
       case 4:
         effect = 'Boss can only attack once next turn!';
@@ -671,13 +792,13 @@ class RaidGameEngine {
       return { error: 'Target player not found' };
     }
 
-    if (targetPlayer.activePokemon.status === 'ko') {
-      return { error: 'Target Pokemon is already knocked out' };
+    if (targetPlayer.cards.active.status === 'ko') {
+      return { error: 'Target card is already knocked out' };
     }
 
-    const oldHP = targetPlayer.activePokemon.currentHP;
-    targetPlayer.activePokemon.currentHP = Math.max(0, oldHP - damage);
-    const newHP = targetPlayer.activePokemon.currentHP;
+    const oldHP = targetPlayer.cards.active.currentHP;
+    targetPlayer.cards.active.currentHP = Math.max(0, oldHP - damage);
+    const newHP = targetPlayer.cards.active.currentHP;
 
     console.log(`👹 BOSS ATTACK DEBUG:`);
     console.log(`  Attack: ${attackName}`);
@@ -695,16 +816,16 @@ class RaidGameEngine {
       targetNewHP: newHP,
     };
 
-    // Check if Pokemon was knocked out
+    // Check if card was knocked out
     if (newHP <= 0) {
-      targetPlayer.activePokemon.status = 'ko';
+      targetPlayer.cards.active.status = 'ko';
       targetPlayer.koCount++;
       raid.koCount++;
       result.targetKO = true;
-      result.message += ` ${targetPlayer.activePokemon.name} was knocked out!`;
+      result.message += ` ${targetPlayer.cards.active.name} was knocked out!`;
 
       // Check if player should become spectator
-      if (targetPlayer.benchPokemon.status === 'ko') {
+      if (targetPlayer.cards.bench.status === 'ko') {
         this.movePlayerToSpectator(raid, targetPlayer);
         result.playerBecameSpectator = true;
       }
@@ -726,13 +847,13 @@ class RaidGameEngine {
       const playerId = target.substring(7);
       const player = raid.players.find((p) => p.id === playerId);
       if (player) {
-        player.activePokemon.currentHP = Math.max(
+        player.cards.active.currentHP = Math.max(
           0,
-          Math.min(player.activePokemon.maxHP, value)
+          Math.min(player.cards.active.maxHP, value)
         );
         return {
           success: true,
-          message: `Debug: ${player.username}'s active Pokemon HP set to ${player.activePokemon.currentHP}`,
+          message: `Debug: ${player.username}'s active card HP set to ${player.cards.active.currentHP}`,
         };
       }
     }
@@ -775,15 +896,15 @@ class RaidGameEngine {
       return { error: 'Target player not found' };
     }
 
-    // Resurrect both active and bench Pokemon
-    if (targetPlayer.activePokemon.status === 'ko') {
-      targetPlayer.activePokemon.status = 'active';
-      targetPlayer.activePokemon.currentHP = targetPlayer.activePokemon.maxHP;
+    // Resurrect both active and bench cards
+    if (targetPlayer.cards.active.status === 'ko') {
+      targetPlayer.cards.active.status = 'active';
+      targetPlayer.cards.active.currentHP = targetPlayer.cards.active.maxHP;
     }
 
-    if (targetPlayer.benchPokemon.status === 'ko') {
-      targetPlayer.benchPokemon.status = 'benched';
-      targetPlayer.benchPokemon.currentHP = targetPlayer.benchPokemon.maxHP;
+    if (targetPlayer.cards.bench.status === 'ko') {
+      targetPlayer.cards.bench.status = 'benched';
+      targetPlayer.cards.bench.currentHP = targetPlayer.cards.bench.maxHP;
     }
 
     // Update player status
@@ -814,43 +935,43 @@ class RaidGameEngine {
       return { error: 'Target player not found' };
     }
 
-    const targetPokemon =
+    const targetCard =
       pokemon === 'bench'
-        ? targetPlayer.benchPokemon
-        : targetPlayer.activePokemon;
+        ? targetPlayer.cards.bench
+        : targetPlayer.cards.active;
 
-    if (targetPokemon.status === 'ko') {
-      return { error: `${pokemon} Pokemon is already knocked out` };
+    if (targetCard.status === 'ko') {
+      return { error: `${pokemon} card is already knocked out` };
     }
 
-    // KO the target Pokemon
-    const pokemonName = targetPokemon.name;
-    targetPokemon.status = 'ko';
-    targetPokemon.currentHP = 0;
+    // KO the target card
+    const cardName = targetCard.name;
+    targetCard.status = 'ko';
+    targetCard.currentHP = 0;
     targetPlayer.koCount++;
     raid.koCount++;
 
     console.log(
-      `🐞 DEBUG KO: ${targetPlayer.username}'s ${pokemon} Pokemon (${pokemonName}) killed`
+      `🐞 DEBUG KO: ${targetPlayer.username}'s ${pokemon} card (${cardName}) killed`
     );
     console.log(
-      `🐞 Player Status Check: Active=${targetPlayer.activePokemon.status}, Bench=${targetPlayer.benchPokemon.status}`
+      `🐞 Player Status Check: Active=${targetPlayer.cards.active.status}, Bench=${targetPlayer.cards.bench.status}`
     );
 
-    // Check if player should become spectator (both Pokemon KO'd)
+    // Check if player should become spectator (both cards KO'd)
     if (
-      targetPlayer.activePokemon.status === 'ko' &&
-      targetPlayer.benchPokemon.status === 'ko'
+      targetPlayer.cards.active.status === 'ko' &&
+      targetPlayer.cards.bench.status === 'ko'
     ) {
       console.log(
-        `🐞 DEBUG SPECTATOR: Moving ${targetPlayer.username} to spectator (both Pokemon KO'd)`
+        `🐞 DEBUG SPECTATOR: Moving ${targetPlayer.username} to spectator (both cards KO'd)`
       );
 
       const spectatorResult = this.movePlayerToSpectator(raid, targetPlayer);
 
       return {
         success: true,
-        message: `Debug: ${targetPlayer.username}'s ${pokemon} Pokemon was killed! Player moved to spectator.`,
+        message: `Debug: ${targetPlayer.username}'s ${pokemon} card was killed! Player moved to spectator.`,
         playerBecameSpectator: true,
         spectatorResult: spectatorResult,
       };
@@ -858,11 +979,11 @@ class RaidGameEngine {
 
     return {
       success: true,
-      message: `Debug: ${targetPlayer.username}'s ${pokemon} Pokemon was killed!`,
+      message: `Debug: ${targetPlayer.username}'s ${pokemon} card was killed!`,
       koCount: raid.koCount,
       playerStatus: targetPlayer.status,
-      activePokemonStatus: targetPlayer.activePokemon.status,
-      benchPokemonStatus: targetPlayer.benchPokemon.status,
+      activeCardStatus: targetPlayer.cards.active.status,
+      benchCardStatus: targetPlayer.cards.bench.status,
     };
   }
 
@@ -874,22 +995,22 @@ class RaidGameEngine {
       return { error: 'Target player not found' };
     }
 
-    const targetPokemon =
+    const targetCard =
       pokemon === 'bench'
-        ? targetPlayer.benchPokemon
-        : targetPlayer.activePokemon;
+        ? targetPlayer.cards.bench
+        : targetPlayer.cards.active;
 
-    if (targetPokemon.status === 'ko') {
-      return { error: `${pokemon} Pokemon is already knocked out` };
+    if (targetCard.status === 'ko') {
+      return { error: `${pokemon} card is already knocked out` };
     }
 
-    const oldHP = targetPokemon.currentHP;
-    targetPokemon.currentHP = Math.min(targetPokemon.maxHP, oldHP + amount);
-    const newHP = targetPokemon.currentHP;
+    const oldHP = targetCard.currentHP;
+    targetCard.currentHP = Math.min(targetCard.maxHP, oldHP + amount);
+    const newHP = targetCard.currentHP;
 
     const result = {
       success: true,
-      message: `Debug: ${targetPlayer.username}'s ${pokemon} Pokemon healed for ${amount} HP (${oldHP} → ${newHP})`,
+      message: `Debug: ${targetPlayer.username}'s ${pokemon} card healed for ${amount} HP (${oldHP} → ${newHP})`,
     };
 
     return result;
@@ -925,10 +1046,10 @@ class RaidGameEngine {
     raid.gamePhase = 'lobby';
     raid.players.forEach((p) => {
       p.status = 'active';
-      p.activePokemon.currentHP = p.activePokemon.maxHP;
-      p.benchPokemon.currentHP = p.benchPokemon.maxHP;
-      p.activePokemon.status = 'active';
-      p.benchPokemon.status = 'benched';
+      p.cards.active.currentHP = p.cards.active.maxHP;
+      p.cards.bench.currentHP = p.cards.bench.maxHP;
+      p.cards.active.status = 'active';
+      p.cards.bench.status = 'benched';
     });
     this.updateRaidPositions(raid);
     return {
@@ -1047,7 +1168,7 @@ class RaidGameEngine {
 
     // Get active players (not spectators)
     const activePlayers = raid.players.filter(
-      (p) => p.status === 'active' && p.activePokemon.status !== 'ko'
+      (p) => p.status === 'active' && p.cards.active.status !== 'ko'
     );
 
     if (activePlayers.length === 0) {
@@ -1061,7 +1182,7 @@ class RaidGameEngine {
     );
     activePlayers.forEach((p) => {
       console.log(
-        `  - ${p.username}: ${p.activePokemon.name} (${p.activePokemon.currentHP}/${p.activePokemon.maxHP} HP)`
+        `  - ${p.username}: ${p.cards.active.name} (${p.cards.active.currentHP}/${p.cards.active.maxHP} HP)`
       );
     });
 
@@ -1072,17 +1193,17 @@ class RaidGameEngine {
     const selectedAttack =
       availableAttacks[Math.floor(Math.random() * availableAttacks.length)];
 
-    const oldHP = targetPlayer.activePokemon.currentHP;
+    const oldHP = targetPlayer.cards.active.currentHP;
     const damage = selectedAttack.damage;
     const newHP = Math.max(0, oldHP - damage);
 
     // Apply damage
-    targetPlayer.activePokemon.currentHP = newHP;
+    targetPlayer.cards.active.currentHP = newHP;
 
     console.log(`👹 BOSS ATTACK EXECUTED:`);
     console.log(`  Attack: ${selectedAttack.name} (${damage} damage)`);
     console.log(
-      `  Target: ${targetPlayer.username}'s ${targetPlayer.activePokemon.name}`
+      `  Target: ${targetPlayer.username}'s ${targetPlayer.cards.active.name}`
     );
     console.log(`  HP Change: ${oldHP} → ${newHP}`);
 
@@ -1096,21 +1217,21 @@ class RaidGameEngine {
       bossAttackExecuted: true,
     };
 
-    // Check if Pokemon was knocked out
+    // Check if card was knocked out
     if (newHP <= 0) {
-      targetPlayer.activePokemon.status = 'ko';
+      targetPlayer.cards.active.status = 'ko';
       targetPlayer.koCount++;
       raid.koCount++;
       bossResult.targetKO = true;
 
       console.log(
-        `💀 BOSS KO: ${targetPlayer.username}'s ${targetPlayer.activePokemon.name} was knocked out by boss!`
+        `💀 BOSS KO: ${targetPlayer.username}'s ${targetPlayer.cards.active.name} was knocked out by boss!`
       );
 
-      // Check if player should become spectator (both Pokemon KO'd)
-      if (targetPlayer.benchPokemon.status === 'ko') {
+      // Check if player should become spectator (both cards KO'd)
+      if (targetPlayer.cards.bench.status === 'ko') {
         console.log(
-          `👻 BOSS KO SPECTATOR: ${targetPlayer.username} - both Pokemon KO'd`
+          `👻 BOSS KO SPECTATOR: ${targetPlayer.username} - both cards KO'd`
         );
         this.movePlayerToSpectator(raid, targetPlayer);
         bossResult.playerBecameSpectator = true;
@@ -1238,6 +1359,31 @@ io.on('connection', (socket) => {
       socket.join(data.raidId);
       const raid = result.raid;
 
+      // Enhanced: Handle spectator joins
+      if (result.joinedAsSpectator) {
+        socket.emit('raidJoined', {
+          success: true,
+          playerId: socket.id,
+          raidState: raid,
+          joinedAsSpectator: true,
+          spectatorData: result.spectatorData,
+        });
+
+        // Notify other players about new spectator
+        io.to(data.raidId).emit('spectatorJoined', {
+          raidId: data.raidId,
+          spectator: result.spectatorData,
+          spectatorCount: raid.spectators.length,
+          updatedRaidState: raid,
+        });
+
+        console.log(
+          `👻 ${data.playerData?.username || 'Spectator'} joined as spectator in raid ${data.raidId}`
+        );
+        return;
+      }
+
+      // Regular player join
       // Auto-start if we have enough players
       if (
         raid.gamePhase === 'lobby' &&
@@ -1252,15 +1398,20 @@ io.on('connection', (socket) => {
         raidState: raid,
       });
 
+      // Enhanced: Find the actual joined player (could be last in array)
+      const joinedPlayer =
+        raid.players.find((p) => p.id === socket.id) ||
+        raid.players[raid.players.length - 1];
+
       io.to(data.raidId).emit('playerJoinedRaid', {
         raidId: data.raidId,
-        player: raid.players.find((p) => p.id === socket.id),
+        player: joinedPlayer,
         playerCount: raid.players.length,
         updatedRaidState: raid,
       });
 
       console.log(
-        `👋 ${data.playerData?.username || 'Player'} joined raid ${data.raidId}`
+        `👋 ${data.playerData?.username || 'Player'} joined raid ${data.raidId} (${raid.players.length}/${raid.config.maxPlayers} players)`
       );
     } else {
       socket.emit('raidJoinFailed', {

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Modular CSS Test - Pokemon Raid System</title>
+    
+    <!-- MODULAR CSS SYSTEM TEST -->
+    <link rel="stylesheet" href="css/pokemon-raid-system.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    
+    <style>
+        /* Minimal test-specific styles */
+        body {
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid var(--pokemon-blue);
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .code-snippet {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <header style="text-align: center; margin-bottom: 40px;">
+            <h1>🧪 Modular CSS System Test</h1>
+            <p>Testing the new Pokemon Raid Battle CSS Architecture</p>
+            <div class="code-snippet">
+                &lt;!-- Only 2 CSS files needed for this demo --&gt;<br>
+                &lt;link rel="stylesheet" href="css/pokemon-raid-system.css"&gt;<br>
+                &lt;link rel="stylesheet" href="css/raid-animations.css"&gt;
+            </div>
+        </header>
+
+        <!-- Pokemon Type System Test -->
+        <section class="test-section">
+            <h2>🎨 Pokemon Type Color System</h2>
+            <p>All 18 Pokemon types with authentic colors:</p>
+            <div class="test-grid">
+                <div class="pokemon-type-badge type-grass">Grass</div>
+                <div class="pokemon-type-badge type-fire">Fire</div>
+                <div class="pokemon-type-badge type-water">Water</div>
+                <div class="pokemon-type-badge type-electric">Electric</div>
+                <div class="pokemon-type-badge type-psychic">Psychic</div>
+                <div class="pokemon-type-badge type-ice">Ice</div>
+                <div class="pokemon-type-badge type-dragon">Dragon</div>
+                <div class="pokemon-type-badge type-dark">Dark</div>
+                <div class="pokemon-type-badge type-fairy">Fairy</div>
+                <div class="pokemon-type-badge type-normal">Normal</div>
+                <div class="pokemon-type-badge type-fighting">Fighting</div>
+                <div class="pokemon-type-badge type-poison">Poison</div>
+                <div class="pokemon-type-badge type-ground">Ground</div>
+                <div class="pokemon-type-badge type-flying">Flying</div>
+                <div class="pokemon-type-badge type-bug">Bug</div>
+                <div class="pokemon-type-badge type-rock">Rock</div>
+                <div class="pokemon-type-badge type-ghost">Ghost</div>
+                <div class="pokemon-type-badge type-steel">Steel</div>
+            </div>
+        </section>
+
+        <!-- 3D Boss Card Test -->
+        <section class="test-section">
+            <h2>🃏 3D Boss Card System</h2>
+            <p>Authentic 3D perspective card with matrix3d transforms:</p>
+            <div style="display: flex; justify-content: center; padding: 40px;">
+                <div class="boss-zone">
+                    <div class="perspective-card animate-glow">
+                        <div class="perspective-card__transformer">
+                            <div class="perspective-card__artwork perspective-card__artwork--front">
+                                <div class="boss-level">★★★</div>
+                                <div class="boss-card-content">
+                                    <div class="boss-name">Test Boss</div>
+                                    <div class="boss-hp-container">
+                                        <div class="boss-hp-bar">
+                                            <div class="boss-hp-fill" style="width: 75%;"></div>
+                                        </div>
+                                        <div class="boss-hp-text">HP: 750 / 1000</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="perspective-card__shine"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="code-snippet">
+                &lt;div class="boss-zone"&gt;<br>
+                &nbsp;&nbsp;&lt;div class="perspective-card animate-glow"&gt;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- 3D card content --&gt;<br>
+                &nbsp;&nbsp;&lt;/div&gt;<br>
+                &lt;/div&gt;
+            </div>
+        </section>
+
+        <!-- Animation System Test -->
+        <section class="test-section">
+            <h2>✨ Animation System</h2>
+            <p>Pokemon-themed animations and effects:</p>
+            <div class="test-grid">
+                <div class="pokemon-type-badge type-electric animate-electric">Electric Effect</div>
+                <div class="pokemon-type-badge type-fire animate-fire">Fire Effect</div>
+                <div class="pokemon-type-badge type-water animate-water">Water Effect</div>
+                <div class="pokemon-type-badge type-grass animate-grass">Grass Effect</div>
+                <div class="pokemon-type-badge type-psychic animate-glow">Glow Effect</div>
+                <div class="pokemon-type-badge type-dragon animate-pulse">Pulse Effect</div>
+            </div>
+        </section>
+
+        <!-- CSS Variables Test -->
+        <section class="test-section">
+            <h2>🎯 CSS Variables System</h2>
+            <p>Centralized theming with CSS custom properties:</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <div style="background: var(--pokemon-blue); color: white; padding: 15px; text-align: center; border-radius: 10px;">
+                    Pokemon Blue<br><code>var(--pokemon-blue)</code>
+                </div>
+                <div style="background: var(--pokemon-yellow); color: #333; padding: 15px; text-align: center; border-radius: 10px;">
+                    Pokemon Yellow<br><code>var(--pokemon-yellow)</code>
+                </div>
+                <div style="background: var(--pokemon-red); color: white; padding: 15px; text-align: center; border-radius: 10px;">
+                    Pokemon Red<br><code>var(--pokemon-red)</code>
+                </div>
+                <div style="background: var(--pokemon-green); color: white; padding: 15px; text-align: center; border-radius: 10px;">
+                    Pokemon Green<br><code>var(--pokemon-green)</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modular Benefits -->
+        <section class="test-section">
+            <h2>🏗️ Modular Architecture Benefits</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3>❌ Before (Embedded CSS)</h3>
+                    <ul style="color: #e74c3c;">
+                        <li>2000+ lines in &lt;style&gt; tag</li>
+                        <li>No reusability across projects</li>
+                        <li>Hard to maintain and update</li>
+                        <li>No browser caching</li>
+                        <li>Cluttered HTML files</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>✅ After (Modular CSS)</h3>
+                    <ul style="color: #27ae60;">
+                        <li>5 focused CSS modules</li>
+                        <li>Reusable across projects</li>
+                        <li>Easy to maintain</li>
+                        <li>Browser cacheable</li>
+                        <li>Clean HTML structure</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- File Structure -->
+        <section class="test-section">
+            <h2>📁 CSS File Structure</h2>
+            <div class="code-snippet">
+css/<br>
+├── pokemon-raid-system.css      &lt;-- Core system (loaded)<br>
+├── pokemon-raid-interactive.css &lt;-- Modals & notifications<br>
+├── raid-launcher.css            &lt;-- Launcher interface<br>
+├── raid-components.css          &lt;-- Player panels & cards<br>
+└── raid-animations.css          &lt;-- All animations (loaded)<br>
+<br>
+💡 Only loading what we need for this test!
+            </div>
+        </section>
+
+        <!-- Performance Note -->
+        <footer style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(0, 0, 0, 0.1); border-radius: 10px;">
+            <h3>🚀 Performance Impact</h3>
+            <p>This demo only loads <strong>2 CSS files</strong> instead of embedding everything.</p>
+            <p>Total CSS size reduced from ~67KB embedded to modular components as needed.</p>
+            <p>
+                <a href="raid-isolated-clean.html" style="color: var(--pokemon-blue); text-decoration: none; font-weight: bold;">
+                    → View Full Raid System with All Modules
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple test to show CSS variables are working
+        console.log('🎨 Pokemon Raid CSS System Loaded!');
+        console.log('CSS Variables available:', {
+            'pokemon-blue': getComputedStyle(document.documentElement).getPropertyValue('--pokemon-blue'),
+            'pokemon-yellow': getComputedStyle(document.documentElement).getPropertyValue('--pokemon-yellow'),
+            'fire': getComputedStyle(document.documentElement).getPropertyValue('--fire'),
+            'water': getComputedStyle(document.documentElement).getPropertyValue('--water')
+        });
+    </script>
+</body>
+</html> 

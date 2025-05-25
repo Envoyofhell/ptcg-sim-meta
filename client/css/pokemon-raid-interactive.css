@@ -1,0 +1,621 @@
+/* ===================================================================
+ * File: client/css/pokemon-raid-interactive.css
+ * Purpose: Interactive Components for Pokemon Raid Battle System
+ * Version: 4.0.0
+ * Author: PTCG Sim Meta Team
+ * ===================================================================*/
+
+/* ================ DAMAGE TRACKING SYSTEM ================ */
+.damage-tracker {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid var(--pokemon-blue);
+    border-radius: 15px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 15;
+}
+
+.damage-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+}
+
+.damage-input {
+    width: 80px;
+    padding: 8px;
+    border: 2px solid var(--pokemon-blue);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.damage-input:focus {
+    border-color: var(--pokemon-yellow);
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    outline: none;
+}
+
+.damage-add-btn {
+    background: linear-gradient(135deg, var(--pokemon-red) 0%, #ff4757 100%);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.damage-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+}
+
+/* ================ BOSS ATTACK CARDS ================ */
+.boss-attack-area {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    z-index: 5;
+}
+
+.boss-attack-header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.draw-card-btn {
+    background: linear-gradient(135deg, var(--pokemon-purple) 0%, #8b3a8b 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.draw-card-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(139, 58, 139, 0.4);
+}
+
+.boss-attack-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.boss-attack-card {
+    width: 80px;
+    height: 100px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border: 2px solid var(--gold-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.boss-attack-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.boss-attack-card.revealed {
+    background: linear-gradient(135deg, var(--pokemon-red) 0%, #c0392b 100%);
+    color: white;
+}
+
+.boss-attack-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.boss-attack-card:hover::before {
+    transform: translateX(100%);
+}
+
+/* ================ POKEMON DETAIL MODAL ================ */
+.pokemon-detail-modal,
+.attack-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    border: 3px solid var(--pokemon-blue);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 2px solid #e9ecef;
+    background: linear-gradient(135deg, var(--pokemon-blue) 0%, var(--pokemon-purple) 100%);
+    color: white;
+    border-radius: 17px 17px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 30px;
+    color: #333;
+}
+
+/* ================ POKEMON DETAIL LAYOUT ================ */
+.pokemon-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.pokemon-image-section {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    border: 2px solid #dee2e6;
+}
+
+.pokemon-icon-large {
+    font-size: 80px;
+    margin-bottom: 15px;
+}
+
+.pokemon-type-large {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 25px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pokemon-stats-section,
+.pokemon-moves-section,
+.pokemon-abilities-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.pokemon-stats-section h3,
+.pokemon-moves-section h3,
+.pokemon-abilities-section h3 {
+    color: var(--pokemon-blue);
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.stat-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 117, 201, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--pokemon-blue);
+}
+
+.stat-name {
+    font-weight: bold;
+    color: #666;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: var(--pokemon-blue);
+}
+
+.moves-list,
+.abilities-list {
+    display: grid;
+    gap: 10px;
+}
+
+.move-item {
+    background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%);
+    border: 2px solid var(--pokemon-yellow);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.move-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
+}
+
+.move-name {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.move-damage {
+    color: var(--pokemon-red);
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.move-cost {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.ability-item {
+    background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+    border: 2px solid var(--pokemon-blue);
+    border-radius: 12px;
+    padding: 15px;
+    font-weight: bold;
+    color: var(--pokemon-blue);
+    text-align: center;
+}
+
+/* ================ ATTACK SELECTION MODAL ================ */
+.active-pokemon-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    border: 2px solid #dee2e6;
+}
+
+.pokemon-icon-small {
+    font-size: 40px;
+    margin-right: 15px;
+}
+
+.attack-options {
+    display: grid;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.attack-option {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 3px solid #dee2e6;
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.attack-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.attack-option:hover {
+    border-color: var(--pokemon-yellow);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.attack-option:hover::before {
+    left: 100%;
+}
+
+.attack-option.selected {
+    border-color: var(--pokemon-yellow);
+    background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 20%, #ffffff 100%);
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+}
+
+.attack-option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.attack-option-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.attack-option-damage {
+    background: var(--pokemon-red);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.attack-option-cost {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.attack-option-description {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.4;
+}
+
+.attack-modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.cancel-btn {
+    background: linear-gradient(135deg, #666 0%, #555 100%);
+    color: white;
+}
+
+.modal-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ================ GAME NOTIFICATIONS ================ */
+.game-notifications {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.notification {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.98) 100%);
+    border: 3px solid var(--pokemon-blue);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.5s ease-out;
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pokemon-blue);
+}
+
+.notification.success::before {
+    background: var(--pokemon-green);
+}
+
+.notification.error::before {
+    background: var(--pokemon-red);
+}
+
+.notification.warning::before {
+    background: var(--pokemon-yellow);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.notification-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.notification-text {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    margin-left: 10px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #666;
+}
+
+/* ================ TURN MANAGEMENT ================ */
+.turn-management {
+    position: absolute;
+    bottom: 5%;
+    right: 10%;
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid var(--pokemon-blue);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    z-index: 20;
+}
+
+.turn-management h3 {
+    color: var(--pokemon-yellow);
+    margin: 0 0 15px 0;
+    text-align: center;
+    font-size: 16px;
+}
+
+.turn-phase-display {
+    color: white;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.turn-phase-display .phase-name {
+    font-weight: bold;
+    color: var(--pokemon-yellow);
+}
+
+.end-turn-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--pokemon-green) 0%, #27ae60 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.end-turn-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(39, 174, 96, 0.4);
+}
+
+.end-turn-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #666 0%, #555 100%);
+} 

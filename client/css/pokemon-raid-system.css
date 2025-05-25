@@ -1,0 +1,608 @@
+/* ===================================================================
+ * File: client/css/pokemon-raid-system.css
+ * Purpose: Complete Pokemon Raid Battle System Styling
+ * Version: 4.0.0 - Authentic Pokemon Playmat Edition
+ * Author: PTCG Sim Meta Team
+ *
+ * Description:
+ *   Complete CSS styling for authentic Pokemon raid battle system
+ *   based on official Pokemon TCG raid battle mechanics and design.
+ *   Includes 3D effects, authentic playmat design, and interactive features.
+ * ===================================================================*/
+
+/* ================ CSS VARIABLES ================ */
+:root {
+    --pokemon-blue: #0075c9;
+    --pokemon-yellow: #ffcc00;
+    --pokemon-red: #dc143c;
+    --pokemon-green: #00a651;
+    --pokemon-purple: #8b3a8b;
+    
+    /* Pokemon type colors */
+    --grass: #7ac74c;
+    --fire: #ee8130;
+    --water: #6390f0;
+    --electric: #f7d02c;
+    --psychic: #f95587;
+    --ice: #96d9d6;
+    --dragon: #6f35fc;
+    --dark: #705746;
+    --fairy: #d685ad;
+    --normal: #a8a878;
+    --fighting: #c22e28;
+    --poison: #a33ea1;
+    --ground: #e2bf65;
+    --flying: #a98ff3;
+    --bug: #a6b91a;
+    --rock: #b6a136;
+    --ghost: #735797;
+    --steel: #b7b7ce;
+    
+    --card-border: #2c3e50;
+    --playmat-green: #1e6b3e;
+    --playmat-dark: #0d4a2b;
+    --gold-border: #ffd700;
+    --silver-border: #c0c0c0;
+    
+    --dark-bg: #0a0a0a;
+    --darker-bg: #050505;
+    --light-text: #ffffff;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --warning: #f39c12;
+}
+
+/* ================ BASE STYLES ================ */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Pokemon Classic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #1a1a2e 50%, var(--pokemon-blue) 100%);
+    min-height: 100vh;
+    color: var(--light-text);
+    overflow: hidden;
+}
+
+/* ================ CORE ANIMATIONS ================ */
+@keyframes pokemonGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(255, 204, 0, 0.6), 0 0 40px rgba(255, 204, 0, 0.3); }
+}
+
+@keyframes turnGlow {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+        border-color: var(--pokemon-yellow);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(255, 204, 0, 0.8), 0 0 35px rgba(255, 204, 0, 0.4);
+        border-color: #ffdd33;
+    }
+}
+
+@keyframes cardFlip {
+    0% { transform: rotateY(0deg); }
+    50% { transform: rotateY(90deg); }
+    100% { transform: rotateY(0deg); }
+}
+
+@keyframes hpPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0px); opacity: 1; }
+    100% { transform: translateY(-50px); opacity: 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* ================ POKEMON RAID BATTLE FIELD ================ */
+.raid-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(0, 117, 201, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 204, 0, 0.2) 0%, transparent 50%),
+        linear-gradient(135deg, var(--dark-bg) 0%, #1a1a2e 50%, #16213e 100%);
+    z-index: 1000;
+}
+
+.raid-battlefield {
+    position: absolute;
+    top: 15%;
+    left: 10%;
+    width: 55%;
+    height: 70%;
+    background: 
+        linear-gradient(135deg, var(--playmat-green) 0%, var(--playmat-dark) 100%);
+    border: 5px solid var(--gold-border);
+    border-radius: 20px;
+    transform: perspective(1200px) rotateX(25deg) rotateY(-10deg);
+    box-shadow: 
+        0 30px 80px rgba(0, 0, 0, 0.6),
+        inset 0 5px 15px rgba(255, 215, 0, 0.3);
+    overflow: hidden;
+}
+
+.battlefield-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 215, 0, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 215, 0, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.3;
+}
+
+/* ================ AUTHENTIC 3D BOSS CARD ================ */
+.boss-zone {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 200px;
+    perspective: 1000px;
+    z-index: 10;
+}
+
+.perspective-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.perspective-card:hover {
+    transform: rotateY(5deg) rotateX(-5deg) scale(1.02);
+}
+
+.perspective-card__transformer {
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: matrix3d(0.998388, 0, -0.0567525, 0, 0.0008397, 0.999891, 0.0147736, 0, 0.0567463, -0.0147974, 0.998279, 0, 0, 0, 0.0009942, 1);
+    transition: all 0.5s ease;
+}
+
+.perspective-card__artwork {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.perspective-card__artwork--front {
+    background: radial-gradient(circle, var(--pokemon-red) 0%, #8b0000 100%);
+    border: 4px solid var(--gold-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
+
+.perspective-card__artwork--back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 4px solid var(--silver-border);
+}
+
+.perspective-card__shine {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.perspective-card:hover .perspective-card__shine {
+    opacity: 1;
+}
+
+/* ================ BOSS CARD CONTENT ================ */
+.boss-card-content {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.boss-name {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    animation: pokemonGlow 3s ease-in-out infinite;
+}
+
+.boss-hp-container {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.boss-hp-bar {
+    width: 100%;
+    height: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--gold-border);
+    position: relative;
+}
+
+.boss-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%);
+    transition: width 0.8s ease;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.boss-hp-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+.boss-hp-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 8px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.boss-level {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--pokemon-yellow);
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.boss-ko-counter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* ================ TYPE COLORS ================ */
+.type-grass { background-color: var(--grass); }
+.type-fire { background-color: var(--fire); }
+.type-water { background-color: var(--water); }
+.type-electric { background-color: var(--electric); }
+.type-psychic { background-color: var(--psychic); }
+.type-ice { background-color: var(--ice); }
+.type-dragon { background-color: var(--dragon); }
+.type-dark { background-color: var(--dark); }
+.type-fairy { background-color: var(--fairy); }
+.type-normal { background-color: var(--normal); }
+.type-fighting { background-color: var(--fighting); }
+.type-poison { background-color: var(--poison); }
+.type-ground { background-color: var(--ground); }
+.type-flying { background-color: var(--flying); }
+.type-bug { background-color: var(--bug); }
+.type-rock { background-color: var(--rock); }
+.type-ghost { background-color: var(--ghost); }
+.type-steel { background-color: var(--steel); }
+
+/* ================ UTILITIES ================ */
+.hidden { display: none !important; }
+.fade-in { animation: fadeIn 0.5s ease-in-out; }
+.slide-up { animation: slideUp 0.5s ease-out; }
+
+/* ================ RESPONSIVE DESIGN SYSTEM ================ */
+
+/* Player zones responsive positioning */
+.player-zone {
+    position: absolute;
+    transition: all 0.3s ease;
+    max-width: 180px;
+    max-height: 110px;
+    overflow: hidden;
+}
+
+.player-zone .main-card {
+    width: 100%;
+    height: auto;
+    max-width: 120px;
+    max-height: 168px;
+}
+
+.player-zone .main-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.player-zone .bench-card {
+    width: 60%;
+    height: auto;
+    max-width: 72px;
+    max-height: 100px;
+}
+
+.player-zone .bench-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1400px) {
+    .player-zone {
+        max-width: 160px;
+        max-height: 100px;
+    }
+    
+    .player-zone .main-card {
+        max-width: 100px;
+        max-height: 140px;
+    }
+    
+    .boss-zone {
+        max-width: 180px;
+        max-height: 252px;
+    }
+    
+    .boss-zone .perspective-card {
+        max-width: 140px;
+        max-height: 196px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .player-zone {
+        max-width: 140px;
+        max-height: 90px;
+    }
+    
+    .player-zone .main-card {
+        max-width: 80px;
+        max-height: 112px;
+    }
+    
+    .boss-zone {
+        max-width: 160px;
+        max-height: 224px;
+    }
+    
+    .boss-zone .perspective-card {
+        max-width: 120px;
+        max-height: 168px;
+    }
+}
+
+@media (max-width: 768px) {
+    .raid-container {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    .raid-battlefield {
+        min-height: 100vh;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    
+    .player-zone {
+        position: relative;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+    }
+    
+    .player-zone .main-card {
+        max-width: 60px;
+        max-height: 84px;
+    }
+    
+    .player-zone .bench-card {
+        max-width: 36px;
+        max-height: 50px;
+    }
+    
+    .boss-zone {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 20px auto;
+        max-width: 120px;
+        max-height: 168px;
+    }
+    
+    .boss-zone .perspective-card {
+        max-width: 100px;
+        max-height: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .raid-battlefield {
+        padding: 5px;
+    }
+    
+    .player-zone {
+        margin: 5px 0;
+        padding: 10px;
+    }
+    
+    .player-zone .main-card {
+        max-width: 50px;
+        max-height: 70px;
+    }
+    
+    .player-zone .bench-card {
+        max-width: 30px;
+        max-height: 42px;
+    }
+    
+    .boss-zone {
+        max-width: 100px;
+        max-height: 140px;
+    }
+    
+    .boss-zone .perspective-card {
+        max-width: 80px;
+        max-height: 112px;
+    }
+}
+
+/* ================ VIEWPORT AND SCALING FIXES ================ */
+
+/* Ensure proper viewport scaling */
+html {
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: clamp(12px, 2vw, 16px);
+    line-height: 1.4;
+}
+
+/* Scrollbar styling for better UX */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--pokemon-blue);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--pokemon-yellow);
+}
+
+/* ================ TURN INDICATOR RESPONSIVE ================ */
+.turn-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1002;
+    max-width: 90vw;
+    padding: 10px 20px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .turn-indicator {
+        top: 10px;
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .turn-indicator {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 10px auto;
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+} 

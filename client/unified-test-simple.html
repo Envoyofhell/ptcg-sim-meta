@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Simple Unified System Test</title>
+    
+    <!-- MODULAR CSS SYSTEM -->
+    <link rel="stylesheet" href="css/pokemon-raid-system.css">
+    <link rel="stylesheet" href="css/pokemon-raid-interactive.css">
+    <link rel="stylesheet" href="css/raid-launcher.css">
+    <link rel="stylesheet" href="css/raid-components.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ecf0f1;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--pokemon-blue);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .test-button {
+            background: var(--pokemon-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        
+        .test-result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .pokemon-type-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .mini-battlefield {
+            width: 400px;
+            height: 300px;
+            background: 
+                radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(135deg, rgba(0, 117, 201, 0.1) 0%, rgba(220, 20, 60, 0.1) 100%);
+            border: 3px solid var(--pokemon-blue);
+            border-radius: 20px;
+            margin: 20px auto;
+            position: relative;
+            transform: perspective(600px) rotateX(15deg);
+        }
+        
+        .test-boss-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 112px;
+            background: var(--pokemon-red);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .player-zone-test {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: var(--pokemon-blue);
+            border-radius: 5px;
+            color: white;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .player-zone-test:nth-child(2) { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .player-zone-test:nth-child(3) { right: 10px; top: 50%; transform: translateY(-50%); }
+        .player-zone-test:nth-child(4) { top: 10px; left: 50%; transform: translateX(-50%); }
+        .player-zone-test:nth-child(5) { left: 10px; top: 50%; transform: translateY(-50%); }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🧪 Unified System Test</h1>
+        
+        <!-- CSS Variable Test -->
+        <div class="test-section">
+            <h2>1. CSS Variables Test</h2>
+            <div id="cssVariableTest">
+                <div class="pokemon-type-badge type-electric" style="background: var(--electric);">Electric</div>
+                <div class="pokemon-type-badge type-fire" style="background: var(--fire);">Fire</div>
+                <div class="pokemon-type-badge type-water" style="background: var(--water);">Water</div>
+                <div class="pokemon-type-badge type-grass" style="background: var(--grass);">Grass</div>
+            </div>
+            <button class="test-button" onclick="testCSSVariables()">Test CSS Variables</button>
+            <div id="cssResults" class="test-result"></div>
+        </div>
+        
+        <!-- Layout Test -->
+        <div class="test-section">
+            <h2>2. Layout Test</h2>
+            <div class="mini-battlefield">
+                <div class="test-boss-card">BOSS</div>
+                <div class="player-zone-test">P1</div>
+                <div class="player-zone-test">P2</div>
+                <div class="player-zone-test">P3</div>
+                <div class="player-zone-test">P4</div>
+            </div>
+            <button class="test-button" onclick="testLayout()">Test Layout</button>
+            <div id="layoutResults" class="test-result"></div>
+        </div>
+        
+        <!-- Socket.IO Test -->
+        <div class="test-section">
+            <h2>3. Socket.IO Test</h2>
+            <button class="test-button" onclick="testSocketIO()">Test Socket.IO</button>
+            <div id="socketResults" class="test-result"></div>
+        </div>
+        
+        <!-- File Loading Test -->
+        <div class="test-section">
+            <h2>4. File Loading Test</h2>
+            <button class="test-button" onclick="testFileLoading()">Test CSS Files</button>
+            <div id="fileResults" class="test-result"></div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="test-section">
+            <h2>5. Quick Links</h2>
+            <button class="test-button" onclick="openUnified()">Open Unified System</button>
+            <button class="test-button" onclick="openDev()">Open Dev Interface</button>
+            <button class="test-button" onclick="testDemo()">Test Demo Data</button>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        
+        function testCSSVariables() {
+            const results = [];
+            const testElement = document.createElement('div');
+            document.body.appendChild(testElement);
+            
+            const variables = ['--pokemon-blue', '--electric', '--fire', '--water', '--grass'];
+            
+            variables.forEach(variable => {
+                testElement.style.setProperty('color', `var(${variable})`);
+                const computedColor = getComputedStyle(testElement).color;
+                
+                if (computedColor && computedColor !== `var(${variable})`) {
+                    results.push(`✅ ${variable}: ${computedColor}`);
+                } else {
+                    results.push(`❌ ${variable}: Not defined`);
+                }
+            });
+            
+            document.body.removeChild(testElement);
+            document.getElementById('cssResults').textContent = results.join('\n');
+        }
+        
+        function testLayout() {
+            const battlefield = document.querySelector('.mini-battlefield');
+            const rect = battlefield.getBoundingClientRect();
+            const results = [
+                `✅ Battlefield dimensions: ${rect.width}x${rect.height}`,
+                `✅ Transform applied: ${battlefield.style.transform}`,
+                `✅ Player zones count: ${battlefield.querySelectorAll('.player-zone-test').length}`
+            ];
+            
+            document.getElementById('layoutResults').textContent = results.join('\n');
+        }
+        
+        function testSocketIO() {
+            const results = [];
+            
+            if (typeof io === 'undefined') {
+                results.push('❌ Socket.IO not loaded');
+                document.getElementById('socketResults').textContent = results.join('\n');
+                return;
+            }
+            
+            results.push('✅ Socket.IO library loaded');
+            
+            if (!socket) {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    results.push('✅ Socket.IO connected');
+                    results.push(`✅ Socket ID: ${socket.id}`);
+                    document.getElementById('socketResults').textContent = results.join('\n');
+                });
+                
+                socket.on('connect_error', (error) => {
+                    results.push(`❌ Socket.IO error: ${error.message}`);
+                    document.getElementById('socketResults').textContent = results.join('\n');
+                });
+                
+                results.push('⏳ Attempting to connect...');
+            } else if (socket.connected) {
+                results.push('✅ Socket.IO already connected');
+                results.push(`✅ Socket ID: ${socket.id}`);
+            } else {
+                results.push('⚠️ Socket exists but not connected');
+            }
+            
+            document.getElementById('socketResults').textContent = results.join('\n');
+        }
+        
+        function testFileLoading() {
+            const cssFiles = [
+                'css/pokemon-raid-system.css',
+                'css/pokemon-raid-interactive.css',
+                'css/raid-launcher.css',
+                'css/raid-components.css',
+                'css/raid-animations.css'
+            ];
+            
+            const results = ['📁 Testing CSS file loading...'];
+            document.getElementById('fileResults').textContent = results.join('\n');
+            
+            Promise.all(cssFiles.map(file => 
+                fetch(file)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text().then(text => 
+                                `✅ ${file}: OK (${text.length} bytes)`
+                            );
+                        } else {
+                            return `❌ ${file}: HTTP ${response.status}`;
+                        }
+                    })
+                    .catch(error => `❌ ${file}: ${error.message}`)
+            )).then(fileResults => {
+                results.push(...fileResults);
+                document.getElementById('fileResults').textContent = results.join('\n');
+            });
+        }
+        
+        function openUnified() {
+            window.open('/raid-unified.html', '_blank');
+        }
+        
+        function openDev() {
+            window.open('/enhanced-features-test.html', '_blank');
+        }
+        
+        function testDemo() {
+            if (socket && socket.connected) {
+                const demoRaidId = 'TEST-' + Math.random().toString(36).substr(2, 4);
+                socket.emit('createRaid', {
+                    raidId: demoRaidId,
+                    raidType: 'tcg-official',
+                    maxPlayers: 4,
+                    layout: 'versus'
+                });
+                alert(`🧪 Demo raid created: ${demoRaidId}\nCheck server console for activity.`);
+            } else {
+                alert('❌ Socket.IO not connected. Test Socket.IO first.');
+            }
+        }
+        
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testCSSVariables();
+                testLayout();
+                testSocketIO();
+            }, 500);
+        });
+    </script>
+</body>
+</html> 

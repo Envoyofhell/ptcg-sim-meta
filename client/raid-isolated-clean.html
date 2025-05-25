@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PTCG Raid Battle System - Authentic Pokemon Playmat Edition">
+    <meta name="author" content="PTCG Sim Meta Team">
+    
+    <title>PTCG Raid System - Authentic Pokemon Playmat Edition</title>
+    
+    <!-- EXTERNAL CSS FILES -->
+    <link rel="stylesheet" href="css/pokemon-raid-system.css">
+    <link rel="stylesheet" href="css/pokemon-raid-interactive.css">
+    <link rel="stylesheet" href="css/raid-launcher.css">
+    <link rel="stylesheet" href="css/raid-components.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    
+    <meta name="theme-color" content="#0075c9">
+</head>
+
+<body>
+    <!-- POKEMON RAID LAUNCHER -->
+    <div id="raidLauncher" class="raid-launcher">
+        <header class="launcher-header">
+            <h1>⚡ Pokemon Raid Battle System</h1>
+            <div class="version">Authentic Playmat Edition v4.0 - Pokemon TCG Inspired</div>
+        </header>
+        
+        <!-- POKEMON TEAM SELECTION -->
+        <div class="pokemon-selection">
+            <h3>🎯 Choose Your Pokemon Team</h3>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                Select 2 Pokemon for your raid team (1 Active, 1 Bench)
+            </p>
+            
+            <div class="pokemon-grid" id="pokemonGrid">
+                <!-- Pokemon options will be populated by JavaScript -->
+            </div>
+            
+            <div class="selected-pokemon">
+                <div class="selected-slot" id="activeSlot">
+                    <h4>🔥 Active Pokemon</h4>
+                    <div class="slot-content">Choose your active Pokemon</div>
+                </div>
+                <div class="selected-slot" id="benchSlot">
+                    <h4>🔹 Bench Pokemon</h4>
+                    <div class="slot-content">Choose your bench Pokemon</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Actions -->
+        <section class="button-group">
+            <button class="raid-button create-raid" id="createRaidBtn" type="button">
+                Create New Raid
+            </button>
+            <button class="raid-button join-raid" id="joinRaidBtn" type="button">
+                Join Existing Raid
+            </button>
+        </section>
+
+        <!-- Input Fields -->
+        <section class="input-section">
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="raidIdInput" 
+                placeholder="Enter Raid ID to join"
+                maxlength="20"
+                autocomplete="off"
+            >
+            <input 
+                type="text" 
+                class="raid-input" 
+                id="usernameInput" 
+                placeholder="Your trainer name" 
+                value="Trainer"
+                maxlength="20"
+                autocomplete="username"
+            >
+        </section>
+
+        <!-- Layout and Test Controls -->
+        <section class="button-group">
+            <button class="raid-button layout-toggle" id="launcherToggleLayoutBtn" type="button">
+                View Mode: Battlefield
+            </button>
+            <button class="raid-button test-button" id="testMultiplayerBtn" type="button">
+                🧪 Test Multiplayer
+            </button>
+        </section>
+
+        <!-- Status Log -->
+        <section class="raid-status" id="raidStatusLog" role="log" aria-live="polite">
+            <div><strong>🚀 Pokemon Raid Battle System Status</strong></div>
+            <div>Status: <span id="connectionStatusDisplay">Initializing...</span></div>
+            <div>Interface: Authentic Pokemon TCG Playmat Design</div>
+            <div>Features: 3D Battlefield, Player Cards, Pokemon Selection</div>
+        </section>
+    </div>
+
+    <!-- MAIN POKEMON RAID BATTLE INTERFACE -->
+    <div id="raidContainer" class="raid-container">
+        <!-- 3D Pokemon Battlefield -->
+        <div id="raidBattlefield" class="raid-battlefield">
+            <div class="battlefield-grid"></div>
+            
+            <!-- Boss Zone -->
+            <div id="bossZone" class="boss-zone">
+                <div class="perspective-card">
+                    <div class="perspective-card__transformer">
+                        <div class="perspective-card__artwork perspective-card__artwork--front">
+                            <div class="boss-ko-counter" id="bossKOCounter">KO: 0</div>
+                            <div class="boss-level" id="bossLevel">★★★</div>
+                            <div class="boss-card-content">
+                                <div class="boss-name" id="bossName">Mysterious Raid Boss</div>
+                                <div class="boss-hp-container">
+                                    <div class="boss-hp-bar">
+                                        <div class="boss-hp-fill" id="bossHPFill" style="width: 100%;"></div>
+                                    </div>
+                                    <div class="boss-hp-text" id="bossHPText">HP: 1000 / 1000</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="perspective-card__artwork perspective-card__artwork--back">
+                            <!-- Pokemon card back design -->
+                        </div>
+                        <div class="perspective-card__shine"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Damage Tracking System -->
+            <div id="damageTracker" class="damage-tracker">
+                <div class="damage-input-group">
+                    <span>Damage:</span>
+                    <input type="number" class="damage-input" id="damageInput" 
+                           placeholder="0" min="0" max="9999" step="10">
+                    <button class="damage-add-btn" id="addDamageBtn">Add</button>
+                </div>
+            </div>
+            
+            <!-- Boss Attack Cards Area -->
+            <div id="bossAttackArea" class="boss-attack-area">
+                <div class="boss-attack-header">
+                    <button class="draw-card-btn" id="drawBossCardBtn">Draw Boss Attack Card</button>
+                </div>
+                <div class="boss-attack-cards" id="bossAttackCards">
+                    <div class="boss-attack-card" data-card="1">?</div>
+                    <div class="boss-attack-card" data-card="2">?</div>
+                    <div class="boss-attack-card" data-card="3">?</div>
+                    <div class="boss-attack-card" data-card="4">?</div>
+                </div>
+            </div>
+            
+            <!-- Player Zones (positioned dynamically) -->
+            <div id="playerZones">
+                <!-- Player zones will be created dynamically -->
+            </div>
+        </div>
+        
+        <!-- Turn Indicator -->
+        <div id="turnIndicator" class="turn-indicator">
+            <div class="turn-display" id="turnDisplay">
+                <div class="turn-element">Waiting for players...</div>
+            </div>
+        </div>
+        
+        <!-- Right Side Player Panel -->
+        <div id="playerPanel" class="player-panel">
+            <div class="panel-header">
+                <h2>🎮 Raid Battle</h2>
+                <div class="raid-info" id="raidInfo">
+                    <div class="info-item">
+                        <div class="info-label">Raid ID</div>
+                        <div class="info-value" id="raidIdDisplay">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Players</div>
+                        <div class="info-value" id="playerCountDisplay">0/4</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phase</div>
+                        <div class="info-value" id="gamePhaseDisplay">Lobby</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Turn</div>
+                        <div class="info-value" id="currentTurnDisplay">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Cards Container -->
+            <div id="playerCardsContainer">
+                <!-- Player cards will be generated dynamically -->
+            </div>
+            
+            <!-- Spectator Section -->
+            <div class="spectator-section" id="spectatorSection" style="display: none;">
+                <div class="spectator-header">👻 Spectators</div>
+                <div class="spectator-list" id="spectatorList">
+                    <!-- Spectators will be listed here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Turn Management -->
+        <div id="turnManagement" class="turn-management">
+            <h3>🎯 Turn Management</h3>
+            <div class="turn-phase-display">
+                Current Phase: <span class="phase-name" id="currentPhase">Boss Turn</span>
+            </div>
+            <button class="end-turn-btn" id="endTurnBtn">End Turn</button>
+        </div>
+        
+        <!-- Game Controls -->
+        <div id="gameControls" class="game-controls">
+            <div class="control-buttons">
+                <button class="game-button attack-btn" id="attackBtn" type="button">
+                    ⚔️ Attack
+                </button>
+                <button class="game-button defend-btn" id="defendBtn" type="button">
+                    🛡️ Defend
+                </button>
+                <button class="game-button leave-btn" id="leaveRaidBtn" type="button">
+                    🚪 Leave Raid
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POKEMON DETAIL MODAL -->
+    <div id="pokemonDetailModal" class="pokemon-detail-modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalPokemonName">Pokemon Details</h2>
+                <button class="modal-close" id="closePokemonModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="pokemon-detail-layout">
+                    <!-- Pokemon Image/Icon -->
+                    <div class="pokemon-image-section">
+                        <div class="pokemon-icon-large" id="modalPokemonIcon">🎮</div>
+                        <div class="pokemon-type-large" id="modalPokemonType">TYPE</div>
+                    </div>
+                    
+                    <!-- Pokemon Stats -->
+                    <div class="pokemon-stats-section">
+                        <h3>📊 Stats</h3>
+                        <div class="stat-grid">
+                            <div class="stat-row">
+                                <span class="stat-name">HP:</span>
+                                <span class="stat-value" id="modalPokemonHP">-</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Rarity:</span>
+                                <span class="stat-value" id="modalPokemonRarity">-</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Weakness:</span>
+                                <span class="stat-value" id="modalPokemonWeakness">-</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Resistance:</span>
+                                <span class="stat-value" id="modalPokemonResistance">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pokemon Moves -->
+                    <div class="pokemon-moves-section">
+                        <h3>⚔️ Moves</h3>
+                        <div id="modalPokemonMoves" class="moves-list">
+                            <!-- Moves will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Pokemon Abilities -->
+                    <div class="pokemon-abilities-section">
+                        <h3>✨ Abilities</h3>
+                        <div id="modalPokemonAbilities" class="abilities-list">
+                            <!-- Abilities will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ATTACK SELECTION MODAL -->
+    <div id="attackSelectionModal" class="attack-selection-modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚔️ Choose Your Attack</h2>
+                <button class="modal-close" id="closeAttackModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="active-pokemon-info">
+                    <div class="pokemon-icon-small" id="attackModalPokemonIcon">⚡</div>
+                    <span id="attackModalPokemonName">Pikachu</span>
+                </div>
+                
+                <div class="attack-options" id="attackOptions">
+                    <!-- Attack options will be populated here -->
+                </div>
+                
+                <div class="attack-modal-footer">
+                    <button class="modal-button cancel-btn" id="cancelAttack">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME NOTIFICATIONS -->
+    <div id="gameNotifications" class="game-notifications">
+        <!-- Notifications will appear here -->
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/raid-core.js"></script>
+
+    <!-- JavaScript disabled fallback -->
+    <noscript>
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: flex; align-items: center; justify-content: center; z-index: 9999; text-align: center; font-family: Arial, sans-serif;">
+            <div>
+                <h1>⚡ JavaScript Required</h1>
+                <p>This Pokemon Raid Battle System requires JavaScript to function.</p>
+                <p>Please enable JavaScript in your browser and reload the page.</p>
+            </div>
+        </div>
+    </noscript>
+</body>
+</html> 

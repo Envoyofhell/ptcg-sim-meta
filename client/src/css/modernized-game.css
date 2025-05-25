@@ -1,0 +1,689 @@
+/* ===================================================================
+ * File: src/css/modernized-game.css
+ * Purpose: Modern 3D game table styles using raid system components
+ * Version: 1.0.0
+ * 
+ * Integrates with:
+ *   - css/raid-launcher.css (variables & base)
+ *   - css/raid-components.css (notifications, modals)
+ *   - css/raid-animations.css (animations & effects)
+ * ===================================================================*/
+
+/* ================ 3D GAME TABLE ================ */
+.game-table-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1000px;
+    overflow: hidden;
+}
+
+.game-table {
+    position: relative;
+    width: 85vw;
+    height: 85vh;
+    background: 
+        radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%),
+        linear-gradient(45deg, #34495e 0%, #2c3e50 100%);
+    border-radius: 20px;
+    transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg);
+    box-shadow: 
+        0 20px 60px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    overflow: visible;
+}
+
+/* ================ PLAYER AREAS ================ */
+.player-areas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.player-area {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: all;
+}
+
+.self-player {
+    left: var(--x, 50%);
+    top: var(--y, 75%);
+}
+
+.opp-player {
+    left: var(--x, 50%);
+    top: var(--y, 25%);
+    transform: translate(-50%, -50%) rotateY(180deg);
+}
+
+/* ================ GAME ZONES ================ */
+.hand-area {
+    position: absolute;
+    bottom: -15vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60vw;
+    height: 12vh;
+    border: 3px solid rgba(52, 152, 219, 0.6);
+    border-radius: 15px;
+    background: rgba(52, 152, 219, 0.1);
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.self-hand {
+    border-color: rgba(52, 152, 219, 0.8);
+    animation: faintNeonPulseSelf 4s infinite;
+}
+
+.opp-hand {
+    border-color: rgba(231, 76, 60, 0.8);
+    animation: faintNeonPulseOpp 4s infinite;
+}
+
+.pokemon-area {
+    position: absolute;
+    width: 120px;
+    height: 180px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.active-area {
+    top: -10vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px;
+    height: 200px;
+    border-color: rgba(46, 204, 113, 0.8);
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.bench-area {
+    top: -8vh;
+    left: 20%;
+    width: 60%;
+    height: 120px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    background: rgba(155, 89, 182, 0.1);
+    border-color: rgba(155, 89, 182, 0.6);
+}
+
+.deck-area {
+    position: absolute;
+    top: -5vh;
+    right: -20vw;
+    width: 100px;
+    height: 140px;
+    border-color: rgba(241, 196, 15, 0.8);
+    background: rgba(241, 196, 15, 0.1);
+}
+
+.discard-area {
+    position: absolute;
+    top: 5vh;
+    right: -20vw;
+    width: 100px;
+    height: 140px;
+    border-color: rgba(230, 126, 34, 0.8);
+    background: rgba(230, 126, 34, 0.1);
+}
+
+.prizes-area {
+    position: absolute;
+    top: -5vh;
+    left: -18vw;
+    width: 80px;
+    height: 200px;
+    border-color: rgba(142, 68, 173, 0.8);
+    background: rgba(142, 68, 173, 0.1);
+    flex-direction: column;
+    gap: 5px;
+}
+
+.lost-zone-area {
+    position: absolute;
+    top: 8vh;
+    left: -18vw;
+    width: 80px;
+    height: 120px;
+    border-color: rgba(52, 73, 94, 0.8);
+    background: rgba(52, 73, 94, 0.1);
+}
+
+/* ================ STADIUM AREA ================ */
+.stadium-area {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 120px;
+    border: 2px solid rgba(128, 0, 128, 0.8);
+    border-radius: 15px;
+    background: rgba(128, 0, 128, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: faintNeonPulseStadium 4s infinite;
+}
+
+/* ================ ZONE LABELS ================ */
+.zone-label {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.zone-controls {
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+}
+
+.zone-btn {
+    background: rgba(52, 152, 219, 0.8);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.zone-btn:hover {
+    background: rgba(52, 152, 219, 1);
+    transform: scale(1.05);
+}
+
+/* ================ BOARD CENTER DESIGN ================ */
+.board-center-design {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.board-circle {
+    position: absolute;
+    width: 16vw;
+    height: 16vw;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(164, 164, 216, 0.112);
+    z-index: -2;
+}
+
+.inner-circle {
+    position: absolute;
+    width: 4vw;
+    height: 4vw;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: -2;
+}
+
+/* ================ TURN INDICATOR ================ */
+.turn-indicator-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 15px;
+    padding: 15px 20px;
+    z-index: 1000;
+    min-width: 400px;
+}
+
+.turn-indicator-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.turn-indicator-header h4 {
+    color: white;
+    margin: 0;
+    font-size: 14px;
+}
+
+.turn-indicator-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* ================ MODERN CONTROL PANEL ================ */
+.modern-control-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    min-width: 250px;
+    z-index: 1001;
+}
+
+.control-section {
+    margin-bottom: 15px;
+}
+
+.control-section:last-child {
+    margin-bottom: 0;
+}
+
+.control-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    flex: 1;
+    min-width: 60px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.control-btn.primary {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+}
+
+.control-btn.secondary {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+.control-btn.accent {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.control-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background: #ccc;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--primary-blue);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* ================ MODERN TABS ================ */
+.modern-tabs {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.tab-btn.active {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.tab-btn:hover:not(.active) {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+/* ================ MODERN SIDE PANEL ================ */
+.modern-side-panel {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 300px;
+    max-height: calc(100vh - 200px);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    z-index: 1001;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.welcome-section h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.welcome-section p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.game-chat {
+    height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.chat-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+#chatInput {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.chat-btn {
+    padding: 8px 15px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.attack {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.action-btn.pass {
+    background: linear-gradient(45deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.action-btn.undo {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+.modern-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.multiplayer-buttons,
+.import-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.multiplayer-btn,
+.import-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.multiplayer-btn.primary,
+.import-btn.primary {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.multiplayer-btn.secondary,
+.import-btn.secondary {
+    background: var(--primary-green);
+    color: white;
+}
+
+#deckImportArea {
+    width: 100%;
+    height: 150px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-item input[type="range"] {
+    flex: 1;
+}
+
+/* ================ RAID TEST BUTTON ================ */
+.raid-test-btn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    padding: 10px 20px;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: all 0.3s ease;
+}
+
+.raid-test-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
+/* ================ RESPONSIVE DESIGN ================ */
+@media (max-width: 1024px) {
+    .game-table {
+        width: 95vw;
+        height: 95vh;
+    }
+    
+    .modern-side-panel {
+        width: 280px;
+    }
+    
+    .hand-area {
+        width: 80vw;
+    }
+}
+
+@media (max-width: 768px) {
+    .modern-tabs {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .modern-side-panel {
+        top: 60px;
+        right: 10px;
+        width: calc(100vw - 40px);
+        max-height: 300px;
+    }
+    
+    .modern-control-panel {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+    }
+    
+    .control-buttons {
+        flex-direction: column;
+    }
+}
+
+/* ================ CARD ANIMATIONS ================ */
+.card-hover-effect {
+    transition: all 0.3s ease;
+}
+
+.card-hover-effect:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+}
+
+.card-drag-preview {
+    opacity: 0.8;
+    transform: rotate(5deg) scale(1.1);
+    z-index: 1000;
+}
+
+/* ================ ZONE HIGHLIGHTS ================ */
+.zone-highlight {
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.8) !important;
+    border-color: rgba(46, 204, 113, 1) !important;
+    background: rgba(46, 204, 113, 0.2) !important;
+}
+
+.zone-invalid {
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.8) !important;
+    border-color: rgba(231, 76, 60, 1) !important;
+    background: rgba(231, 76, 60, 0.2) !important;
+}

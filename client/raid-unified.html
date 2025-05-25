@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 PTCG Raid System - Unified Interface</title>
+    
+    <!-- MODULAR CSS SYSTEM -->
+    <link rel="stylesheet" href="css/pokemon-raid-system.css">
+    <link rel="stylesheet" href="css/pokemon-raid-interactive.css">
+    <link rel="stylesheet" href="css/raid-launcher.css">
+    <link rel="stylesheet" href="css/raid-components.css">
+    <link rel="stylesheet" href="css/raid-animations.css">
+    
+    <style>
+        /* UNIFIED INTERFACE FIXES & ENHANCEMENTS */
+        
+        :root {
+            /* Enhanced positioning variables */
+            --player-1-angle: 0deg;
+            --player-2-angle: 90deg;
+            --player-3-angle: 180deg;
+            --player-4-angle: 270deg;
+            
+            /* Fixed layout dimensions */
+            --battlefield-width: 800px;
+            --battlefield-height: 600px;
+            --card-width: 120px;
+            --card-height: 168px;
+            --mini-card-scale: 0.6;
+        }
+        
+        /* MAIN LAYOUT FIXES */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ecf0f1;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+        
+        /* BATTLEFIELD CONTAINER - FIXED POSITIONING */
+        .battlefield-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: 
+                radial-gradient(ellipse at center, rgba(0, 117, 201, 0.1) 0%, transparent 70%),
+                linear-gradient(45deg, #1a1a2e 0%, #16213e 100%);
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        
+        /* CENTRAL BATTLEFIELD - PROPER TOP-DOWN ANGLE */
+        .battlefield {
+            position: relative;
+            width: min(var(--battlefield-width), 90vw);
+            height: min(var(--battlefield-height), 70vh);
+            background: 
+                radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(135deg, rgba(0, 117, 201, 0.1) 0%, rgba(220, 20, 60, 0.1) 100%);
+            border: 3px solid var(--pokemon-blue);
+            border-radius: 20px;
+            transform: perspective(1000px) rotateX(10deg);
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            margin: 0 auto;
+        }
+        
+        /* BOSS ZONE - CENTER */
+        .boss-zone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .boss-card {
+            width: calc(var(--card-width) * 1.3);
+            height: calc(var(--card-height) * 1.3);
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .boss-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        
+        .boss-card .boss-hp-bar {
+            position: absolute;
+            top: -35px;
+            left: 0;
+            right: 0;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid var(--pokemon-blue);
+        }
+        
+        .boss-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--pokemon-red) 0%, var(--pokemon-yellow) 50%, var(--pokemon-green) 100%);
+            transition: width 0.5s ease;
+        }
+        
+        /* PLAYER POSITIONS - FIXED ANGLES */
+        .player-zone {
+            position: absolute;
+            width: 180px;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: all;
+            z-index: 20;
+        }
+        
+        .player-zone[data-position="1"] {
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(var(--player-1-angle));
+        }
+        
+        .player-zone[data-position="2"] {
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%) rotate(var(--player-2-angle));
+        }
+        
+        .player-zone[data-position="3"] {
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(var(--player-3-angle));
+        }
+        
+        .player-zone[data-position="4"] {
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%) rotate(var(--player-4-angle));
+        }
+        
+        /* ENHANCED CARD SYSTEM */
+        .player-cards {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .main-card {
+            width: var(--card-width);
+            height: var(--card-height);
+            position: relative;
+            z-index: 2;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--pokemon-blue);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .main-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(0, 117, 201, 0.4);
+        }
+        
+        .main-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .bench-card {
+            width: calc(var(--card-width) * var(--mini-card-scale));
+            height: calc(var(--card-height) * var(--mini-card-scale));
+            position: absolute;
+            right: -12px;
+            top: 8px;
+            z-index: 1;
+            opacity: 0.8;
+            transform: rotate(5deg);
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--pokemon-green);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .bench-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        .player-cards:hover .bench-card {
+            opacity: 1;
+            transform: rotate(0deg) translateX(-3px);
+        }
+        
+        /* PLAYER INFO OVERLAY */
+        .player-info {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid var(--pokemon-blue);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        
+        /* TURN INDICATOR */
+        .turn-indicator {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--pokemon-blue);
+            z-index: 1000;
+            pointer-events: all;
+            max-width: 200px;
+        }
+        
+        .turn-indicator.current-turn {
+            border-color: var(--pokemon-yellow);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+            animation: turnPulse 2s infinite;
+        }
+        
+        /* POKEMON MANAGEMENT PANEL */
+        .pokemon-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--pokemon-blue);
+            border-radius: 12px;
+            padding: 12px;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            pointer-events: all;
+        }
+        
+        .pokemon-panel.hidden {
+            display: none;
+        }
+        
+        .pokemon-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        
+        .pokemon-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .pokemon-option:hover {
+            border-color: var(--pokemon-blue);
+            background: rgba(0, 117, 201, 0.2);
+        }
+        
+        .pokemon-option.selected {
+            border-color: var(--pokemon-yellow);
+            background: rgba(255, 204, 0, 0.2);
+        }
+        
+        .pokemon-option img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        
+        .energy-system {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .energy-counter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0;
+            font-size: 11px;
+        }
+        
+        .energy-add {
+            background: var(--pokemon-green);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        
+        /* ATTACK SYSTEM */
+        .attack-panel {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(220, 20, 60, 0.1);
+            border: 1px solid var(--pokemon-red);
+            border-radius: 8px;
+        }
+        
+        .attack-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 11px;
+        }
+        
+        .attack-option:hover {
+            background: rgba(220, 20, 60, 0.2);
+            border-color: var(--pokemon-red);
+        }
+        
+        .attack-cost {
+            display: flex;
+            gap: 2px;
+            margin-top: 2px;
+        }
+        
+        .energy-symbol {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        /* VIEW CONTROLS - MOVED */
+        .view-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 280px;
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+            pointer-events: all;
+        }
+        
+        .view-btn {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--pokemon-blue);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        
+        .view-btn:hover,
+        .view-btn.active {
+            background: var(--pokemon-blue);
+            transform: translateY(-2px);
+        }
+        
+        /* DEBUG PANEL - REPOSITIONED */
+        .debug-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--pokemon-green);
+            border-radius: 12px;
+            padding: 12px;
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+            pointer-events: all;
+        }
+        
+        .debug-panel.hidden {
+            display: none;
+        }
+        
+        .debug-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        
+        .debug-btn {
+            padding: 6px 8px;
+            background: var(--pokemon-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s ease;
+            pointer-events: all;
+        }
+        
+        .debug-btn:hover {
+            background: var(--pokemon-yellow);
+            color: #333;
+            transform: translateY(-1px);
+        }
+        
+        /* CHAT PANEL - REPOSITIONED */
+        .chat-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            height: 280px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--pokemon-blue);
+            border-radius: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            pointer-events: all;
+        }
+        
+        .chat-header {
+            padding: 8px 12px;
+            background: var(--pokemon-blue);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        .chat-input-area {
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 11px;
+        }
+        
+        .chat-send {
+            padding: 6px 12px;
+            background: var(--pokemon-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* BOSS ATTACK INDICATOR */
+        .boss-attack-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(220, 20, 60, 0.95);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+        
+        .boss-attack-indicator.active {
+            opacity: 1;
+            animation: bossAttackPulse 3s ease-in-out;
+        }
+        
+        /* TYPE BADGES */
+        .pokemon-type-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+        
+        .type-electric { background: var(--electric); }
+        .type-fire { background: var(--fire); }
+        .type-water { background: var(--water); }
+        .type-grass { background: var(--grass); }
+        .type-psychic { background: var(--psychic); }
+        
+        /* CARD PLACEHOLDER */
+        .card-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            border-radius: 8px;
+            color: #999;
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        /* JOIN SCREEN - ENHANCED */
+        .join-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: all;
+        }
+        
+        .join-form {
+            background: linear-gradient(135deg, rgba(0, 117, 201, 0.2) 0%, rgba(220, 20, 60, 0.2) 100%);
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid var(--pokemon-blue);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            pointer-events: all;
+        }
+        
+        .join-form h2 {
+            color: var(--pokemon-yellow);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #ecf0f1;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--pokemon-blue);
+            box-shadow: 0 0 10px rgba(0, 117, 201, 0.3);
+        }
+        
+        .join-btn {
+            background: linear-gradient(135deg, var(--pokemon-blue) 0%, #4ecdc4 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 8px;
+            pointer-events: all;
+        }
+        
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 117, 201, 0.4);
+        }
+        
+        .spectator-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+        
+        /* RESPONSIVE FIXES */
+        @media (max-width: 1200px) {
+            .debug-panel {
+                width: 220px;
+                font-size: 11px;
+            }
+            
+            .chat-panel {
+                width: 280px;
+                height: 240px;
+            }
+            
+            .battlefield {
+                transform: perspective(800px) rotateX(8deg) scale(0.9);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .battlefield {
+                transform: perspective(600px) rotateX(5deg) scale(0.8);
+            }
+            
+            .debug-panel,
+            .chat-panel {
+                position: fixed;
+                bottom: 80px;
+                right: 10px;
+                width: calc(100vw - 20px);
+                max-width: 300px;
+            }
+            
+            .view-controls {
+                bottom: 10px;
+                left: 10px;
+            }
+        }
+        
+        /* ANIMATIONS */
+        @keyframes bossAttackPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        @keyframes turnPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 204, 0, 0.8); }
+        }
+        
+        @keyframes damageFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(-30px) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px) scale(0.8);
+                opacity: 0;
+            }
+        }
+        
+        /* DAMAGE FLOATING NUMBERS */
+        .damage-float {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--pokemon-red);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            animation: damageFloat 2s ease-out forwards;
+            z-index: 50;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- JOIN SCREEN -->
+    <div id="joinScreen" class="join-screen">
+        <div class="join-form">
+            <h2>🎮 Join PTCG Raid Battle</h2>
+            <p style="color: #bdc3c7; font-size: 14px; margin-bottom: 20px;">
+                ⚡ Now featuring real Pokemon from the official Pokemon API!<br>
+                🎲 Demo mode includes random Pokemon generation and interactive features.
+            </p>
+            
+            <div class="form-group">
+                <label for="usernameInput">Trainer Name:</label>
+                <input type="text" id="usernameInput" placeholder="Enter your trainer name" maxlength="20">
+            </div>
+            
+            <div class="form-group">
+                <label for="raidSelect">Select Raid:</label>
+                <select id="raidSelect">
+                    <option value="">Choose existing raid or create new</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="newRaidId">Or Create New Raid:</label>
+                <input type="text" id="newRaidId" placeholder="Enter raid ID" maxlength="15">
+            </div>
+            
+            <div class="spectator-option">
+                <input type="checkbox" id="spectatorMode">
+                <label for="spectatorMode">Join as Spectator</label>
+            </div>
+            
+            <button class="join-btn" onclick="joinRaid()">⚡ Join Battle</button>
+            <button class="join-btn" onclick="createDemoRaid()" style="background: linear-gradient(135deg, var(--pokemon-green) 0%, #27ae60 100%);">
+                🧪 Quick Demo (Recommended)
+            </button>
+            
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; font-size: 12px; color: #bdc3c7;">
+                <strong>🎮 Demo Features:</strong><br>
+                • Real Pokemon images from Pokemon API<br>
+                • Random Pokemon generation<br>
+                • Interactive debug controls<br>
+                • Multi-view camera system<br>
+                • Working chat and turn system
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GAME INTERFACE -->
+    <div id="gameInterface" class="battlefield-container" style="display: none;">
+        
+        <!-- POKEMON MANAGEMENT PANEL -->
+        <div id="pokemonPanel" class="pokemon-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; color: var(--pokemon-blue);">🎮 Pokemon Manager</h4>
+                <button onclick="togglePokemonPanel()" style="background: none; border: none; color: white; cursor: pointer;">✖</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <strong>Active Pokemon:</strong> <span id="activePokemonName">None</span><br>
+                <strong>Bench Pokemon:</strong> <span id="benchPokemonName">None</span><br>
+                <strong>Energy Available:</strong> <span id="totalEnergy">0</span>
+            </div>
+            
+            <!-- Pokemon Selection -->
+            <div style="margin-bottom: 10px;">
+                <strong style="font-size: 12px;">Select Pokemon:</strong>
+            </div>
+            <div class="pokemon-selector" id="pokemonSelector">
+                <!-- Pokemon options will be populated here -->
+            </div>
+            
+            <!-- Energy System -->
+            <div class="energy-system">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">Energy Management</div>
+                <div class="energy-counter">
+                    <span>⚡ Electric:</span>
+                    <span id="electricEnergy">0</span>
+                    <button class="energy-add" onclick="addEnergy('electric')">+</button>
+                </div>
+                <div class="energy-counter">
+                    <span>🔥 Fire:</span>
+                    <span id="fireEnergy">0</span>
+                    <button class="energy-add" onclick="addEnergy('fire')">+</button>
+                </div>
+                <div class="energy-counter">
+                    <span>💧 Water:</span>
+                    <span id="waterEnergy">0</span>
+                    <button class="energy-add" onclick="addEnergy('water')">+</button>
+                </div>
+                <div class="energy-counter">
+                    <span>🌿 Grass:</span>
+                    <span id="grassEnergy">0</span>
+                    <button class="energy-add" onclick="addEnergy('grass')">+</button>
+                </div>
+                <div class="energy-counter">
+                    <span>🔮 Psychic:</span>
+                    <span id="psychicEnergy">0</span>
+                    <button class="energy-add" onclick="addEnergy('psychic')">+</button>
+                </div>
+            </div>
+            
+            <!-- Attack System -->
+            <div class="attack-panel">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">Available Attacks</div>
+                <div id="availableAttacks">
+                    <!-- Attacks will be populated based on active Pokemon -->
+                </div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <button class="debug-btn" onclick="switchActiveBench()" style="width: 100%;">Switch Active/Bench</button>
+            </div>
+        </div>
+        
+        <!-- TURN INDICATOR -->
+        <div id="turnIndicator" class="turn-indicator">
+            <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">Turn Phase</div>
+            <div id="turnText">Waiting for players...</div>
+            <div id="turnTimer" style="font-size: 12px; margin-top: 5px;">--:--</div>
+        </div>
+        
+        <!-- DEBUG PANEL -->
+        <div id="debugPanel" class="debug-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; color: var(--pokemon-green);">🐞 Debug Controls</h4>
+                <button onclick="toggleDebugPanel()" style="background: none; border: none; color: white; cursor: pointer;">✖</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <strong>Raid:</strong> <span id="debugRaidId">--</span><br>
+                <strong>Players:</strong> <span id="debugPlayerCount">0</span><br>
+                <strong>Phase:</strong> <span id="debugPhase">lobby</span><br>
+                <strong>Boss HP:</strong> <span id="debugBossHp">1000</span>
+            </div>
+            
+            <div class="debug-controls">
+                <button class="debug-btn" onclick="debugDamagePlayer()">Damage Player</button>
+                <button class="debug-btn" onclick="debugHealPlayer()">Heal Player</button>
+                <button class="debug-btn" onclick="debugKOPlayer()">KO Player</button>
+                <button class="debug-btn" onclick="debugRevivePlayer()">Revive Player</button>
+                <button class="debug-btn" onclick="debugBossAttack()">Boss Attack</button>
+                <button class="debug-btn" onclick="debugAdvanceTurn()">Next Turn</button>
+                <button class="debug-btn" onclick="debugResetRaid()">Reset Raid</button>
+                <button class="debug-btn" onclick="debugShowState()">Show State</button>
+                <button class="debug-btn" onclick="debugRandomPokemon()">Random Pokemon</button>
+                <button class="debug-btn" onclick="debugRandomBoss()">Random Boss</button>
+                <button class="debug-btn" onclick="debugAddRandomPlayer()">Add AI Player</button>
+                <button class="debug-btn" onclick="debugFullEnergy()">Max Energy</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 12px;">Quick Damage:</label>
+                <input type="number" id="debugDamageAmount" value="50" min="10" max="500" step="10" 
+                       style="width: 100%; padding: 5px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; color: white;">
+            </div>
+        </div>
+        
+        <!-- BATTLEFIELD -->
+        <div class="battlefield">
+            
+            <!-- BOSS ZONE -->
+            <div class="boss-zone">
+                <div class="boss-card">
+                    <div class="boss-hp-bar">
+                        <div id="bossHpFill" class="boss-hp-fill" style="width: 100%;"></div>
+                    </div>
+                    <img id="bossCardImage" alt="Boss Pokemon" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png">
+                    <div style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--pokemon-yellow);">
+                        <div id="bossName">Boss Pokemon</div>
+                        <div id="bossHpText" style="font-size: 14px;">1000/1000 HP</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PLAYER ZONES -->
+            <div id="playerZones">
+                <!-- Player zones will be dynamically created here -->
+            </div>
+            
+        </div>
+        
+        <!-- BOSS ATTACK INDICATOR -->
+        <div id="bossAttackIndicator" class="boss-attack-indicator">
+            <div>💥 BOSS ATTACK!</div>
+            <div id="bossAttackText" style="font-size: 14px; margin-top: 5px;">Preparing attack...</div>
+        </div>
+        
+        <!-- VIEW CONTROLS -->
+        <div class="view-controls">
+            <button class="view-btn active" onclick="setView('overhead')" data-view="overhead">🔝 Overhead</button>
+            <button class="view-btn" onclick="setView('player')" data-view="player">👤 Player View</button>
+            <button class="view-btn" onclick="setView('boss')" data-view="boss">👹 Boss View</button>
+        </div>
+        
+        <!-- CHAT PANEL -->
+        <div id="chatPanel" class="chat-panel">
+            <div class="chat-header">
+                <span>💬 Battle Chat</span>
+                <button onclick="toggleChatPanel()" style="background: none; border: none; color: white; cursor: pointer;">−</button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <div style="color: var(--pokemon-blue); font-weight: bold;">🎮 Battle communication ready!</div>
+                <div style="color: #888; font-size: 11px;">Use chat to coordinate with your team</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." maxlength="200">
+                <button onclick="sendChatMessage()" class="chat-send">Send</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // ==================== UNIFIED RAID SYSTEM ====================
+        
+        let socket;
+        let gameState = {
+            raidId: null,
+            username: null,
+            isSpectator: false,
+            players: {},
+            boss: { hp: 1000, maxHp: 1000, name: 'Boss Pokemon' },
+            currentPhase: 'lobby',
+            currentTurn: null,
+            playerPosition: 1
+        };
+        
+        let currentView = 'overhead';
+        let debugMode = true;
+        
+        // ==================== INITIALIZATION ====================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            loadAvailableRaids();
+            initializePokemonDatabase();
+            
+            // Chat input enter key
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+        });
+        
+        function initializeSocket() {
+            console.log('🔧 Initializing Socket.IO...');
+            
+            if (typeof io === 'undefined') {
+                console.error('❌ Socket.IO not loaded!');
+                addChatMessage('System', '❌ Socket.IO not available', 'error');
+                return;
+            }
+            
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('✅ Connected to unified raid system');
+                addChatMessage('System', '✅ Connected to server', 'system');
+                updateConnectionStatus(true);
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('❌ Disconnected from server');
+                addChatMessage('System', '❌ Disconnected from server', 'error');
+                updateConnectionStatus(false);
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('❌ Connection error:', error);
+                addChatMessage('System', `❌ Connection error: ${error.message}`, 'error');
+            });
+            
+            // Raid events
+            socket.on('raidCreated', handleRaidCreated);
+            socket.on('raidJoined', handleRaidJoined);
+            socket.on('raidStateUpdate', handleRaidStateUpdate);
+            socket.on('playerJoined', handlePlayerJoined);
+            socket.on('playerLeft', handlePlayerLeft);
+            socket.on('chatMessage', handleChatMessage);
+            socket.on('bossAttack', handleBossAttack);
+            socket.on('turnAdvanced', handleTurnAdvanced);
+            socket.on('gamePhaseChanged', handleGamePhaseChanged);
+        }
+        
+        function updateConnectionStatus(connected) {
+            // Update any UI elements to show connection status
+            const debugPanel = document.getElementById('debugPanel');
+            if (debugPanel) {
+                const connectionIndicator = debugPanel.querySelector('.connection-status') || (() => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'connection-status';
+                    indicator.style.marginBottom = '10px';
+                    debugPanel.insertBefore(indicator, debugPanel.firstChild.nextSibling);
+                    return indicator;
+                })();
+                
+                connectionIndicator.innerHTML = connected 
+                    ? '<strong style="color: var(--pokemon-green);">🟢 Connected</strong>'
+                    : '<strong style="color: var(--pokemon-red);">🔴 Disconnected</strong>';
+            }
+        }
+        
+        // ==================== JOIN SYSTEM ====================
+        
+        function loadAvailableRaids() {
+            // This would load from server in real implementation
+            const raidSelect = document.getElementById('raidSelect');
+            const demoRaids = ['DEMO-RAID-1', 'DEMO-RAID-2', 'TRAINING-RAID'];
+            
+            demoRaids.forEach(raidId => {
+                const option = document.createElement('option');
+                option.value = raidId;
+                option.textContent = raidId;
+                raidSelect.appendChild(option);
+            });
+        }
+        
+        function joinRaid() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const selectedRaid = document.getElementById('raidSelect').value;
+            const newRaidId = document.getElementById('newRaidId').value.trim();
+            const isSpectator = document.getElementById('spectatorMode').checked;
+            
+            if (!username) {
+                alert('⚠️ Please enter a trainer name!');
+                return;
+            }
+            
+            const raidId = newRaidId || selectedRaid;
+            if (!raidId) {
+                alert('⚠️ Please select a raid or enter a new raid ID!');
+                return;
+            }
+            
+            gameState.username = username;
+            gameState.raidId = raidId;
+            gameState.isSpectator = isSpectator;
+            
+            console.log('🎮 Attempting to join raid:', raidId);
+            addChatMessage('System', `🎮 Attempting to join raid: ${raidId}`, 'system');
+            
+            if (!socket || !socket.connected) {
+                console.error('❌ Socket not connected, starting demo mode');
+                addChatMessage('System', '⚠️ Server not connected, starting demo mode', 'warning');
+                startDemoMode();
+                return;
+            }
+            
+            if (newRaidId) {
+                // Create new raid
+                console.log('🏴‍☠️ Creating new raid:', raidId);
+                socket.emit('createRaid', {
+                    raidId: raidId,
+                    raidType: 'tcg-official',
+                    maxPlayers: 4,
+                    layout: 'versus'
+                });
+                
+                // Also join it
+                setTimeout(() => {
+                    socket.emit('joinRaid', {
+                        raidId: raidId,
+                        username: username,
+                        isSpectator: isSpectator
+                    });
+                }, 500);
+            } else {
+                // Join existing raid
+                console.log('👋 Joining existing raid:', raidId);
+                socket.emit('joinRaid', {
+                    raidId: raidId,
+                    username: username,
+                    isSpectator: isSpectator
+                });
+            }
+        }
+        
+        function createDemoRaid() {
+            const username = document.getElementById('usernameInput').value.trim() || 'Demo Player';
+            gameState.username = username;
+            
+            console.log('🧪 Starting demo mode directly');
+            addChatMessage('System', '🧪 Starting demo mode', 'system');
+            
+            startDemoMode();
+        }
+        
+        function startDemoMode() {
+            // Hide join screen and show game immediately
+            document.getElementById('joinScreen').style.display = 'none';
+            document.getElementById('gameInterface').style.display = 'block';
+            
+            // Set up demo game state
+            gameState.raidId = 'DEMO-' + Math.random().toString(36).substr(2, 4);
+            gameState.currentPhase = 'playing';
+            gameState.currentTurn = gameState.username;
+            
+            // Initialize energy for demo
+            energyState = {
+                electric: 2,
+                fire: 2,
+                water: 2,
+                grass: 2,
+                psychic: 2,
+                colorless: 1
+            };
+            updateEnergyDisplay();
+            
+            // Create demo players immediately
+            addDemoPlayers();
+            
+            // Initialize Pokemon displays
+            updateActivePokemonDisplay();
+            updateBenchPokemonDisplay();
+            updateAvailableAttacks();
+            
+            // Update UI
+            document.getElementById('debugRaidId').textContent = gameState.raidId;
+            
+            addChatMessage('System', '🎮 Demo raid started successfully!', 'success');
+            addChatMessage('System', '🎯 Use Pokemon Manager to select and manage your Pokemon', 'system');
+            addChatMessage('System', '⚡ You start with some energy - try using attacks!', 'system');
+            addChatMessage('System', '🎲 Use debug controls to test all features', 'system');
+        }
+        
+        function addDemoPlayers() {
+            // Create demo players with cards for testing
+            const demoPlayers = {
+                [gameState.username]: {
+                    username: gameState.username,
+                    isSpectator: false,
+                    status: 'active',
+                    activeCard: {
+                        name: 'Pikachu',
+                        type: 'electric',
+                        hp: 120,
+                        maxHp: 120,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png'
+                    },
+                    benchCard: {
+                        name: 'Squirtle',
+                        type: 'water',
+                        hp: 100,
+                        maxHp: 100,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png'
+                    }
+                },
+                'AI Trainer 1': {
+                    username: 'AI Trainer 1',
+                    isSpectator: false,
+                    status: 'active',
+                    activeCard: {
+                        name: 'Charizard',
+                        type: 'fire',
+                        hp: 150,
+                        maxHp: 150,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png'
+                    },
+                    benchCard: {
+                        name: 'Charmander',
+                        type: 'fire',
+                        hp: 80,
+                        maxHp: 80,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png'
+                    }
+                },
+                'AI Trainer 2': {
+                    username: 'AI Trainer 2',
+                    isSpectator: false,
+                    status: 'active',
+                    activeCard: {
+                        name: 'Venusaur',
+                        type: 'grass',
+                        hp: 140,
+                        maxHp: 140,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png'
+                    },
+                    benchCard: {
+                        name: 'Bulbasaur',
+                        type: 'grass',
+                        hp: 90,
+                        maxHp: 90,
+                        image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png'
+                    }
+                }
+            };
+            
+            // Update game state with demo players
+            gameState.players = demoPlayers;
+            gameState.currentPhase = 'playing';
+            gameState.currentTurn = gameState.username;
+            
+            // Update boss with Pokemon API image
+            gameState.boss = {
+                name: 'Mewtwo',
+                hp: 1000,
+                maxHp: 1000,
+                image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png'
+            };
+            
+            // Update UI
+            updatePlayerZones();
+            updateBossDisplay();
+            updateTurnIndicator({
+                currentPlayer: gameState.username,
+                timeRemaining: 120
+            });
+            
+            // Update debug info
+            document.getElementById('debugPlayerCount').textContent = Object.keys(gameState.players).length;
+            document.getElementById('debugPhase').textContent = gameState.currentPhase;
+            
+            addChatMessage('System', '🧪 Demo players added with Pokemon API images!', 'success');
+            addChatMessage('System', '🎮 Game ready - try the debug controls!', 'system');
+            console.log('🧪 Demo game state:', gameState);
+        }
+        
+        // Function to get random Pokemon for variety
+        async function getRandomPokemon() {
+            try {
+                const randomId = Math.floor(Math.random() * 150) + 1; // First 150 Pokemon
+                const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+                const pokemon = await response.json();
+                
+                return {
+                    name: pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1),
+                    type: pokemon.types[0].type.name,
+                    image: pokemon.sprites.other['official-artwork'].front_default,
+                    hp: Math.floor(Math.random() * 100) + 80, // Random HP between 80-180
+                    maxHp: Math.floor(Math.random() * 100) + 80
+                };
+            } catch (error) {
+                console.error('Failed to fetch Pokemon:', error);
+                // Fallback to default
+                return {
+                    name: 'Pikachu',
+                    type: 'electric',
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png',
+                    hp: 120,
+                    maxHp: 120
+                };
+            }
+        }
+        
+        // ==================== GAME EVENT HANDLERS ====================
+        
+        function handleRaidCreated(data) {
+            console.log('🏴‍☠️ Raid created:', data);
+            addChatMessage('System', `🏴‍☠️ Raid ${data.raidId} created!`, 'system');
+            
+            if (data.autoJoin) {
+                socket.emit('joinRaid', {
+                    raidId: data.raidId,
+                    username: gameState.username,
+                    isSpectator: gameState.isSpectator
+                });
+            }
+        }
+        
+        function handleRaidJoined(data) {
+            console.log('🎮 Joined raid:', data);
+            addChatMessage('System', `🎮 Joined raid ${data.raidId}`, 'success');
+            
+            // Hide join screen and show game
+            document.getElementById('joinScreen').style.display = 'none';
+            document.getElementById('gameInterface').style.display = 'block';
+            
+            // Update debug info
+            document.getElementById('debugRaidId').textContent = data.raidId;
+            
+            updateGameState(data.gameState);
+        }
+        
+        function handleRaidStateUpdate(data) {
+            console.log('📊 Raid state update:', data);
+            updateGameState(data);
+        }
+        
+        function handlePlayerJoined(data) {
+            console.log('👋 Player joined:', data);
+            addChatMessage('System', `👋 ${data.username} joined the battle!`, 'join');
+            updatePlayerZones();
+        }
+        
+        function handlePlayerLeft(data) {
+            console.log('👋 Player left:', data);
+            addChatMessage('System', `👋 ${data.username} left the battle`, 'leave');
+            updatePlayerZones();
+        }
+        
+        function handleChatMessage(data) {
+            addChatMessage(data.username, data.message, data.type || 'chat');
+        }
+        
+        function handleBossAttack(data) {
+            console.log('👹 Boss attack:', data);
+            showBossAttack(data);
+            
+            if (data.target && data.damage) {
+                showDamageFloat(data.target, data.damage);
+                addChatMessage('Boss', `💥 ${data.attackName} deals ${data.damage} damage to ${data.target}!`, 'boss');
+            }
+        }
+        
+        function handleTurnAdvanced(data) {
+            console.log('🎯 Turn advanced:', data);
+            updateTurnIndicator(data);
+            addChatMessage('System', `🎯 Now ${data.currentPlayer}'s turn`, 'turn');
+        }
+        
+        function handleGamePhaseChanged(data) {
+            console.log('🔄 Phase changed:', data);
+            gameState.currentPhase = data.phase;
+            document.getElementById('debugPhase').textContent = data.phase;
+            
+            if (data.phase === 'bossTurn') {
+                addChatMessage('System', '👹 Boss turn begins!', 'boss');
+            } else if (data.phase === 'playing') {
+                addChatMessage('System', '⚔️ Battle phase!', 'battle');
+            }
+        }
+        
+        // ==================== GAME STATE MANAGEMENT ====================
+        
+        // Enhanced game state with Pokemon data
+        let pokemonDatabase = [];
+        let energyState = {
+            electric: 0,
+            fire: 0,
+            water: 0,
+            grass: 0,
+            psychic: 0,
+            colorless: 0
+        };
+        
+        function updateGameState(newState) {
+            if (!newState) return;
+            
+            // Update players
+            if (newState.players) {
+                gameState.players = newState.players;
+                updatePlayerZones();
+            }
+            
+            // Update boss
+            if (newState.boss) {
+                gameState.boss = newState.boss;
+                updateBossDisplay();
+            }
+            
+            // Update current phase
+            if (newState.currentPhase) {
+                gameState.currentPhase = newState.currentPhase;
+                document.getElementById('debugPhase').textContent = newState.currentPhase;
+            }
+            
+            // Update turn info
+            if (newState.currentTurn) {
+                gameState.currentTurn = newState.currentTurn;
+                updateTurnIndicator(newState);
+            }
+            
+            // Update energy state
+            if (newState.energy) {
+                energyState = { ...energyState, ...newState.energy };
+                updateEnergyDisplay();
+            }
+            
+            // Update debug info
+            document.getElementById('debugPlayerCount').textContent = Object.keys(gameState.players).length;
+            document.getElementById('debugBossHp').textContent = gameState.boss.hp;
+        }
+        
+        function updatePlayerZones() {
+            const playerZonesContainer = document.getElementById('playerZones');
+            playerZonesContainer.innerHTML = '';
+            
+            let position = 1;
+            Object.values(gameState.players).forEach(player => {
+                if (!player.isSpectator) {
+                    createPlayerZone(player, position);
+                    position++;
+                }
+            });
+        }
+        
+        function createPlayerZone(player, position) {
+            const playerZonesContainer = document.getElementById('playerZones');
+            
+            const playerZone = document.createElement('div');
+            playerZone.className = 'player-zone';
+            playerZone.setAttribute('data-position', position);
+            playerZone.setAttribute('data-player', player.username);
+            
+            // Determine if this is the current user
+            const isCurrentUser = player.username === gameState.username;
+            if (isCurrentUser) {
+                gameState.playerPosition = position;
+                playerZone.classList.add('current-user');
+            }
+            
+            // Player cards (main + bench)
+            const playerCards = document.createElement('div');
+            playerCards.className = 'player-cards';
+            
+            // Main card
+            const mainCard = document.createElement('div');
+            mainCard.className = 'main-card';
+            if (player.activeCard) {
+                mainCard.innerHTML = `
+                    <img src="${player.activeCard.image || '../raid-app/static/pokemon-cards/pikachu.jpg'}" alt="${player.activeCard.name}">
+                    <div class="pokemon-type-badge type-${player.activeCard.type}">${player.activeCard.type}</div>
+                `;
+            } else {
+                mainCard.innerHTML = `
+                    <div class="card-placeholder">
+                        <div style="text-align: center; padding: 20px; color: #666;">
+                            <div>🃏</div>
+                            <div style="font-size: 12px;">No Card</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Bench card (smaller)
+            const benchCard = document.createElement('div');
+            benchCard.className = 'bench-card';
+            if (player.benchCard) {
+                benchCard.innerHTML = `
+                    <img src="${player.benchCard.image || '../raid-app/static/pokemon-cards/squirtle.jpg'}" alt="${player.benchCard.name}">
+                `;
+            }
+            
+            playerCards.appendChild(mainCard);
+            if (player.benchCard) {
+                playerCards.appendChild(benchCard);
+            }
+            
+            // Player info
+            const playerInfo = document.createElement('div');
+            playerInfo.className = 'player-info';
+            playerInfo.innerHTML = `
+                <div style="color: ${isCurrentUser ? 'var(--pokemon-yellow)' : 'white'}; font-weight: bold;">
+                    ${isCurrentUser ? '👤 ' : ''}${player.username}
+                </div>
+                <div style="font-size: 10px; color: #ccc;">
+                    ${player.activeCard ? `${player.activeCard.hp}/${player.activeCard.maxHp} HP` : 'No card'}
+                </div>
+            `;
+            
+            playerZone.appendChild(playerCards);
+            playerZone.appendChild(playerInfo);
+            
+            playerZonesContainer.appendChild(playerZone);
+        }
+        
+        function updateBossDisplay() {
+            const boss = gameState.boss;
+            
+            // Update HP bar
+            const hpPercentage = (boss.hp / boss.maxHp) * 100;
+            document.getElementById('bossHpFill').style.width = hpPercentage + '%';
+            
+            // Update HP text
+            document.getElementById('bossHpText').textContent = `${boss.hp}/${boss.maxHp} HP`;
+            
+            // Update boss name
+            document.getElementById('bossName').textContent = boss.name || 'Boss Pokemon';
+            
+            // Update boss image if available
+            if (boss.image) {
+                document.getElementById('bossCardImage').src = boss.image;
+            }
+        }
+        
+        function updateTurnIndicator(turnData) {
+            const turnIndicator = document.getElementById('turnIndicator');
+            const turnText = document.getElementById('turnText');
+            const turnTimer = document.getElementById('turnTimer');
+            
+            if (turnData.currentPlayer) {
+                turnText.textContent = `${turnData.currentPlayer}'s Turn`;
+                turnIndicator.classList.add('current-turn');
+                
+                // Highlight current player
+                document.querySelectorAll('.player-zone').forEach(zone => {
+                    zone.classList.remove('active-turn');
+                    if (zone.getAttribute('data-player') === turnData.currentPlayer) {
+                        zone.classList.add('active-turn');
+                    }
+                });
+            } else if (gameState.currentPhase === 'bossTurn') {
+                turnText.textContent = 'Boss Turn';
+                turnIndicator.classList.add('current-turn');
+            } else {
+                turnText.textContent = 'Waiting...';
+                turnIndicator.classList.remove('current-turn');
+            }
+            
+            // Update timer if available
+            if (turnData.timeRemaining) {
+                const minutes = Math.floor(turnData.timeRemaining / 60);
+                const seconds = turnData.timeRemaining % 60;
+                turnTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                turnTimer.textContent = '--:--';
+            }
+        }
+        
+        // ==================== VISUAL EFFECTS ====================
+        
+        function showDamageFloat(target, damage) {
+            const targetZone = document.querySelector(`[data-player="${target}"]`);
+            if (!targetZone) return;
+            
+            const damageFloat = document.createElement('div');
+            damageFloat.className = 'damage-float';
+            damageFloat.textContent = `-${damage}`;
+            
+            const rect = targetZone.getBoundingClientRect();
+            damageFloat.style.left = (rect.left + rect.width / 2) + 'px';
+            damageFloat.style.top = (rect.top + rect.height / 2) + 'px';
+            
+            document.body.appendChild(damageFloat);
+            
+            setTimeout(() => {
+                document.body.removeChild(damageFloat);
+            }, 2000);
+        }
+        
+        function showBossAttack(attackData) {
+            const indicator = document.getElementById('bossAttackIndicator');
+            const attackText = document.getElementById('bossAttackText');
+            
+            attackText.textContent = attackData.attackName || 'Boss Attack!';
+            indicator.classList.add('active');
+            
+            setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 3000);
+        }
+        
+        // ==================== VIEW CONTROLS ====================
+        
+        function setView(viewType) {
+            const battlefield = document.querySelector('.battlefield');
+            const viewButtons = document.querySelectorAll('.view-btn');
+            
+            // Update active button
+            viewButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-view') === viewType) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Apply view transformation
+            let transform = 'perspective(1000px)';
+            
+            switch (viewType) {
+                case 'overhead':
+                    transform += ' rotateX(15deg)';
+                    break;
+                case 'player':
+                    const playerAngle = (gameState.playerPosition - 1) * 90;
+                    transform += ` rotateX(10deg) rotateZ(${-playerAngle}deg)`;
+                    break;
+                case 'boss':
+                    transform += ' rotateX(5deg) rotateY(0deg)';
+                    break;
+            }
+            
+            battlefield.style.transform = transform;
+            currentView = viewType;
+        }
+        
+        // ==================== CHAT SYSTEM ====================
+        
+        function addChatMessage(username, message, type = 'chat') {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.margin = '5px 0';
+            messageDiv.style.padding = '3px 0';
+            
+            let color = '#ecf0f1';
+            let prefix = '';
+            
+            switch (type) {
+                case 'system':
+                    color = 'var(--pokemon-blue)';
+                    break;
+                case 'success':
+                    color = 'var(--pokemon-green)';
+                    break;
+                case 'error':
+                    color = 'var(--pokemon-red)';
+                    break;
+                case 'boss':
+                    color = 'var(--pokemon-red)';
+                    prefix = '👹 ';
+                    break;
+                case 'battle':
+                    color = 'var(--pokemon-yellow)';
+                    prefix = '⚔️ ';
+                    break;
+                case 'join':
+                    color = 'var(--pokemon-green)';
+                    break;
+                case 'leave':
+                    color = '#888';
+                    break;
+                case 'turn':
+                    color = 'var(--pokemon-yellow)';
+                    break;
+            }
+            
+            if (type === 'chat') {
+                messageDiv.innerHTML = `<strong style="color: var(--pokemon-blue);">${username}:</strong> ${message}`;
+            } else {
+                messageDiv.innerHTML = `<span style="color: ${color};">${prefix}${message}</span>`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function sendChatMessage() {
+            const chatInput = document.getElementById('chatInput');
+            const message = chatInput.value.trim();
+            
+            if (!message) return;
+            
+            socket.emit('chatMessage', {
+                raidId: gameState.raidId,
+                username: gameState.username,
+                message: message,
+                type: 'chat'
+            });
+            
+            chatInput.value = '';
+        }
+        
+        function toggleChatPanel() {
+            const chatPanel = document.getElementById('chatPanel');
+            chatPanel.style.display = chatPanel.style.display === 'none' ? 'flex' : 'none';
+        }
+        
+        // ==================== DEBUG FUNCTIONS ====================
+        
+        function toggleDebugPanel() {
+            const debugPanel = document.getElementById('debugPanel');
+            debugPanel.classList.toggle('hidden');
+        }
+        
+        function debugDamagePlayer() {
+            const amount = parseInt(document.getElementById('debugDamageAmount').value) || 50;
+            socket.emit('raidAction', {
+                type: 'debugDamage',
+                raidId: gameState.raidId,
+                amount: amount
+            });
+        }
+        
+        function debugHealPlayer() {
+            const amount = parseInt(document.getElementById('debugDamageAmount').value) || 50;
+            socket.emit('raidAction', {
+                type: 'debugHeal',
+                raidId: gameState.raidId,
+                amount: amount
+            });
+        }
+        
+        function debugKOPlayer() {
+            socket.emit('raidAction', {
+                type: 'debugKO',
+                raidId: gameState.raidId
+            });
+        }
+        
+        function debugRevivePlayer() {
+            socket.emit('raidAction', {
+                type: 'debugRevive',
+                raidId: gameState.raidId
+            });
+        }
+        
+        function debugBossAttack() {
+            socket.emit('raidAction', {
+                type: 'debugBossAttack',
+                raidId: gameState.raidId
+            });
+        }
+        
+        function debugAdvanceTurn() {
+            socket.emit('raidAction', {
+                type: 'debugAdvanceTurn',
+                raidId: gameState.raidId
+            });
+        }
+        
+        function debugResetRaid() {
+            if (confirm('🔄 Reset the entire raid? This will reset all players and boss.')) {
+                socket.emit('raidAction', {
+                    type: 'debugReset',
+                    raidId: gameState.raidId
+                });
+            }
+        }
+        
+        function debugShowState() {
+            console.log('🐞 Current Game State:', gameState);
+            addChatMessage('Debug', 'Game state logged to console', 'system');
+        }
+        
+        function debugRandomPokemon() {
+            if (gameState.raidId.startsWith('DEMO-')) {
+                // Demo mode - update locally
+                getRandomPokemon().then(pokemon => {
+                    // Update a random player's active card
+                    const playerNames = Object.keys(gameState.players);
+                    const randomPlayer = playerNames[Math.floor(Math.random() * playerNames.length)];
+                    
+                    if (gameState.players[randomPlayer]) {
+                        gameState.players[randomPlayer].activeCard = pokemon;
+                        updatePlayerZones();
+                        addChatMessage('Debug', `🎲 ${randomPlayer} got a random ${pokemon.name}!`, 'system');
+                    }
+                });
+            } else {
+                // Server mode
+                getRandomPokemon().then(pokemon => {
+                    socket.emit('raidAction', {
+                        type: 'debugRandomPokemon',
+                        raidId: gameState.raidId,
+                        pokemon: pokemon
+                    });
+                });
+            }
+        }
+        
+        function debugRandomBoss() {
+            if (gameState.raidId.startsWith('DEMO-')) {
+                // Demo mode - update locally
+                getRandomPokemon().then(pokemon => {
+                    gameState.boss = {
+                        name: pokemon.name,
+                        hp: Math.floor(Math.random() * 1000) + 500, // 500-1500 HP
+                        maxHp: Math.floor(Math.random() * 1000) + 500,
+                        image: pokemon.image
+                    };
+                    updateBossDisplay();
+                    addChatMessage('Debug', `👹 New boss: ${pokemon.name}!`, 'boss');
+                });
+            } else {
+                // Server mode
+                socket.emit('raidAction', {
+                    type: 'debugRandomBoss',
+                    raidId: gameState.raidId
+                });
+            }
+        }
+        
+        function debugAddRandomPlayer() {
+            if (gameState.raidId.startsWith('DEMO-')) {
+                // Demo mode - update locally
+                getRandomPokemon().then(pokemon => {
+                    // Add a new random player
+                    const newPlayer = {
+                        username: 'AI Trainer ' + (Object.keys(gameState.players).length + 1),
+                        isSpectator: false,
+                        status: 'active',
+                        activeCard: pokemon,
+                        benchCard: null
+                    };
+                    gameState.players[newPlayer.username] = newPlayer;
+                    updatePlayerZones();
+                    addChatMessage('Debug', `🎲 AI Trainer ${newPlayer.username} added!`, 'system');
+                });
+            } else {
+                // Server mode
+                getRandomPokemon().then(pokemon => {
+                    // Add a new random player
+                    const newPlayer = {
+                        username: 'AI Trainer ' + (Object.keys(gameState.players).length + 1),
+                        isSpectator: false,
+                        status: 'active',
+                        activeCard: pokemon,
+                        benchCard: null
+                    };
+                    socket.emit('raidAction', {
+                        type: 'debugAddRandomPlayer',
+                        raidId: gameState.raidId,
+                        player: newPlayer
+                    });
+                });
+            }
+        }
+        
+        function debugFullEnergy() {
+            if (gameState.raidId.startsWith('DEMO-')) {
+                // Demo mode - update locally
+                energyState = {
+                    electric: 5,
+                    fire: 5,
+                    water: 5,
+                    grass: 5,
+                    psychic: 5,
+                    colorless: 3
+                };
+                updateEnergyDisplay();
+                updateAvailableAttacks();
+                addChatMessage('Debug', '⚡ Max energy added!', 'success');
+            } else {
+                // Server mode
+                socket.emit('raidAction', {
+                    type: 'debugFullEnergy',
+                    raidId: gameState.raidId
+                });
+            }
+        }
+        
+        // ==================== KEYBOARD SHORTCUTS ====================
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'd':
+                        e.preventDefault();
+                        toggleDebugPanel();
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        toggleChatPanel();
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        setView('overhead');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        setView('player');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        setView('boss');
+                        break;
+                }
+            }
+        });
+        
+        // Auto-focus chat input when typing
+        document.addEventListener('keypress', function(e) {
+            if (!e.ctrlKey && !e.metaKey && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                const chatInput = document.getElementById('chatInput');
+                chatInput.focus();
+                chatInput.value += e.key;
+            }
+        });
+        
+        // ==================== POKEMON MANAGEMENT SYSTEM ====================
+        
+        function initializePokemonDatabase() {
+            // Initialize with popular Pokemon
+            pokemonDatabase = [
+                {
+                    id: 25,
+                    name: 'Pikachu',
+                    type: 'electric',
+                    hp: 120,
+                    maxHp: 120,
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png',
+                    attacks: [
+                        { name: 'Thunder Shock', damage: 40, cost: ['electric'], description: 'A basic electric attack' },
+                        { name: 'Thunder', damage: 120, cost: ['electric', 'electric', 'colorless'], description: 'Powerful electric attack' }
+                    ]
+                },
+                {
+                    id: 6,
+                    name: 'Charizard',
+                    type: 'fire',
+                    hp: 150,
+                    maxHp: 150,
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png',
+                    attacks: [
+                        { name: 'Ember', damage: 50, cost: ['fire'], description: 'Basic fire attack' },
+                        { name: 'Fire Blast', damage: 140, cost: ['fire', 'fire', 'colorless'], description: 'Devastating fire attack' }
+                    ]
+                },
+                {
+                    id: 9,
+                    name: 'Blastoise',
+                    type: 'water',
+                    hp: 140,
+                    maxHp: 140,
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png',
+                    attacks: [
+                        { name: 'Water Gun', damage: 40, cost: ['water'], description: 'Basic water attack' },
+                        { name: 'Hydro Pump', damage: 130, cost: ['water', 'water', 'colorless'], description: 'Powerful water attack' }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: 'Venusaur',
+                    type: 'grass',
+                    hp: 140,
+                    maxHp: 140,
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png',
+                    attacks: [
+                        { name: 'Vine Whip', damage: 45, cost: ['grass'], description: 'Basic grass attack' },
+                        { name: 'Solar Beam', damage: 135, cost: ['grass', 'grass', 'colorless'], description: 'Powerful grass attack' }
+                    ]
+                },
+                {
+                    id: 150,
+                    name: 'Mewtwo',
+                    type: 'psychic',
+                    hp: 160,
+                    maxHp: 160,
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png',
+                    attacks: [
+                        { name: 'Psycho Cut', damage: 70, cost: ['psychic'], description: 'Basic psychic attack' },
+                        { name: 'Psystrike', damage: 150, cost: ['psychic', 'psychic', 'colorless'], description: 'Devastating psychic attack' }
+                    ]
+                }
+            ];
+            
+            updatePokemonSelector();
+        }
+        
+        function updatePokemonSelector() {
+            const selector = document.getElementById('pokemonSelector');
+            selector.innerHTML = '';
+            
+            pokemonDatabase.forEach(pokemon => {
+                const option = document.createElement('div');
+                option.className = 'pokemon-option';
+                option.setAttribute('data-pokemon-id', pokemon.id);
+                option.onclick = () => selectPokemon(pokemon);
+                
+                option.innerHTML = `
+                    <img src="${pokemon.image}" alt="${pokemon.name}">
+                    <div style="font-weight: bold;">${pokemon.name}</div>
+                    <div style="color: #888;">${pokemon.type}</div>
+                    <div style="color: #888;">${pokemon.hp} HP</div>
+                `;
+                
+                selector.appendChild(option);
+            });
+        }
+        
+        function selectPokemon(pokemon) {
+            const currentPlayer = gameState.players[gameState.username];
+            if (!currentPlayer) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.pokemon-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selection to clicked option
+            document.querySelector(`[data-pokemon-id="${pokemon.id}"]`).classList.add('selected');
+            
+            // Update player's Pokemon
+            if (!currentPlayer.activeCard) {
+                // Set as active Pokemon
+                currentPlayer.activeCard = { ...pokemon };
+                updateActivePokemonDisplay();
+                addChatMessage('System', `🎮 ${pokemon.name} set as active Pokemon!`, 'success');
+            } else if (!currentPlayer.benchCard) {
+                // Set as bench Pokemon
+                currentPlayer.benchCard = { ...pokemon };
+                updateBenchPokemonDisplay();
+                addChatMessage('System', `🎮 ${pokemon.name} added to bench!`, 'success');
+            } else {
+                // Replace active Pokemon
+                currentPlayer.activeCard = { ...pokemon };
+                updateActivePokemonDisplay();
+                addChatMessage('System', `🎮 ${pokemon.name} replaced active Pokemon!`, 'success');
+            }
+            
+            updatePlayerZones();
+            updateAvailableAttacks();
+            
+            // Sync with server if connected
+            if (socket && socket.connected) {
+                socket.emit('raidAction', {
+                    type: 'updatePokemon',
+                    raidId: gameState.raidId,
+                    pokemonData: {
+                        activeCard: currentPlayer.activeCard,
+                        benchCard: currentPlayer.benchCard
+                    }
+                });
+            }
+        }
+        
+        function updateActivePokemonDisplay() {
+            const currentPlayer = gameState.players[gameState.username];
+            const activeName = document.getElementById('activePokemonName');
+            
+            if (currentPlayer && currentPlayer.activeCard) {
+                activeName.textContent = `${currentPlayer.activeCard.name} (${currentPlayer.activeCard.hp}/${currentPlayer.activeCard.maxHp} HP)`;
+            } else {
+                activeName.textContent = 'None';
+            }
+        }
+        
+        function updateBenchPokemonDisplay() {
+            const currentPlayer = gameState.players[gameState.username];
+            const benchName = document.getElementById('benchPokemonName');
+            
+            if (currentPlayer && currentPlayer.benchCard) {
+                benchName.textContent = `${currentPlayer.benchCard.name} (${currentPlayer.benchCard.hp}/${currentPlayer.benchCard.maxHp} HP)`;
+            } else {
+                benchName.textContent = 'None';
+            }
+        }
+        
+        function switchActiveBench() {
+            const currentPlayer = gameState.players[gameState.username];
+            if (!currentPlayer || !currentPlayer.activeCard || !currentPlayer.benchCard) {
+                addChatMessage('System', '⚠️ Need both active and bench Pokemon to switch!', 'warning');
+                return;
+            }
+            
+            // Swap active and bench Pokemon
+            const temp = currentPlayer.activeCard;
+            currentPlayer.activeCard = currentPlayer.benchCard;
+            currentPlayer.benchCard = temp;
+            
+            updateActivePokemonDisplay();
+            updateBenchPokemonDisplay();
+            updatePlayerZones();
+            updateAvailableAttacks();
+            
+            addChatMessage('System', `🔄 Switched ${currentPlayer.activeCard.name} to active!`, 'success');
+            
+            // Sync with server
+            if (socket && socket.connected) {
+                socket.emit('raidAction', {
+                    type: 'switchPokemon',
+                    raidId: gameState.raidId
+                });
+            }
+        }
+        
+        // ==================== ENERGY MANAGEMENT SYSTEM ====================
+        
+        function addEnergy(type) {
+            if (energyState[type] !== undefined) {
+                energyState[type]++;
+                updateEnergyDisplay();
+                addChatMessage('System', `⚡ Added 1 ${type} energy`, 'system');
+                
+                // Sync with server
+                if (socket && socket.connected) {
+                    socket.emit('raidAction', {
+                        type: 'addEnergy',
+                        raidId: gameState.raidId,
+                        energyType: type
+                    });
+                }
+            }
+        }
+        
+        function updateEnergyDisplay() {
+            document.getElementById('electricEnergy').textContent = energyState.electric;
+            document.getElementById('fireEnergy').textContent = energyState.fire;
+            document.getElementById('waterEnergy').textContent = energyState.water;
+            document.getElementById('grassEnergy').textContent = energyState.grass;
+            document.getElementById('psychicEnergy').textContent = energyState.psychic;
+            
+            const total = Object.values(energyState).reduce((sum, val) => sum + val, 0);
+            document.getElementById('totalEnergy').textContent = total;
+        }
+        
+        function canUseAttack(attack) {
+            const energyCost = {};
+            attack.cost.forEach(energy => {
+                energyCost[energy] = (energyCost[energy] || 0) + 1;
+            });
+            
+            for (const [type, needed] of Object.entries(energyCost)) {
+                if (type === 'colorless') {
+                    // Colorless can be paid with any energy
+                    const totalAvailable = Object.values(energyState).reduce((sum, val) => sum + val, 0);
+                    const totalUsed = Object.values(energyCost).reduce((sum, val) => sum + val, 0) - needed;
+                    if (totalAvailable < totalUsed + needed) return false;
+                } else {
+                    if ((energyState[type] || 0) < needed) return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function useAttack(attack) {
+            if (!canUseAttack(attack)) {
+                addChatMessage('System', `⚠️ Not enough energy for ${attack.name}!`, 'warning');
+                return false;
+            }
+            
+            const currentPlayer = gameState.players[gameState.username];
+            if (!currentPlayer || !currentPlayer.activeCard) {
+                addChatMessage('System', '⚠️ No active Pokemon!', 'warning');
+                return false;
+            }
+            
+            // Consume energy
+            const energyCost = {};
+            attack.cost.forEach(energy => {
+                energyCost[energy] = (energyCost[energy] || 0) + 1;
+            });
+            
+            for (const [type, needed] of Object.entries(energyCost)) {
+                if (type !== 'colorless') {
+                    energyState[type] = Math.max(0, energyState[type] - needed);
+                }
+            }
+            
+            // Handle colorless cost with remaining available energy
+            let colorlessNeeded = energyCost.colorless || 0;
+            for (const type in energyState) {
+                while (colorlessNeeded > 0 && energyState[type] > 0) {
+                    energyState[type]--;
+                    colorlessNeeded--;
+                }
+            }
+            
+            updateEnergyDisplay();
+            
+            // Execute attack
+            addChatMessage('Battle', `💥 ${currentPlayer.activeCard.name} used ${attack.name} for ${attack.damage} damage!`, 'battle');
+            
+            // Damage boss
+            gameState.boss.hp = Math.max(0, gameState.boss.hp - attack.damage);
+            updateBossDisplay();
+            
+            // Show damage effect
+            showDamageFloat('Boss', attack.damage);
+            
+            // Sync with server
+            if (socket && socket.connected) {
+                socket.emit('raidAction', {
+                    type: 'playerAttack',
+                    raidId: gameState.raidId,
+                    damage: attack.damage,
+                    attackName: attack.name,
+                    pokemonUsed: currentPlayer.activeCard.name,
+                    energyCost: attack.cost
+                });
+            }
+            
+            return true;
+        }
+        
+        function updateAvailableAttacks() {
+            const currentPlayer = gameState.players[gameState.username];
+            const attacksContainer = document.getElementById('availableAttacks');
+            
+            attacksContainer.innerHTML = '';
+            
+            if (!currentPlayer || !currentPlayer.activeCard || !currentPlayer.activeCard.attacks) {
+                attacksContainer.innerHTML = '<div style="color: #888; font-size: 11px;">No attacks available</div>';
+                return;
+            }
+            
+            currentPlayer.activeCard.attacks.forEach(attack => {
+                const attackDiv = document.createElement('div');
+                attackDiv.className = 'attack-option';
+                const canUse = canUseAttack(attack);
+                
+                if (!canUse) {
+                    attackDiv.style.opacity = '0.5';
+                    attackDiv.style.cursor = 'not-allowed';
+                } else {
+                    attackDiv.onclick = () => useAttack(attack);
+                }
+                
+                const costSymbols = attack.cost.map(energy => {
+                    const colors = {
+                        electric: '#FFD700',
+                        fire: '#FF4500',
+                        water: '#1E90FF',
+                        grass: '#32CD32',
+                        psychic: '#DA70D6',
+                        colorless: '#C0C0C0'
+                    };
+                    return `<span class="energy-symbol" style="background: ${colors[energy] || '#888'};"></span>`;
+                }).join('');
+                
+                attackDiv.innerHTML = `
+                    <div style="font-weight: bold;">${attack.name}</div>
+                    <div style="color: #888; font-size: 10px;">${attack.damage} damage</div>
+                    <div class="attack-cost">${costSymbols}</div>
+                `;
+                
+                attacksContainer.appendChild(attackDiv);
+            });
+        }
+        
+        // ==================== PANEL TOGGLE FUNCTIONS ====================
+        
+        function togglePokemonPanel() {
+            const panel = document.getElementById('pokemonPanel');
+            panel.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html> 

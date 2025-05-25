@@ -1,7 +1,7 @@
 /* ===================================================================
  * File: client/css/raid-animations.css
- * Purpose: Animation and effect styles for PTCG Raid System
- * Version: 1.0.0
+ * Purpose: Pokemon Raid Battle Animations and Effects
+ * Version: 4.0.0 - Authentic Pokemon Playmat Edition
  * Author: PTCG Sim Meta Team
  * 
  * Description:
@@ -20,400 +20,393 @@
  *   v1.0.0 - Extracted from inline styles for modularity
  * ===================================================================*/
 
-/* ================ PLAYER CARD ANIMATIONS ================ */
+/* ================ POKEMON THEMED ANIMATIONS ================ */
 
-/* Damage number floating animation */
-@keyframes damageFloat {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-40px);
-    }
-}
-
-/* Heal number floating animation */
-@keyframes healFloat {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    50% {
-        transform: translateY(-20px) scale(1.2);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-40px) scale(1);
-    }
-}
-
-/* Player shake animation for damage */
-@keyframes playerShake {
+/* Main Pokemon glow effect for boss and special cards */
+@keyframes pokemonGlow {
     0%, 100% { 
-        transform: translate(-50%, -50%) translateX(0); 
-    }
-    10%, 30%, 50%, 70%, 90% { 
-        transform: translate(-50%, -50%) translateX(-3px); 
-    }
-    20%, 40%, 60%, 80% { 
-        transform: translate(-50%, -50%) translateX(3px); 
-    }
-}
-
-/* Turn highlight animation */
-@keyframes turnHighlight {
-    0%, 100% { 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transform: translate(-50%, -50%) scale(1);
-    }
-    50% { 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 25px rgba(241,196,15,0.8);
-        transform: translate(-50%, -50%) scale(1.05);
-    }
-}
-
-/* KO overlay appear animation */
-@keyframes koAppear {
-    0% {
-        opacity: 0;
-        transform: scale(0.5);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        opacity: 1;
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
         transform: scale(1);
     }
-}
-
-/* Turn indicator pulse */
-@keyframes turnPulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
+    50% { 
+        box-shadow: 0 0 30px rgba(255, 204, 0, 0.6), 0 0 40px rgba(255, 204, 0, 0.3);
+        transform: scale(1.02);
     }
 }
 
-/* ================ BOSS ANIMATIONS ================ */
-
-/* Boss idle animation */
-@keyframes bossIdle {
+/* Enhanced turn glow for current player indicators */
+@keyframes turnGlow {
     0%, 100% { 
-        transform: translate(-50%, -50%) translateY(0px) scale(1); 
+        box-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+        border-color: var(--pokemon-yellow);
     }
     50% { 
-        transform: translate(-50%, -50%) translateY(-5px) scale(1.02); 
+        box-shadow: 0 0 25px rgba(255, 204, 0, 0.8), 0 0 35px rgba(255, 204, 0, 0.4);
+        border-color: #ffdd33;
     }
 }
 
-/* Boss attack animation */
-@keyframes bossAttack {
-    0% {
-        transform: translate(-50%, -50%) scale(1);
+/* 3D card flip animation */
+@keyframes cardFlip {
+    0% { transform: rotateY(0deg); }
+    50% { 
+        transform: rotateY(90deg) scale(1.1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+    100% { transform: rotateY(0deg); }
+}
+
+/* HP bar pulse when critical */
+@keyframes hpPulse {
+    0%, 100% { transform: scale(1); }
+    50% { 
+        transform: scale(1.05);
+        filter: brightness(1.2);
+    }
+}
+
+/* Floating damage numbers */
+@keyframes floatUp {
+    0% { 
+        transform: translateY(0px) scale(0.8); 
+        opacity: 0;
     }
     20% {
-        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+        transform: translateY(-20px) scale(1.2);
     }
-    40% {
-        transform: translate(-50%, -50%) scale(0.95);
-    }
-    60% {
-        transform: translate(-50%, -50%) scale(1.05);
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(1);
+    100% { 
+        transform: translateY(-80px) scale(0.6); 
+        opacity: 0;
     }
 }
 
-/* Boss glow animation for turn indicator */
-@keyframes bossGlow {
-    0%, 100% { 
-        box-shadow: 
-            0 0 20px rgba(231,76,60,0.6),
-            0 4px 15px rgba(0,0,0,0.3);
+/* Smooth fade in for modals and overlays */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.95);
     }
-    50% { 
-        box-shadow: 
-            0 0 30px rgba(231,76,60,0.9),
-            0 6px 20px rgba(0,0,0,0.4);
+    to { 
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
-/* Boss damage taken animation */
-@keyframes bossHurt {
-    0%, 100% {
-        filter: hue-rotate(0deg);
+/* Slide up animation for content */
+@keyframes slideUp {
+    from { 
+        transform: translateY(30px); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+}
+
+/* Shimmer effect for HP bars and special elements */
+@keyframes shimmer {
+    0% { 
+        transform: translateX(-100%); 
+        opacity: 0;
     }
     50% {
-        filter: hue-rotate(180deg);
+        opacity: 1;
+    }
+    100% { 
+        transform: translateX(100%); 
+        opacity: 0;
     }
 }
 
-/* ================ UI ANIMATIONS ================ */
+/* Pulse animation for badges and indicators */
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.08);
+        opacity: 0.8;
+    }
+}
+
+/* Slide in from right for notifications */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Slide out to right for notifications */
+@keyframes slideOutRight {
+    from { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translateX(100%) scale(0.8); 
+        opacity: 0; 
+    }
+}
+
+/* Bounce in effect for Pokemon selection */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Shake animation for errors or damage */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Spin animation for loading states */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Wiggle animation for interactive elements */
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg) scale(1.02); }
+    75% { transform: rotate(3deg) scale(1.02); }
+}
+
+/* ================ TYPE-SPECIFIC ANIMATIONS ================ */
+
+/* Electric type crackling effect */
+@keyframes electricCrackle {
+    0%, 100% { 
+        box-shadow: 0 0 10px var(--electric), 0 0 20px var(--electric);
+        filter: brightness(1);
+    }
+    50% { 
+        box-shadow: 0 0 20px var(--electric), 0 0 40px var(--electric), 0 0 60px rgba(247, 208, 44, 0.3);
+        filter: brightness(1.3);
+    }
+}
+
+/* Fire type flame effect */
+@keyframes fireFlicker {
+    0%, 100% { 
+        box-shadow: 0 0 15px var(--fire);
+        filter: hue-rotate(0deg);
+    }
+    33% { 
+        box-shadow: 0 0 25px var(--fire), 0 0 35px rgba(238, 129, 48, 0.5);
+        filter: hue-rotate(10deg);
+    }
+    66% { 
+        box-shadow: 0 0 20px var(--fire);
+        filter: hue-rotate(-10deg);
+    }
+}
+
+/* Water type wave effect */
+@keyframes waterWave {
+    0%, 100% { 
+        box-shadow: 0 0 12px var(--water);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px var(--water), 0 0 40px rgba(99, 144, 240, 0.3);
+        transform: scale(1.02);
+    }
+}
+
+/* Grass type growth effect */
+@keyframes grassGrow {
+    0% { 
+        box-shadow: 0 0 8px var(--grass);
+        transform: scale(0.98);
+    }
+    100% { 
+        box-shadow: 0 0 20px var(--grass), 0 0 30px rgba(122, 199, 76, 0.4);
+        transform: scale(1.02);
+    }
+}
+
+/* ================ RAID SPECIFIC ANIMATIONS ================ */
+
+/* Boss emergence animation */
+@keyframes bossEmerge {
+    0% {
+        transform: scale(0) rotateY(180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotateY(90deg);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1) rotateY(0deg);
+        opacity: 1;
+    }
+}
+
+/* Card draw animation */
+@keyframes cardDraw {
+    0% {
+        transform: translateY(100px) rotateX(-90deg);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(-10px) rotateX(0deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(0) rotateX(0deg);
+        opacity: 1;
+    }
+}
+
+/* Attack animation sequence */
+@keyframes attackSequence {
+    0% { 
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+    25% { 
+        transform: scale(1.1) rotate(-2deg);
+        filter: brightness(1.2);
+    }
+    50% { 
+        transform: scale(1.2) rotate(2deg);
+        filter: brightness(1.5);
+        box-shadow: 0 0 30px var(--pokemon-red);
+    }
+    75% { 
+        transform: scale(1.1) rotate(-1deg);
+        filter: brightness(1.2);
+    }
+    100% { 
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+}
+
+/* Victory celebration animation */
+@keyframes victory {
+    0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        filter: hue-rotate(0deg);
+    }
+    25% { 
+        transform: scale(1.1) rotate(5deg);
+        filter: hue-rotate(90deg);
+    }
+    50% { 
+        transform: scale(1.2) rotate(-5deg);
+        filter: hue-rotate(180deg);
+    }
+    75% { 
+        transform: scale(1.1) rotate(3deg);
+        filter: hue-rotate(270deg);
+    }
+}
+
+/* ================ HOVER AND INTERACTION ANIMATIONS ================ */
+
+/* Enhanced hover effect for cards */
+@keyframes cardHover {
+    0% { 
+        transform: translateY(0) scale(1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    100% { 
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+}
 
 /* Button press animation */
 @keyframes buttonPress {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(0.95);
-    }
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
 }
 
-/* Slide in from right */
-@keyframes slideInRight {
-    0% {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0);
-        opacity: 1;
-    }
+/* ================ UTILITY CLASSES FOR ANIMATIONS ================ */
+
+/* Animation trigger classes */
+.animate-glow { animation: pokemonGlow 3s ease-in-out infinite; }
+.animate-turn { animation: turnGlow 2s ease-in-out infinite; }
+.animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.5s ease-in-out; }
+.animate-shake { animation: shake 0.5s linear; }
+.animate-bounce { animation: bounceIn 0.6s ease-out; }
+.animate-electric { animation: electricCrackle 2s ease-in-out infinite; }
+.animate-fire { animation: fireFlicker 3s ease-in-out infinite; }
+.animate-water { animation: waterWave 4s ease-in-out infinite; }
+.animate-grass { animation: grassGrow 2s ease-in-out infinite alternate; }
+
+/* Hover effects */
+.hover-lift:hover { animation: cardHover 0.3s ease-out forwards; }
+.hover-glow:hover { animation: pokemonGlow 1s ease-in-out; }
+
+/* State-based animations */
+.critical-hp { animation: hpPulse 1s ease-in-out infinite, shake 0.1s linear infinite; }
+.low-hp { animation: hpPulse 2s ease-in-out infinite; }
+.ko-state { 
+    animation: fadeIn 0.5s ease-out reverse;
+    filter: grayscale(1) brightness(0.7);
 }
 
-/* Slide in from left */
-@keyframes slideInLeft {
-    0% {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
+/* Loading animations */
+.loading-spin { animation: spin 1s linear infinite; }
+.loading-pulse { animation: pulse 1.5s ease-in-out infinite; }
 
-/* Fade in */
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-}
+/* ================ ANIMATION PERFORMANCE OPTIMIZATIONS ================ */
 
-/* Fade out */
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-    }
-}
-
-/* Scale in */
-@keyframes scaleIn {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-/* Bounce in */
-@keyframes bounceIn {
-    0% {
-        transform: scale(0.3);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.05);
-        opacity: 1;
-    }
-    70% {
-        transform: scale(0.9);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* ================ SPECIAL EFFECTS ================ */
-
-/* Health bar damage animation */
-@keyframes healthBarDamage {
-    0% {
-        background: linear-gradient(90deg, var(--primary-green), #27ae60);
-    }
-    50% {
-        background: linear-gradient(90deg, var(--primary-red), #c0392b);
-    }
-    100% {
-        background: linear-gradient(90deg, var(--primary-green), #27ae60);
-    }
-}
-
-/* Critical hit flash */
-@keyframes criticalHit {
-    0%, 100% {
-        background: inherit;
-    }
-    25% {
-        background: radial-gradient(circle, rgba(255,255,0,0.8) 0%, transparent 70%);
-    }
-    50% {
-        background: radial-gradient(circle, rgba(255,165,0,0.8) 0%, transparent 70%);
-    }
-    75% {
-        background: radial-gradient(circle, rgba(255,0,0,0.8) 0%, transparent 70%);
-    }
-}
-
-/* Status effect pulse */
-@keyframes statusPulse {
-    0%, 100% {
-        opacity: 0.8;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.2);
-    }
-}
-
-/* Loading spinner */
-@keyframes spin {
-    0% { 
-        transform: rotate(0deg); 
-    }
-    100% { 
-        transform: rotate(360deg); 
-    }
-}
-
-/* Ripple effect */
-@keyframes ripple {
-    0% {
-        transform: scale(0);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(4);
-        opacity: 0;
-    }
-}
-
-/* ================ UTILITY ANIMATION CLASSES ================ */
-
-/* Animation utility classes for dynamic application */
-.animate-damage-float {
-    animation: damageFloat 1.5s ease-out forwards;
-}
-
-.animate-heal-float {
-    animation: healFloat 1.5s ease-out forwards;
-}
-
-.animate-player-shake {
-    animation: playerShake 0.5s ease-in-out;
-}
-
-.animate-turn-highlight {
-    animation: turnHighlight 2s ease-in-out infinite;
-}
-
-.animate-ko-appear {
-    animation: koAppear 0.8s ease-out forwards;
-}
-
-.animate-boss-attack {
-    animation: bossAttack 1s ease-in-out;
-}
-
-.animate-boss-hurt {
-    animation: bossHurt 0.5s ease-in-out;
-}
-
-.animate-button-press {
-    animation: buttonPress 0.2s ease-in-out;
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
-.animate-fade-out {
-    animation: fadeOut 0.3s ease-out forwards;
-}
-
-.animate-slide-in-right {
-    animation: slideInRight 0.3s ease-out forwards;
-}
-
-.animate-slide-in-left {
-    animation: slideInLeft 0.3s ease-out forwards;
-}
-
-.animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
-}
-
-.animate-bounce-in {
-    animation: bounceIn 0.6s ease-out forwards;
-}
-
-.animate-critical-hit {
-    animation: criticalHit 0.8s ease-in-out;
-}
-
-.animate-status-pulse {
-    animation: statusPulse 2s ease-in-out infinite;
-}
-
-/* ================ REDUCED MOTION SUPPORT ================ */
-
-/* Respect user preferences for reduced motion */
+/* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    * {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-    
-    /* Keep essential animations but make them shorter */
-    .animate-fade-in,
-    .animate-fade-out,
-    .animate-scale-in {
-        animation-duration: 0.1s !important;
     }
 }
 
-/* ================ PERFORMANCE OPTIMIZATIONS ================ */
-
-/* Use hardware acceleration for smooth animations */
-.raid-player,
-#raidBossDisplay,
-.notification,
-.modal-overlay,
-.modal-content {
-    will-change: transform;
-    backface-visibility: hidden;
-    perspective: 1000px;
-}
-
-/* Optimize transforms */
-.transform-optimized {
+/* GPU acceleration for smooth animations */
+.gpu-accelerated {
     transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+}
+
+/* ================ RESPONSIVE ANIMATION ADJUSTMENTS ================ */
+
+@media (max-width: 768px) {
+    /* Reduce animation intensity on mobile for performance */
+    .animate-glow { animation-duration: 4s; }
+    .animate-turn { animation-duration: 3s; }
+    .animate-pulse { animation-duration: 2s; }
+    
+    /* Simplify complex animations */
+    @keyframes pokemonGlow {
+        0%, 100% { box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
+        50% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
+    }
 }
 
 /* ===================================================================
