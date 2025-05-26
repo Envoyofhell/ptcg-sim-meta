@@ -241,7 +241,7 @@ ul, li {
   align-items: center;
   justify-content: space-between;
   width: fit-content;
-  min-width: 25%;
+  min-width: 35%;
   max-width: 800px;
   height: clamp(40px, 6vh, 60px);
   z-index: var(--z-fixed);
