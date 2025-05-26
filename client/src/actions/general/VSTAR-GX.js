@@ -8,20 +8,40 @@ import { determineUsername } from '../../setup/general/determine-username.js';
 import { processAction } from '../../setup/general/process-action.js';
 
 export const VSTARGXFunction = (user, type, emit = true) => {
+  console.log(
+    `VSTARGXFunction called with user: ${user}, type: ${type}, emit: ${emit}`
+  );
+
   if (user === 'opp' && emit && systemState.isTwoPlayer) {
     processAction(user, emit, 'VSTARGXFunction', [type]);
     return;
   }
 
-  const selfGXButton = selfContainerDocument.getElementById('GXButton');
-  const selfVSTARButton = selfContainerDocument.getElementById('VSTARButton');
-  const selfForteButton = selfContainerDocument.getElementById('ForteButton');
-  const oppGXButton = oppContainerDocument.getElementById('GXButton');
-  const oppForteButton = oppContainerDocument.getElementById('ForteButton');
-  const oppVSTARButton = oppContainerDocument.getElementById('VSTARButton');
+  // Try to get buttons from main document first, then fallback to container documents
+  const selfGXButton =
+    document.getElementById('selfGXButton') ||
+    selfContainerDocument.getElementById('GXButton');
+  const selfVSTARButton =
+    document.getElementById('selfVSTARButton') ||
+    selfContainerDocument.getElementById('VSTARButton');
+  const selfForteButton =
+    document.getElementById('selfForteButton') ||
+    selfContainerDocument.getElementById('ForteButton');
+  const oppGXButton =
+    document.getElementById('oppGXButton') ||
+    oppContainerDocument.getElementById('GXButton');
+  const oppForteButton =
+    document.getElementById('oppForteButton') ||
+    oppContainerDocument.getElementById('ForteButton');
+  const oppVSTARButton =
+    document.getElementById('oppVSTARButton') ||
+    oppContainerDocument.getElementById('VSTARButton');
 
-   let button;
+  let button;
+  let allUserButtons;
+
   if (user === 'self') {
+    allUserButtons = [selfGXButton, selfVSTARButton, selfForteButton];
     if (type === 'GX') {
       button = selfGXButton;
     } else if (type === 'VSTAR') {
@@ -30,6 +50,7 @@ export const VSTARGXFunction = (user, type, emit = true) => {
       button = selfForteButton;
     }
   } else {
+    allUserButtons = [oppGXButton, oppVSTARButton, oppForteButton];
     if (type === 'GX') {
       button = oppGXButton;
     } else if (type === 'VSTAR') {
@@ -39,14 +60,20 @@ export const VSTARGXFunction = (user, type, emit = true) => {
     }
   }
 
-  if (button.classList.contains('used-special-move')) {
+  if (button && button.classList.contains('used-special-move')) {
+    // If clicking the same button that's already active, deactivate it
+    console.log(`Deactivating ${type} button for ${user}`);
     button.classList.remove('used-special-move');
     const message = determineUsername(user) + ' reset their ' + type;
     appendMessage(user, message, 'player', false);
-  } else {
+  } else if (button) {
+    // Activate the clicked button (don't clear others - allow multiple to be active)
+    console.log(`Activating ${type} button for ${user}`);
     button.classList.add('used-special-move');
     const message = determineUsername(user) + ' used their ' + type + '!';
     appendMessage(user, message, 'player', false);
+  } else {
+    console.log(`Button not found for ${user} ${type}`);
   }
 
   processAction(user, emit, 'VSTARGXFunction', [type]);

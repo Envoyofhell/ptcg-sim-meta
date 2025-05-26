@@ -22,6 +22,8 @@
     <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
     
     <!-- Stylesheets -->
+    <link rel="stylesheet" href="src/css/modern-variables.css">
+    <link rel="stylesheet" href="src/css/modern-components.css">
     <link rel="stylesheet" href="src/css/index.css">
     <link rel="stylesheet" href="../src/css/glow.css">
     
@@ -47,7 +49,10 @@
     <div id="cover"></div>
     <iframe id="selfContainer" class="self" src="./self-containers.html"></iframe>
     <iframe id="oppContainer" class="opp" src="./opp-containers.html"></iframe>
-    <div id="stadium" class="outline stadium-outline"></div>
+    <div id="stadium" class="outline stadium-outline glow-stadium"></div>
+    
+    <!-- Modern Chat Interface -->
+    <iframe id="chatInterface" class="chat-iframe" src="./chat-interface.html"></iframe>
     
     <!-- Resizer Elements -->
     <div id="selfResizer" class="self-color"></div>
@@ -55,21 +60,103 @@
 
     <!-- Board Control Buttons -->
     <div id="boardButtonContainer">
-        <div class="tooltip" id="turnButton">
-            <button>+Turn</button>
-            <span class="tooltiptext">Start turn</span>
+        <!-- Self Player Actions (Left Side) -->
+        <div class="player-actions self-actions">
+            <div class="tooltip-modern" data-tooltip="Self GX Attack">
+                <button id="selfGXButton" class="btn btn-self">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    GX
+                </button>
+            </div>
+            <div class="tooltip-modern" data-tooltip="Self VSTAR Power">
+                <button id="selfVSTARButton" class="btn btn-self">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7.4-6.3-4.6-6.3 4.6 2.3-7.4-6-4.6h7.6z"/>
+                    </svg>
+                    VSTAR
+                </button>
+            </div>
+            <div class="tooltip-modern" data-tooltip="Self Forte">
+                <button id="selfForteButton" class="btn btn-self">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8-1.41-1.42z"/>
+                    </svg>
+                    Forte
+                </button>
+            </div>
         </div>
-        <div class="tooltip" id="flipCoinButton">
-            <button>Coin</button>
-            <span class="tooltiptext">Flip coin</span>
+
+        <!-- Center Actions -->
+        <div class="center-actions">
+            <div class="tooltip-modern" id="turnButton" data-tooltip="Start turn">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                    </svg>
+                    Turn
+                </button>
+            </div>
+            <div class="tooltip-modern" id="flipCoinButton" data-tooltip="Flip coin">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    </svg>
+                    Coin
+                </button>
+            </div>
+            <div class="tooltip-modern" id="flipBoardButton" data-tooltip="Flip board">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="tooltip-modern" id="boardUndoButton" data-tooltip="Undo last action">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+                    </svg>
+                    Undo
+                </button>
+            </div>
+            <div class="tooltip-modern" id="refreshButton" data-tooltip="Refresh images">
+                <button class="btn btn-neutral">
+                    <svg class="icon" id="refreshIcon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                    <div id="loadingCircle" style="display: none;"></div>
+                </button>
+            </div>
         </div>
-        <div class="tooltip" id="flipBoardButton">
-            <button>⇅</button>
-            <span class="tooltiptext">Flip board</span>
-        </div>
-        <div class="tooltip" id="refreshButton">
-            <button><div id="refreshIcon">↻</div><div id="loadingCircle"></div></button>
-            <span class="tooltiptext">Refresh images</span>
+
+        <!-- Opponent Player Actions (Right Side) -->
+        <div class="player-actions opp-actions">
+            <div class="tooltip-modern" data-tooltip="Opponent GX Attack">
+                <button id="oppGXButton" class="btn btn-opp">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    GX
+                </button>
+            </div>
+            <div class="tooltip-modern" data-tooltip="Opponent VSTAR Power">
+                <button id="oppVSTARButton" class="btn btn-opp">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7.4-6.3-4.6-6.3 4.6 2.3-7.4-6-4.6h7.6z"/>
+                    </svg>
+                    VSTAR
+                </button>
+            </div>
+            <div class="tooltip-modern" data-tooltip="Opponent Forte">
+                <button id="oppForteButton" class="btn btn-opp">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8-1.41-1.42z"/>
+                    </svg>
+                    Forte
+                </button>
+            </div>
         </div>
     </div>
 
@@ -480,6 +567,63 @@
     <script src="src/changelogs/main-changelog.js"></script>
     <script src="src/changelogs/meta-changelog.js"></script>
     <script src="src/changelogs/changelog.js"></script>
+
+    <!-- Board Button Event Listeners -->
+    <script type="module">
+        import { VSTARGXFunction } from './src/actions/general/VSTAR-GX.js';
+        import { appendMessage } from './src/setup/chatbox/append-message.js';
+        import { determineUsername } from './src/setup/general/determine-username.js';
+        
+        // Simple undo function for board button that just adds a message
+        const boardUndo = (user) => {
+            console.log(`Board undo called for user: ${user}`);
+            const message = determineUsername(user) + ' took back their last move!';
+            appendMessage(user, message, 'announcement', false);
+        };
+        
+        // Wait for the page to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Self player buttons
+            const selfGXButton = document.getElementById('selfGXButton');
+            const selfVSTARButton = document.getElementById('selfVSTARButton');
+            const selfForteButton = document.getElementById('selfForteButton');
+            
+            // Opponent player buttons
+            const oppGXButton = document.getElementById('oppGXButton');
+            const oppVSTARButton = document.getElementById('oppVSTARButton');
+            const oppForteButton = document.getElementById('oppForteButton');
+            
+            // Center buttons
+            const boardUndoButton = document.getElementById('boardUndoButton');
+            
+            // Add event listeners for self buttons
+            if (selfGXButton) {
+                selfGXButton.addEventListener('click', () => VSTARGXFunction('self', 'GX'));
+            }
+            if (selfVSTARButton) {
+                selfVSTARButton.addEventListener('click', () => VSTARGXFunction('self', 'VSTAR'));
+            }
+            if (selfForteButton) {
+                selfForteButton.addEventListener('click', () => VSTARGXFunction('self', 'Forte'));
+            }
+            
+            // Add event listeners for opponent buttons
+            if (oppGXButton) {
+                oppGXButton.addEventListener('click', () => VSTARGXFunction('opp', 'GX'));
+            }
+            if (oppVSTARButton) {
+                oppVSTARButton.addEventListener('click', () => VSTARGXFunction('opp', 'VSTAR'));
+            }
+            if (oppForteButton) {
+                oppForteButton.addEventListener('click', () => VSTARGXFunction('opp', 'Forte'));
+            }
+            
+            // Add event listener for undo button
+            if (boardUndoButton) {
+                boardUndoButton.addEventListener('click', () => boardUndo('self'));
+            }
+        });
+    </script>
 
 </body>
 </html>

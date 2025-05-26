@@ -1,0 +1,199 @@
+/* Modern Design System Variables */
+:root {
+  /* Color Palette */
+  --primary-blue: #007bff;
+  --primary-blue-light: #4dabf7;
+  --primary-blue-dark: #0056b3;
+  --primary-red: #dc3545;
+  --primary-red-light: #ff6b7a;
+  --primary-red-dark: #a71e2a;
+  --accent-purple: #6f42c1;
+  --accent-purple-light: #9775fa;
+  --accent-purple-dark: #4c2a85;
+  
+  /* Neutral Colors */
+  --white: #ffffff;
+  --gray-50: #f8f9fa;
+  --gray-100: #e9ecef;
+  --gray-200: #dee2e6;
+  --gray-300: #ced4da;
+  --gray-400: #adb5bd;
+  --gray-500: #6c757d;
+  --gray-600: #495057;
+  --gray-700: #343a40;
+  --gray-800: #212529;
+  --gray-900: #0d1117;
+  
+  /* Semantic Colors */
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: #17a2b8;
+  
+  /* Background Colors */
+  --bg-primary: rgba(255, 255, 255, 0.95);
+  --bg-secondary: rgba(248, 249, 250, 0.9);
+  --bg-dark: rgba(13, 17, 23, 0.95);
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Glass Morphism */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-backdrop: blur(10px);
+  
+  /* Chat System - MMO Dark Theme */
+  --chat-width: 500px;
+  --chat-height: 600px;
+  --chat-bg: rgba(15, 15, 25, 0.95);
+  --chat-border: rgba(100, 100, 150, 0.3);
+  --chat-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+  --chat-tab-active: linear-gradient(135deg, #4a5568, #2d3748);
+  --chat-tab-inactive: rgba(100, 100, 150, 0.3);
+  --chat-message-self: linear-gradient(135deg, #3182ce, #2c5282);
+  --chat-message-opp: linear-gradient(135deg, #e53e3e, #c53030);
+  --chat-message-system: linear-gradient(135deg, #4a5568, #2d3748);
+  --chat-message-spectator: linear-gradient(135deg, #805ad5, #553c9a);
+  --chat-message-game: linear-gradient(135deg, #38a169, #2f855a);
+  --chat-input-bg: rgba(45, 55, 72, 0.8);
+  --chat-input-border: rgba(100, 100, 150, 0.4);
+  --chat-text-primary: #e2e8f0;
+  --chat-text-secondary: #a0aec0;
+  --chat-text-muted: #718096;
+  
+  /* Button Enhancements */
+  --btn-icon-size: 1.2rem;
+  --btn-hover-scale: 1.05;
+  --btn-active-scale: 0.98;
+  --btn-glow-intensity: 0.4;
+  
+  /* Icon System */
+  --icon-xs: 0.75rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.25rem;
+  --icon-lg: 1.5rem;
+  --icon-xl: 2rem;
+  --icon-2xl: 2.5rem;
+  
+  /* Enhanced Effects */
+  --neon-glow-self: 0 0 20px var(--primary-blue), 0 0 40px var(--primary-blue), 0 0 60px var(--primary-blue);
+  --neon-glow-opp: 0 0 20px var(--primary-red), 0 0 40px var(--primary-red), 0 0 60px var(--primary-red);
+  --neon-glow-stadium: 0 0 20px var(--accent-purple), 0 0 40px var(--accent-purple), 0 0 60px var(--accent-purple);
+  
+  /* Particle Effects */
+  --particle-count: 50;
+  --particle-size: 2px;
+  --particle-duration: 3s;
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  
+  /* Typography */
+  --font-family-base: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Animation */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  
+  /* Enhanced Animation Curves */
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  --z-chat: 1090;
+  
+  /* Game-specific Colors */
+  --player-self: var(--primary-blue);
+  --player-self-light: var(--primary-blue-light);
+  --player-self-dark: var(--primary-blue-dark);
+  --player-opp: var(--primary-red);
+  --player-opp-light: var(--primary-red-light);
+  --player-opp-dark: var(--primary-red-dark);
+  --stadium: var(--accent-purple);
+  --stadium-light: var(--accent-purple-light);
+  --stadium-dark: var(--accent-purple-dark);
+  
+  /* Glow Effects */
+  --glow-self: 0 0 20px rgba(0, 123, 255, 0.3);
+  --glow-opp: 0 0 20px rgba(255, 85, 100, 0.3);
+  --glow-stadium: 0 0 20px rgba(111, 66, 193, 0.3);
+  --glow-success: 0 0 20px rgba(40, 167, 69, 0.3);
+  --glow-warning: 0 0 20px rgba(255, 193, 7, 0.3);
+  --glow-danger: 0 0 20px rgba(220, 53, 69, 0.3);
+  
+  /* Layout Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* Dark Mode Variables */
+[data-theme="dark"] {
+  --bg-primary: rgba(13, 17, 23, 0.95);
+  --bg-secondary: rgba(33, 37, 41, 0.9);
+  --glass-bg: rgba(0, 0, 0, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --chat-bg: rgba(33, 37, 41, 0.95);
+  --chat-border: rgba(255, 255, 255, 0.1);
+  --chat-message-system: var(--gray-600);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+} 

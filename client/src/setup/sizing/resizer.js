@@ -110,14 +110,15 @@ export const selfResize = (e) => {
         2 -
         8
     ) + '%';
-  boardButtonContainer.style.bottom =
-    Math.min(
-      90,
-      (parseFloat(oppResizer.style.bottom) +
-        parseFloat(selfResizer.style.bottom)) /
-        2 -
-        3
-    ) + '%';
+  // Keep boardButtonContainer centered - remove dynamic bottom positioning
+  // boardButtonContainer.style.bottom =
+  //   Math.min(
+  //     90,
+  //     (parseFloat(oppResizer.style.bottom) +
+  //       parseFloat(selfResizer.style.bottom)) /
+  //       2 -
+  //       3
+  //   ) + '%';
   oppResizer.style.height = '2%';
   if (parseFloat(oppResizer.style.bottom) > 100) {
     oppResizer.style.height = '6%';
@@ -178,14 +179,15 @@ export const oppResize = (e) => {
         2 -
         8
     ) + '%';
-  boardButtonContainer.style.bottom =
-    Math.min(
-      90,
-      (parseFloat(oppResizer.style.bottom) +
-        parseFloat(selfResizer.style.bottom)) /
-        2 -
-        3
-    ) + '%';
+  // Keep boardButtonContainer centered - remove dynamic bottom positioning
+  // boardButtonContainer.style.bottom =
+  //   Math.min(
+  //     90,
+  //     (parseFloat(oppResizer.style.bottom) +
+  //       parseFloat(selfResizer.style.bottom)) /
+  //       2 -
+  //       3
+  //   ) + '%';
   oppResizer.style.height = '2%';
   if (parseFloat(oppResizer.style.bottom) > 100) {
     oppResizer.style.height = '6%';
@@ -312,14 +314,15 @@ export const flippedSelfResize = (e) => {
         2 -
         8
     ) + '%';
-  boardButtonContainer.style.bottom =
-    Math.min(
-      90,
-      (parseFloat(selfResizer.style.bottom) +
-        parseFloat(oppResizer.style.bottom)) /
-        2 -
-        3
-    ) + '%';
+  // Keep boardButtonContainer centered - remove dynamic bottom positioning
+  // boardButtonContainer.style.bottom =
+  //   Math.min(
+  //     90,
+  //     (parseFloat(selfResizer.style.bottom) +
+  //       parseFloat(oppResizer.style.bottom)) /
+  //       2 -
+  //       3
+  //   ) + '%';
   oppResizer.style.height = '2%';
   if (parseFloat(oppResizer.style.bottom) > 100) {
     oppResizer.style.height = '5%';
@@ -377,14 +380,15 @@ export const flippedOppResize = (e) => {
         2 -
         8
     ) + '%';
-  boardButtonContainer.style.bottom =
-    Math.min(
-      90,
-      (parseFloat(selfResizer.style.bottom) +
-        parseFloat(oppResizer.style.bottom)) /
-        2 -
-        3
-    ) + '%';
+  // Keep boardButtonContainer centered - remove dynamic bottom positioning
+  // boardButtonContainer.style.bottom =
+  //   Math.min(
+  //     90,
+  //     (parseFloat(selfResizer.style.bottom) +
+  //       parseFloat(oppResizer.style.bottom)) /
+  //       2 -
+  //       3
+  //   ) + '%';
   oppResizer.style.height = '2%';
   if (parseFloat(oppResizer.style.bottom) > 100) {
     oppResizer.style.height = '5%';

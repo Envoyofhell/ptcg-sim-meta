@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link rel="stylesheet" href="src/css/modern-variables.css">
+    <link rel="stylesheet" href="src/css/modern-components.css">
+    <link rel="stylesheet" href="src/css/chat-interface.css">
+</head>
+<body>
+    <div class="chat-container mmo-theme">
+        <!-- Chat Header with Tabs -->
+        <div class="chat-header">
+            <div class="chat-tabs">
+                <button class="chat-tab active" data-tab="main">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <span>Main</span>
+                    <div class="notification-badge" id="mainBadge">0</div>
+                </button>
+                <button class="chat-tab" data-tab="chat">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                    </svg>
+                    <span>Chat</span>
+                    <div class="notification-badge" id="chatBadge">0</div>
+                </button>
+                <button class="chat-tab" data-tab="logs">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                    </svg>
+                    <span>Logs</span>
+                    <div class="notification-badge" id="logsBadge">0</div>
+                </button>
+            </div>
+            <div class="chat-controls">
+                <button class="control-btn" id="emojiBtn" data-tooltip="Emojis">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-5 6c.83 0 1.5.67 1.5 1.5S7.83 11 7 11s-1.5-.67-1.5-1.5S6.17 8 7 8zm5 9c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zm5-6c-.83 0-1.5-.67-1.5-1.5S16.17 8 17 8s1.5.67 1.5 1.5S17.83 11 17 11z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" id="minimizeBtn" data-tooltip="Minimize">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13H5v-2h14v2z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" id="settingsBtn" data-tooltip="Settings">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Emoji Drawer -->
+        <div class="emoji-drawer" id="emojiDrawer">
+            <div class="emoji-grid">
+                <button class="emoji-btn">😀</button>
+                <button class="emoji-btn">😂</button>
+                <button class="emoji-btn">😎</button>
+                <button class="emoji-btn">😍</button>
+                <button class="emoji-btn">🤔</button>
+                <button class="emoji-btn">😢</button>
+                <button class="emoji-btn">😡</button>
+                <button class="emoji-btn">👍</button>
+                <button class="emoji-btn">👎</button>
+                <button class="emoji-btn">❤️</button>
+                <button class="emoji-btn">⚡</button>
+                <button class="emoji-btn">🔥</button>
+                <button class="emoji-btn">💯</button>
+                <button class="emoji-btn">🎯</button>
+                <button class="emoji-btn">⭐</button>
+                <button class="emoji-btn">💎</button>
+            </div>
+        </div>
+
+        <!-- Chat Content Areas -->
+        <div class="chat-content">
+            <!-- Main Tab Content -->
+            <div class="tab-content active" id="mainContent">
+                <div class="messages-container scrollbar-modern" id="mainMessages">
+                    <div class="welcome-message">
+                        <div class="system-message">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <span>Welcome to Meta PTCG-sim! All messages and game actions appear here.</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Player Action Buttons for Main Tab -->
+                <div class="player-actions-bar">
+                    <div class="action-group self-group">
+                        <button class="action-btn btn-self" id="mainAttackBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            Attack
+                        </button>
+                        <button class="action-btn btn-self" id="mainPassBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                            </svg>
+                            Pass
+                        </button>
+                        <button class="action-btn btn-self" id="mainUndoBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+                            </svg>
+                            Undo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-container">
+                    <input type="text" class="message-input mmo-input" id="mainInput" placeholder="Type your message...">
+                    <button class="send-btn btn-primary" id="mainSend">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Only Tab Content -->
+            <div class="tab-content" id="chatContent">
+                <div class="messages-container scrollbar-modern" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="system-message">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                            </svg>
+                            <span>Chat messages only. Spectators can also participate here.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-container">
+                    <input type="text" class="message-input mmo-input" id="chatInput" placeholder="Chat with players and spectators...">
+                    <button class="send-btn btn-primary" id="chatSend">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logs Tab Content -->
+            <div class="tab-content" id="logsContent">
+                <div class="messages-container scrollbar-modern" id="logsMessages">
+                    <div class="welcome-message">
+                        <div class="system-message">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                            </svg>
+                            <span>Game action logs and system messages only.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="logs-controls">
+                    <button class="btn btn-ghost btn-sm" id="clearLogs">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                        Clear
+                    </button>
+                    <button class="btn btn-ghost btn-sm" id="exportLogs">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Status Bar -->
+        <div class="chat-status">
+            <div class="connection-status">
+                <div class="status-indicator online" id="connectionStatus"></div>
+                <span id="connectionText">Connected</span>
+            </div>
+            <div class="user-count">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99l-2.98 3.93a.998.998 0 0 0 .27 1.39l1.83 1.18c.3.19.49.52.49.89V22h6zm-11.5-9.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S7 11.17 7 12s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm1.5 16h6v-2.5c0-.37.19-.7.49-.89l1.83-1.18c.3-.19.49-.52.49-.89V14h-2.5l-2.54 7.63A1.5 1.5 0 0 1 9.46 22H7v-6H4.5l2.54-7.63A1.5 1.5 0 0 1 8.46 8H10c.8 0 1.54.37 2.01.99l.93 1.23-.27.18c-.3.19-.49.52-.49.89V22z"/>
+                </svg>
+                <span id="userCount">1</span>
+            </div>
+            <div class="game-mode">
+                <span id="gameModeText">Single Player</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/chat-interface.js"></script>
+</body>
+</html> 
