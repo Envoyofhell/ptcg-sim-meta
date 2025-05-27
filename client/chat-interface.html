@@ -18,6 +18,17 @@
                 <span id="ircTitle">PTCG Chat</span>
                 <span class="connection-status" id="connectionStatus">●</span>
             </div>
+            
+            <!-- Room Sharing Box (shown in multiplayer) -->
+            <div class="room-sharing-box" id="roomSharingBox" style="display: none;">
+                <div class="room-share-info">
+                    <span class="room-share-label">Room:</span>
+                    <span class="room-share-id" id="roomShareId">-</span>
+                </div>
+                <button class="room-share-btn" id="roomShareBtn" title="Copy Room ID">📋</button>
+                <button class="room-share-btn" id="roomLinkBtn" title="Copy Room Link">🔗</button>
+            </div>
+            
             <div class="irc-controls">
                 <button class="irc-btn irc-btn-minimize" id="minimizeBtn" title="Minimize">_</button>
                 <button class="irc-btn irc-btn-maximize" id="maximizeBtn" title="Maximize">□</button>
@@ -82,17 +93,17 @@
                     <div class="irc-message system">
                         <span class="timestamp">[00:00]</span>
                         <span class="nick">*</span>
-                        <span class="message">Welcome to #multiplayer - Pokemon-themed rooms and trainer names!</span>
+                        <span class="message">Welcome to #multiplayer - Player chat and room communication</span>
                     </div>
                     <div class="irc-message system">
                         <span class="timestamp">[00:00]</span>
                         <span class="nick">*</span>
-                        <span class="message">🎲 Generate: Pokemon location + numbers (e.g., PalletTown123)</span>
+                        <span class="message">💬 Chat with other players in your room here</span>
                     </div>
                     <div class="irc-message system">
                         <span class="timestamp">[00:00]</span>
                         <span class="nick">*</span>
-                        <span class="message">👤 Auto-trainer: Leave name empty for random Pokemon trainer</span>
+                        <span class="message">🎮 Join a room below to start chatting with opponents</span>
                 </div>
             </div>
 
@@ -146,7 +157,17 @@
                     <div class="irc-message system">
                         <span class="timestamp">[00:00]</span>
                         <span class="nick">*</span>
-                        <span class="message">Welcome to #system - Game logs and system messages</span>
+                        <span class="message">Welcome to #system - Connection status and room notifications</span>
+                    </div>
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">🔗 Room joining/leaving notifications appear here</span>
+                    </div>
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">⚙️ System status and connection info</span>
                             </div>
                         </div>
                     </div>
@@ -162,6 +183,11 @@
                 <span class="user-info" id="userInfo">Guest</span>
                 <span class="channel-info" id="channelInfo">#battle</span>
                 <span class="user-count" id="userCount">1 user</span>
+                <div class="chat-export-controls">
+                    <button class="export-btn" id="exportChatMainBtn" title="Export Chat Log">📄</button>
+                    <button class="export-btn" id="copyChatMainBtn" title="Copy Chat Log">📋</button>
+                    <button class="export-btn" id="clearChatMainBtn" title="Clear Chat">🗑️</button>
+                </div>
                 </div>
             </div>
 
@@ -259,6 +285,7 @@
                 this.setupResizing();
                 this.setupDragging();
                 this.initializePokemonDefaults();
+                this.checkUrlForRoom();
             }
 
             initializeElements() {
@@ -295,11 +322,20 @@
                 // Minimized tab
                 this.minimizedTab.addEventListener('click', () => this.restore());
                 
+                // Room sharing controls (title bar)
+                document.getElementById('roomShareBtn').addEventListener('click', () => this.copyRoomIdFromTitleBar());
+                document.getElementById('roomLinkBtn').addEventListener('click', () => this.copyRoomLinkFromTitleBar());
+                
                 // Sidebar controls
                 document.getElementById('openChatBtn').addEventListener('click', () => this.openFromSidebar());
                 document.getElementById('exportChatBtn').addEventListener('click', () => this.exportChat());
                 document.getElementById('copyChatBtn').addEventListener('click', () => this.copyChat());
                 document.getElementById('clearSidebarBtn').addEventListener('click', () => this.clearSidebar());
+                
+                // Main export controls
+                document.getElementById('exportChatMainBtn').addEventListener('click', () => this.exportChat());
+                document.getElementById('copyChatMainBtn').addEventListener('click', () => this.copyChat());
+                document.getElementById('clearChatMainBtn').addEventListener('click', () => this.clearAllMessages());
                 
                 // Channel tabs
                 Object.keys(this.tabs).forEach(channel => {
@@ -442,9 +478,18 @@
                 }
                 
                 // Update unread count if not active channel
-                if (channel !== this.currentChannel && !this.isMinimized) {
+                if (channel !== this.currentChannel) {
                     this.unreadCounts[channel]++;
                     this.updateUnreadDisplay();
+                    
+                    // Add visual notification for new messages
+                    const tab = this.tabs[channel];
+                    if (tab) {
+                        tab.classList.add('has-unread');
+                        setTimeout(() => {
+                            tab.classList.remove('has-unread');
+                        }, 3000);
+                    }
                 }
             }
 
@@ -456,14 +501,32 @@
                 if (message.startsWith('/')) {
                     this.handleCommand(message);
                 } else {
-                    // Don't add message locally - let the parent window handle it and send it back
-                    // This prevents duplicate messages
-                    
-                    // Send to parent window for integration
-                    window.parent.postMessage({
-                        type: 'chatMessage',
-                        data: { channel: this.currentChannel, message, username: this.username }
-                    }, '*');
+                    // For multiplayer channel, send directly to other players via socket
+                    if (this.currentChannel === 'multiplayer' && this.roomId) {
+                        // Send to parent window for socket transmission
+                        window.parent.postMessage({
+                            type: 'multiplayerMessage',
+                            data: { 
+                                message, 
+                                username: this.username,
+                                roomId: this.roomId
+                            }
+                        }, '*');
+                        
+                        // Add locally as self message
+                        this.addMessage('multiplayer', 'self', this.username, message);
+                    } else {
+                        // For battle/system channels, send to parent window for integration
+                        window.parent.postMessage({
+                            type: 'chatMessage',
+                            data: { 
+                                channel: this.currentChannel, 
+                                message, 
+                                username: this.username,
+                                messageType: 'message'
+                            }
+                        }, '*');
+                    }
                 }
                 
                 this.messageInput.value = '';
@@ -670,6 +733,32 @@
                 this.sidebarContent.innerHTML = '<div class="sidebar-message system">Chat cleared</div>';
             }
 
+            clearAllMessages() {
+                // Clear all messages from all channels
+                Object.keys(this.messages).forEach(channel => {
+                    this.messages[channel].innerHTML = `
+                        <div class="irc-message system">
+                            <span class="timestamp">[${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}]</span>
+                            <span class="nick">*</span>
+                            <span class="message">Chat cleared</span>
+                        </div>
+                    `;
+                });
+                
+                // Clear stored messages
+                this.allMessages = [];
+                
+                // Clear sidebar
+                this.updateSidebarContent();
+                
+                // Clear minimized content
+                this.updateMinimizedContent();
+                
+                // Reset unread counts
+                this.unreadCounts = { battle: 0, multiplayer: 0, system: 0 };
+                this.updateUnreadDisplay();
+            }
+
             updateMinimizedContent() {
                 const minimizedMessages = document.getElementById('minimizedMessages');
                 if (!minimizedMessages) return;
@@ -735,7 +824,7 @@
                 if (!playerName) {
                     playerName = this.generateRandomTrainerName();
                     document.getElementById('playerNameInput').value = playerName;
-                    this.addMessage('multiplayer', 'system', '*', `Auto-assigned trainer name: ${playerName}`);
+                    this.addMessage('system', 'system', '*', `Auto-assigned trainer name: ${playerName}`);
                 }
                 
                 // If no room ID provided, generate one automatically
@@ -744,16 +833,27 @@
                     const numbers = Math.floor(Math.random() * 999) + 1;
                     roomId = location.replace(/\s+/g, '') + numbers;
                     document.getElementById('roomIdInput').value = roomId;
-                    this.addMessage('multiplayer', 'system', '*', `Auto-generated room: ${roomId} (${location})`);
+                    this.addMessage('system', 'system', '*', `Auto-generated room: ${roomId} (${location})`);
                 }
                 
                 this.username = playerName;
                 this.roomId = roomId;
                 
+                // Update URL to include room parameter for easy sharing
+                const baseUrl = window.parent.location.origin + window.parent.location.pathname;
+                const newUrl = `${baseUrl}?room=${encodeURIComponent(roomId)}`;
+                window.parent.history.replaceState({}, '', newUrl);
+                
+                // Switch to multiplayer channel when joining
+                this.switchChannel('multiplayer');
+                
                 // Hide join controls and show room info
                 document.getElementById('multiplayerControls').style.display = 'none';
                 document.getElementById('roomInfo').style.display = 'block';
                 document.getElementById('roomTitle').textContent = `Room: ${roomId}`;
+                
+                // Update room link display
+                document.getElementById('roomLink').textContent = `Share: ${newUrl}`;
                 
                 // Send to parent window
                 window.parent.postMessage({
@@ -766,7 +866,8 @@
                     }
                 }, '*');
                 
-                this.addMessage('multiplayer', 'system', '*', `Joining room ${roomId} as ${playerName}...`);
+                this.addMessage('system', 'system', '*', `Joining room ${roomId} as ${playerName}...`);
+                this.addMessage('multiplayer', 'system', '*', `Room URL updated! You can now share: ${newUrl}`);
             }
 
             generateRoomId() {
@@ -816,8 +917,9 @@
 
             copyRoomLink() {
                 if (this.roomId) {
-                    const currentUrl = window.location.href.split('?')[0]; // Remove any existing query params
-                    const roomLink = `${currentUrl}?room=${encodeURIComponent(this.roomId)}&trainer=${encodeURIComponent(this.username)}`;
+                    // Get the current URL without query parameters
+                    const baseUrl = window.parent.location.origin + window.parent.location.pathname;
+                    const roomLink = `${baseUrl}?room=${encodeURIComponent(this.roomId)}`;
                     
                     navigator.clipboard.writeText(roomLink).then(() => {
                         // Show temporary feedback
@@ -859,6 +961,87 @@
                 }
             }
 
+            checkUrlForRoom() {
+                // Check if there's a room parameter in the parent window URL
+                const urlParams = new URLSearchParams(window.parent.location.search);
+                const roomFromUrl = urlParams.get('room');
+                
+                if (roomFromUrl) {
+                    // Show room invitation prompt (step 1)
+                    this.showRoomInvitationPrompt(roomFromUrl);
+                }
+            }
+
+            showRoomInvitationPrompt(roomId) {
+                // Remove any existing modals first
+                this.closeInvitationModal();
+                
+                // Send modal data to parent window to create it on the main screen
+                window.parent.postMessage({
+                    type: 'showRoomInvitationModal',
+                    data: { roomId }
+                }, '*');
+            }
+
+            showRoomJoinForm(roomId, isSpectator) {
+                // Send join form data to parent window to create it on the main screen
+                window.parent.postMessage({
+                    type: 'showRoomJoinForm',
+                    data: { 
+                        roomId, 
+                        isSpectator,
+                        defaultName: this.generateRandomTrainerName()
+                    }
+                }, '*');
+            }
+
+            closeInvitationModal() {
+                // Send close modal message to parent window
+                window.parent.postMessage({
+                    type: 'closeRoomModal'
+                }, '*');
+            }
+
+            joinRoomFromPrompt(roomId, playerName, isSpectator, coachingMode) {
+                // Remove the modal
+                this.closeInvitationModal();
+                
+                // Set the values in the interface
+                const playerNameInput = document.getElementById('playerNameInput');
+                const roomIdInput = document.getElementById('roomIdInput');
+                const spectatorCheckbox = document.getElementById('spectatorMode');
+                const coachingCheckbox = document.getElementById('coachingMode');
+                
+                if (playerNameInput) playerNameInput.value = playerName;
+                if (roomIdInput) roomIdInput.value = roomId;
+                if (spectatorCheckbox) spectatorCheckbox.checked = isSpectator;
+                if (coachingCheckbox) coachingCheckbox.checked = coachingMode;
+
+                this.username = playerName;
+                this.roomId = roomId;
+
+                // Switch to multiplayer channel
+                this.switchChannel('multiplayer');
+
+                // Hide join controls and show room info
+                document.getElementById('multiplayerControls').style.display = 'none';
+                document.getElementById('roomInfo').style.display = 'block';
+                document.getElementById('roomTitle').textContent = `Room: ${roomId}`;
+
+                // Send to parent window
+                window.parent.postMessage({
+                    type: 'joinRoom',
+                    data: {
+                        playerName,
+                        roomId,
+                        isSpectator,
+                        coachingMode
+                    }
+                }, '*');
+
+                this.addMessage('system', 'system', '*', `Joining room ${roomId} as ${playerName}...`);
+            }
+
             leaveRoom() {
                 if (this.roomId) {
                     window.parent.postMessage({
@@ -869,9 +1052,16 @@
                     this.roomId = null;
                     this.roomJoinedProcessed = false;
                     
+                    // Clear URL parameters
+                    const newUrl = window.parent.location.origin + window.parent.location.pathname;
+                    window.parent.history.replaceState({}, '', newUrl);
+                    
                     // Show join controls and hide room info
                     document.getElementById('multiplayerControls').style.display = 'block';
                     document.getElementById('roomInfo').style.display = 'none';
+                    
+                    // Hide room sharing box in title bar
+                    this.updateRoomSharingBox(null);
                     
                     // Clear the input fields
                     document.getElementById('playerNameInput').value = '';
@@ -882,6 +1072,67 @@
                 }
             }
 
+            updateRoomSharingBox(roomId) {
+                const roomSharingBox = document.getElementById('roomSharingBox');
+                const roomShareId = document.getElementById('roomShareId');
+                
+                if (roomId) {
+                    // Show room sharing box and update room ID
+                    roomSharingBox.style.display = 'flex';
+                    roomShareId.textContent = roomId;
+                    this.roomId = roomId;
+                } else {
+                    // Hide room sharing box
+                    roomSharingBox.style.display = 'none';
+                    roomShareId.textContent = '-';
+                    this.roomId = null;
+                }
+            }
+
+            // Title bar room sharing button handlers
+            copyRoomIdFromTitleBar() {
+                if (this.roomId) {
+                    navigator.clipboard.writeText(this.roomId).then(() => {
+                        // Show temporary feedback
+                        const btn = document.getElementById('roomShareBtn');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '✓';
+                        btn.style.background = 'rgba(0, 255, 0, 0.3)';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.style.background = '';
+                        }, 2000);
+                        
+                        this.addMessage('system', 'system', '*', `Room ID copied: ${this.roomId}`);
+                    }).catch(err => {
+                        console.error('Failed to copy room ID:', err);
+                    });
+                }
+            }
+
+            copyRoomLinkFromTitleBar() {
+                if (this.roomId) {
+                    const baseUrl = window.parent.location.origin + window.parent.location.pathname;
+                    const roomLink = `${baseUrl}?room=${encodeURIComponent(this.roomId)}`;
+                    
+                    navigator.clipboard.writeText(roomLink).then(() => {
+                        // Show temporary feedback
+                        const btn = document.getElementById('roomLinkBtn');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '✓';
+                        btn.style.background = 'rgba(0, 255, 0, 0.3)';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.style.background = '';
+                        }, 2000);
+                        
+                        this.addMessage('system', 'system', '*', `Room link copied! Share with friends to join directly.`);
+                    }).catch(err => {
+                        console.error('Failed to copy room link:', err);
+                    });
+                }
+            }
+
             // Handle messages from parent window
             receiveMessage(type, data) {
                 console.log('IRC Chat received message:', type, data);
@@ -889,6 +1140,10 @@
                     case 'gameMessage':
                         // Route game messages to battle channel
                         this.addMessage('battle', data.type || 'game', data.username || 'Game', data.message, null, true);
+                        break;
+                    case 'joinRoomFromModal':
+                        // Handle room joining from main window modal
+                        this.joinRoomFromPrompt(data.roomId, data.playerName, data.isSpectator, data.coachingMode);
                         break;
                     case 'newMessage':
                         // Handle new message format from the game - only if not already processed
@@ -940,6 +1195,9 @@
                             this.addMessage('system', 'system', '*', `Successfully connected to room ${data.roomId}`);
                             this.addMessage('multiplayer', 'system', '*', `Welcome to room ${data.roomId}! You can now chat with other players.`);
                             this.roomJoinedProcessed = true;
+                            
+                            // Update room sharing box in title bar
+                            this.updateRoomSharingBox(data.roomId);
                         }
                         // UI changes are already handled in joinRoom() function
                         break;

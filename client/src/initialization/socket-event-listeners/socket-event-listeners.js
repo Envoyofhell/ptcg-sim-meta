@@ -137,35 +137,37 @@ export const initializeSocketEventListeners = () => {
   socket.on('spectatorJoin', () => {
     spectatorJoin();
   });
-  socket.on('roomReject', () => {
-    let overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+  socket.on('roomFull', (data) => {
+    // Show room full modal with spectator option
+    showRoomFullModal(data);
+  });
 
-    let container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.top = '50%';
-    container.style.left = '50%';
-    container.style.transform = 'translate(-50%, -50%)';
-    container.style.textAlign = 'center';
-    container.style.color = '#fff';
+  socket.on('userJoined', (data) => {
+    // Notify chat interface about new user
+    const chatInterface = document.getElementById('chatInterface');
+    if (chatInterface && chatInterface.contentWindow) {
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'playerJoined',
+          data: {
+            username: data.username,
+            isSpectator: data.isSpectator,
+            playerCount: data.playerCount,
+            spectatorCount: data.spectatorCount,
+          },
+        },
+        '*'
+      );
+    }
 
-    let message = document.createElement('p');
-    message.innerHTML =
-      'Room is full.<br>Enable spectator mode to watch the game.';
-    message.style.fontSize = '24px';
-
-    container.appendChild(message);
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener('click', () => {
-      document.body.removeChild(overlay);
-    });
+    // Add message to main chat
+    const userType = data.isSpectator ? 'spectator' : 'player';
+    appendMessage(
+      '',
+      `${data.username} joined as ${userType}`,
+      'announcement',
+      false
+    );
   });
   socket.on('connect', () => {
     const notSpectator = !(
@@ -217,6 +219,38 @@ export const initializeSocketEventListeners = () => {
       data.user = data.user === 'self' ? 'opp' : 'self';
     }
     appendMessage(data.user, data.message, data.type, data.emit);
+  });
+  socket.on('message', (data) => {
+    // Handle incoming multiplayer chat messages
+    const username = data.username || 'Player';
+    const message = data.message || data;
+
+    // Add to main chat log
+    appendMessage('opp', `${username}: ${message}`, 'message', true);
+
+    // Send to IRC chat interface for multiplayer channel
+    const chatFrame = document.getElementById('chatInterface');
+    if (chatFrame && chatFrame.contentWindow) {
+      chatFrame.contentWindow.postMessage(
+        {
+          type: 'multiplayerMessage',
+          data: {
+            username: username,
+            message: message,
+            messageType: 'opp',
+          },
+        },
+        '*'
+      );
+    }
+    if (window.sendToIRCChat) {
+      window.sendToIRCChat('multiplayerMessage', {
+        messageType: 'opp',
+        username: username,
+        message: message,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
   socket.on('requestAction', (data) => {
     const notSpectator = !(
@@ -513,3 +547,83 @@ export const initializeSocketEventListeners = () => {
     appendMessage('self', message, 'announcement', false);
   });
 };
+
+// Function to show room full modal with spectator option
+function showRoomFullModal(data) {
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  `;
+
+  // Create modal content
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: linear-gradient(135deg, rgba(40, 40, 60, 0.95), rgba(60, 60, 80, 0.95));
+    border: 2px solid rgba(255, 100, 100, 0.5);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    color: #e0e0e0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  `;
+
+  modal.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <h2 style="margin: 0 0 8px 0; color: #ff6b6b;">🚫 Room Full</h2>
+      <p style="margin: 0; color: #b0b0b0;">Room "${data.roomId}" is currently full</p>
+      <div style="background: rgba(255, 100, 100, 0.1); border: 1px solid rgba(255, 100, 100, 0.3); border-radius: 6px; padding: 8px; margin: 12px 0;">
+        <strong>Players:</strong> ${data.playerCount}/2 | <strong>Spectators:</strong> ${data.spectatorCount}
+      </div>
+    </div>
+    
+    <p style="margin-bottom: 20px; color: #e0e0e0;">
+      Would you like to join as a spectator to watch the game?
+    </p>
+    
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button id="joinAsSpectatorBtn" style="background: rgba(100, 150, 255, 0.8); border: 1px solid rgba(100, 200, 255, 0.5); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Join as Spectator</button>
+      <button id="cancelRoomFullBtn" style="background: rgba(200, 60, 60, 0.8); border: 1px solid rgba(255, 100, 100, 0.5); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Cancel</button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Add event listeners
+  document
+    .getElementById('joinAsSpectatorBtn')
+    .addEventListener('click', () => {
+      // Set spectator mode and rejoin
+      document.getElementById('spectatorModeCheckbox').checked = true;
+
+      // Rejoin as spectator
+      socket.emit('joinGame', data.roomId, systemState.p2SelfUsername, true);
+
+      // Remove modal
+      document.body.removeChild(overlay);
+    });
+
+  document.getElementById('cancelRoomFullBtn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}

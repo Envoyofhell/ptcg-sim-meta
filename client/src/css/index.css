@@ -261,7 +261,7 @@ body.sidebar-open #greyFiller {
   position: fixed;
   right: 40%;
   top: 50%;
-  transform: translate(-15%, -55%);
+  transform: translate(-25%, -55%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -275,12 +275,12 @@ body.sidebar-open #greyFiller {
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(128, 0, 128, 0.3);
   border-radius: 20px;
-  padding: 8px;
+  padding: 5px;
   box-shadow: 
     0 4px 16px rgba(0, 0, 0, 0.4),
     0 0 15px rgba(128, 0, 128, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  gap: 10px;
+  gap: 4px;
 }
 
 .player-actions {

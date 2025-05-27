@@ -586,6 +586,43 @@
     <script src="src/changelogs/meta-changelog.js"></script>
     <script src="src/changelogs/changelog.js"></script>
 
+    <!-- URL Detection Script (runs immediately) -->
+    <script>
+        // Check for room parameter in URL on page load
+        function checkUrlForRoom() {
+            console.log('checkUrlForRoom called');
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get('room');
+            
+            console.log('URL params:', window.location.search);
+            console.log('Room from URL:', roomFromUrl);
+            
+            if (roomFromUrl) {
+                console.log('Room found in URL:', roomFromUrl);
+                console.log('About to show modal...');
+                // Show room invitation modal immediately
+                if (typeof createRoomInvitationModal === 'function') {
+                    createRoomInvitationModal(roomFromUrl);
+                } else {
+                    // Store room ID for later when modal functions are loaded
+                    window.pendingRoomId = roomFromUrl;
+                    console.log('Modal function not ready, storing room ID for later');
+                }
+            } else {
+                console.log('No room parameter found in URL');
+            }
+        }
+        
+        // Check URL immediately
+        checkUrlForRoom();
+        
+        // Also check when DOM is ready
+        document.addEventListener('DOMContentLoaded', checkUrlForRoom);
+        
+        // Also check when window loads
+        window.addEventListener('load', checkUrlForRoom);
+    </script>
+
     <!-- Board Button Event Listeners -->
     <script type="module">
         import { VSTARGXFunction } from './src/actions/general/VSTAR-GX.js';
@@ -603,6 +640,7 @@
         
         // Chat region tracking for pointer events
         let chatRegions = [];
+        let modalOpen = false;
         
         // Function to check if a point is within any chat region
         function isPointInChatRegion(x, y) {
@@ -626,13 +664,19 @@
                     chatFrame.style.pointerEvents = 'auto';
                     console.log('Chat region clicked - enabling iframe interaction');
                     
-                    // Disable after a short delay to prevent blocking other elements
-                    setTimeout(() => {
-                        chatFrame.style.pointerEvents = 'none';
-                    }, 200);
+                    // Only disable after delay if no modal is open
+                    if (!modalOpen) {
+                        setTimeout(() => {
+                            if (!modalOpen) {
+                                chatFrame.style.pointerEvents = 'none';
+                            }
+                        }, 200);
+                    }
                 } else {
-                    // Clicked outside chat - ensure iframe doesn't block
-                    chatFrame.style.pointerEvents = 'none';
+                    // Clicked outside chat - ensure iframe doesn't block (unless modal is open)
+                    if (!modalOpen) {
+                        chatFrame.style.pointerEvents = 'none';
+                    }
                     
                     // Check if we clicked on a board button
                     const boardButton = e.target.closest('#boardButtonContainer button, .btn');
@@ -653,9 +697,13 @@
             document.addEventListener('dblclick', (e) => {
                 if (isPointInChatRegion(e.clientX, e.clientY)) {
                     chatFrame.style.pointerEvents = 'auto';
-                    setTimeout(() => {
-                        chatFrame.style.pointerEvents = 'none';
-                    }, 500);
+                    if (!modalOpen) {
+                        setTimeout(() => {
+                            if (!modalOpen) {
+                                chatFrame.style.pointerEvents = 'none';
+                            }
+                        }, 500);
+                    }
                 }
             });
         }
@@ -672,9 +720,29 @@
                     chatRegions = data.regions || [];
                     console.log('Updated chat regions:', chatRegions);
                     break;
+                case 'modalOpened':
+                    // Modal opened - keep pointer events enabled
+                    modalOpen = true;
+                    const chatIframe = document.getElementById('chatInterface');
+                    if (chatIframe) {
+                        chatIframe.style.pointerEvents = 'auto';
+                    }
+                    console.log('Modal opened - keeping chat pointer events enabled');
+                    break;
+                case 'modalClosed':
+                    // Modal closed - allow pointer events to be disabled
+                    modalOpen = false;
+                    console.log('Modal closed - allowing chat pointer events to be disabled');
+                    break;
                 case 'joinRoom':
                     // Connect IRC chat interface join room to original 2P system
                     const { playerName, roomId, isSpectator, coachingMode } = data;
+                    
+                    // Check for duplicate names before joining
+                    if (window.roomPlayers && window.roomPlayers.includes(playerName)) {
+                        alert('This name is already taken in the room. Please choose a different name.');
+                        return;
+                    }
                     
                     // Set the values in the original 2P interface
                     const nameInput = document.getElementById('nameInput');
@@ -690,6 +758,11 @@
                     // Set system state
                     systemState.p2SelfUsername = playerName;
                     systemState.roomId = roomId;
+                    
+                    // Add player to room players list
+                    if (!window.roomPlayers.includes(playerName)) {
+                        window.roomPlayers.push(playerName);
+                    }
                     
                     // Emit join game event
                     socket.emit('joinGame', roomId, playerName, isSpectator);
@@ -710,40 +783,39 @@
                     if (leaveRoomButton) {
                         leaveRoomButton.click();
                     }
+                    
+                    // Clear URL parameters when leaving room
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, '', cleanUrl);
+                    console.log('Cleared URL parameters after leaving room');
+                    
+                    // Clear room players list
+                    window.roomPlayers = [];
+                    break;
+                    
+                case 'multiplayerMessage':
+                    // Handle multiplayer messages from IRC interface
+                    const { message: multiMessage, username: multiUsername, roomId: multiRoomId } = data;
+                    
+                    // Send to other players via socket
+                    if (socket && systemState.isTwoPlayer) {
+                        socket.emit('message', {
+                            message: multiMessage,
+                            username: multiUsername
+                        });
+                    }
+                    
+                    // Add to main chat log as self message (only if not from socket to prevent duplication)
+                    originalAppendMessage('self', `${multiUsername}: ${multiMessage}`, 'message', false);
                     break;
                     
                 case 'chatMessage':
-                    // Handle chat messages from IRC interface
+                    // Handle battle/system chat messages from IRC interface
                     const { channel, message, username: chatUsername, messageType } = data;
                     
-                    // Determine message type and format
-                    let displayMessage = message;
-                    let msgType = 'message';
-                    
-                    if (messageType === 'emoji') {
-                        displayMessage = message; // Just the emoji
-                        msgType = 'emoji';
-                        // Use the original appendMessage function directly to avoid double processing
-                        originalAppendMessage('self', `${chatUsername}: ${displayMessage}`, msgType);
-                    } else {
-                        // Regular message
-                        originalAppendMessage('self', `${chatUsername}: ${displayMessage}`, msgType);
-                    }
-                    
-                    // Send the message back to IRC chat to display it there
-                    sendToIRCChat('newMessage', {
-                        type: 'self',
-                        content: displayMessage,
-                        username: chatUsername,
-                        timestamp: new Date().toISOString(),
-                        tab: channel,
-                        messageType: msgType,
-                        processed: false
-                    });
-                    
-                    // If in multiplayer, send to other players
-                    if (systemState.isTwoPlayer && socket) {
-                        socket.emit('message', displayMessage);
+                    // Only add to main chat for battle/system channels (not multiplayer)
+                    if (channel !== 'multiplayer') {
+                        originalAppendMessage('self', `${chatUsername}: ${message}`, messageType || 'message', false);
                     }
                     break;
                     
@@ -817,7 +889,7 @@
         const appendMessageWithIRC = function(user, message, type, isFromSocket = false) {
             console.log('appendMessageWithIRC called:', { user, message, type, isFromSocket });
             
-            // Call original function
+            // Call original function first
             originalAppendMessage(user, message, type, isFromSocket);
             
             // Enhanced duplicate prevention - skip messages that are already from IRC chat interface
@@ -830,13 +902,16 @@
             );
             
             // Skip if message is from IRC, socket, or contains certain patterns
+            // Also skip if this is a socket message to prevent duplication
             if (!message.includes('[battle]') && 
                 !isFromSocket && 
                 !message.includes('IRC Chat') && 
                 !isFromIRCChat &&
                 !message.includes('copied to clipboard') &&
                 !message.includes('Generated room:') &&
-                !message.includes('Auto-assigned trainer')) {
+                !message.includes('Auto-assigned trainer') &&
+                !message.includes('took back their last move') && // Skip undo messages from board buttons
+                !message.includes('flipped a coin')) { // Skip coin flip messages from board buttons
                 
                 // Enhanced duplicate prevention with timestamp
                 const timestamp = new Date().getTime();
@@ -849,12 +924,16 @@
                         let channel = 'battle';
                         let messageType = 'system';
                         
-                        // Better message type classification
+                        // Enhanced message type classification and routing
                         if (type === 'announcement') {
                             channel = 'battle';
                             messageType = 'announcement';
                         } else if (type === 'message') {
-                            channel = systemState.isTwoPlayer ? 'multiplayer' : 'battle';
+                            // Player messages from socket go to multiplayer, others to battle
+                            if (isFromSocket && systemState.isTwoPlayer) {
+                                return; // Skip - already handled by socket listener
+                            }
+                            channel = 'battle';
                             messageType = user === 'self' ? 'self' : 'opp';
                         } else if (type === 'player') {
                             channel = 'battle';
@@ -862,7 +941,15 @@
                         } else if (type === 'emoji') {
                             channel = 'battle';
                             messageType = 'emoji';
+                        } else if (message.includes('joined') || message.includes('left') || 
+                                  message.includes('room') || message.includes('connected') ||
+                                  message.includes('disconnected') || message.includes('Generated')) {
+                            // Connection/room messages go to system
+                            channel = 'system';
+                            messageType = 'system';
                         } else {
+                            // Default system messages
+                            channel = 'system';
                             messageType = 'system';
                         }
                         
@@ -983,6 +1070,559 @@
                 flipCoinButton.addEventListener('click', () => flipCoin('self'));
             }
         });
+        
+        // Also check when the page becomes visible (in case user navigates back)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const roomFromUrl = urlParams.get('room');
+                if (roomFromUrl) {
+                    createRoomInvitationModal(roomFromUrl);
+                }
+            }
+        });
+        
+        // Room invitation modal handling
+        let currentRoomModal = null;
+        
+        // Track players in current room for duplicate name checking
+        window.roomPlayers = [];
+        
+        // Check for pending room ID from URL detection
+        if (window.pendingRoomId) {
+            console.log('Found pending room ID:', window.pendingRoomId);
+            setTimeout(() => {
+                createRoomInvitationModal(window.pendingRoomId);
+                window.pendingRoomId = null;
+            }, 100);
+        }
+        
+        function createRoomInvitationModal(roomId) {
+            console.log('createRoomInvitationModal called with roomId:', roomId);
+            
+            // Make function globally available
+            window.createRoomInvitationModal = createRoomInvitationModal;
+            // Remove any existing modal
+            removeRoomModal();
+            
+            // Create modal overlay with maximum z-index
+            const overlay = document.createElement('div');
+            overlay.id = 'roomInvitationOverlay';
+            overlay.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background: rgba(0, 0, 0, 0.95) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 2147483647 !important;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+                pointer-events: auto !important;
+                user-select: none !important;
+            `;
+
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: linear-gradient(135deg, rgba(40, 40, 60, 0.98), rgba(60, 60, 80, 0.98)) !important;
+                border: 3px solid rgba(100, 200, 255, 0.6) !important;
+                border-radius: 16px !important;
+                padding: 40px !important;
+                max-width: 500px !important;
+                width: 90% !important;
+                text-align: center !important;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+                pointer-events: auto !important;
+                position: relative !important;
+                z-index: 2147483647 !important;
+                animation: modalSlideIn 0.3s ease-out !important;
+            `;
+
+            modal.innerHTML = `
+                <style>
+                    @keyframes modalSlideIn {
+                        from { opacity: 0; transform: scale(0.8) translateY(-20px); }
+                        to { opacity: 1; transform: scale(1) translateY(0); }
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(-10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                </style>
+                <div style="margin-bottom: 32px;">
+                    <div style="font-size: 64px; margin-bottom: 20px; animation: bounce 2s infinite;">🎮</div>
+                    <h2 style="color: #fff; margin: 0 0 16px 0; font-size: 28px; font-weight: bold;">Room Invitation</h2>
+                    <p style="color: #ccc; margin: 0; font-size: 18px; line-height: 1.5;">
+                        You've been invited to join multiplayer room:
+                    </p>
+                    <div style="background: rgba(100, 200, 255, 0.15); border: 2px solid rgba(100, 200, 255, 0.4); border-radius: 12px; padding: 16px; margin: 24px 0; font-family: 'Courier New', monospace; font-size: 22px; color: #64c8ff; font-weight: bold; letter-spacing: 1px;">
+                        ${roomId}
+                    </div>
+                    <p style="color: #aaa; margin: 0; font-size: 16px;">
+                        Would you like to join this room?
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                    <button id="joinAsPlayerBtn" style="
+                        background: linear-gradient(135deg, #4CAF50, #45a049);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+                    ">
+                        🎯 Join to Play
+                    </button>
+                    
+                    <button id="joinAsSpectatorBtn" style="
+                        background: linear-gradient(135deg, #2196F3, #1976D2);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+                    ">
+                        👁️ Spectate
+                    </button>
+                    
+                    <button id="declineInvitationBtn" style="
+                        background: linear-gradient(135deg, #f44336, #d32f2f);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+                    ">
+                        ❌ Decline
+                    </button>
+                </div>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            currentRoomModal = overlay;
+
+            // Add hover effects
+            const buttons = modal.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'translateY(-3px) scale(1.05)';
+                    btn.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.4)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translateY(0) scale(1)';
+                    btn.style.boxShadow = btn.style.boxShadow.replace('0 8px 25px rgba(0, 0, 0, 0.4)', '');
+                });
+            });
+
+            // Add event listeners
+            document.getElementById('joinAsPlayerBtn').addEventListener('click', () => {
+                createRoomJoinForm(roomId, false);
+            });
+
+            document.getElementById('joinAsSpectatorBtn').addEventListener('click', () => {
+                createRoomJoinForm(roomId, true);
+            });
+
+            document.getElementById('declineInvitationBtn').addEventListener('click', () => {
+                removeRoomModal();
+            });
+        }
+        
+        function createRoomJoinForm(roomId, isSpectator) {
+            // Remove existing modal
+            removeRoomModal();
+            
+            const roleText = isSpectator ? 'Spectate' : 'Play';
+            const roleIcon = isSpectator ? '👁️' : '🎯';
+            
+            // Generate random trainer name from the comprehensive list
+            const trainerNames = [
+                'Red', 'Ash', 'Leaf', 'Ethan', 'Lyra', 'Brendan', 'May', 'Lucas', 'Dawn',
+                'Hilbert', 'Hilda', 'Nate', 'Rosa', 'Calem', 'Serena', 'Elio', 'Selene',
+                'Victor', 'Gloria', 'Blue', 'Silver', 'Barry', 'Hugh', 'Cheren', 'Bianca',
+                'Cynthia', 'Steven', 'Lance', 'Diantha', 'Iris', 'Alder', 'Leon', 'Nemona',
+                'Brock', 'Misty', 'Lt. Surge', 'Erika', 'Koga', 'Sabrina', 'Blaine', 'Giovanni',
+                'Falkner', 'Bugsy', 'Whitney', 'Morty', 'Chuck', 'Jasmine', 'Pryce', 'Clair',
+                'Roxanne', 'Brawly', 'Wattson', 'Flannery', 'Norman', 'Winona', 'Tate', 'Liza',
+                'Juan', 'Roxie', 'Clay', 'Skyla', 'Brycen', 'Drayden', 'Viola', 'Grant',
+                'Korrina', 'Ramos', 'Clemont', 'Valerie', 'Olympia', 'Wulfric', 'Milo', 'Nessa',
+                'Kabu', 'Bea', 'Allister', 'Raihan', 'Klara', 'Avery', 'Karen', 'Will', 'Bruno',
+                'Lorelei', 'Sidney', 'Phoebe', 'Glacia', 'Drake', 'Aaron', 'Bertha', 'Flint',
+                'Lucian', 'Wallace', 'Archie', 'Maxie', 'Cyrus', 'Ghetsis', 'Lysandre', 'Guzma',
+                'Oak', 'Elm', 'Birch', 'Rowan', 'Juniper', 'Sycamore', 'Kukui', 'Burnet',
+                'Magnolia', 'Sonia', 'Gary', 'Tobias', 'Virgil', 'Sawyer', 'Conway', 'Harrison',
+                'Ritchie', 'Jimmy', 'Marina', 'Wally', 'Hau', 'Hop', 'Bede', 'Marnie', 'Mustard',
+                'Acerola', 'Arven', 'Volo', 'Iono', 'Tulip', 'Penny', 'Brassius', 'Ryme',
+                'Larry', 'Grusha', 'Kofu', 'Ortega', 'Zinnia', 'Riley', 'Ranger', 'Guardian'
+            ];
+            // Select random trainer name (no numbers added)
+            const randomIndex = Math.floor(Math.random() * trainerNames.length);
+            const defaultName = trainerNames[randomIndex];
+            
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'roomJoinFormOverlay';
+            overlay.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background: rgba(0, 0, 0, 0.95) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 2147483647 !important;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+                pointer-events: auto !important;
+            `;
+
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: linear-gradient(135deg, rgba(40, 40, 60, 0.98), rgba(60, 60, 80, 0.98)) !important;
+                border: 3px solid rgba(100, 200, 255, 0.6) !important;
+                border-radius: 16px !important;
+                padding: 40px !important;
+                max-width: 500px !important;
+                width: 90% !important;
+                text-align: center !important;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+                pointer-events: auto !important;
+                position: relative !important;
+                animation: modalSlideIn 0.3s ease-out !important;
+            `;
+            
+            modal.innerHTML = `
+                <div style="margin-bottom: 32px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">${roleIcon}</div>
+                    <h2 style="color: #fff; margin: 0 0 12px 0; font-size: 26px; font-weight: bold;">Join as ${isSpectator ? 'Spectator' : 'Player'}</h2>
+                    <p style="color: #ccc; margin: 0; font-size: 16px;">Room: <span style="color: #64c8ff; font-weight: bold; font-family: monospace;">${roomId}</span></p>
+                </div>
+                
+                <div style="margin-bottom: 24px; text-align: left;">
+                    <label for="trainerNameInput" style="display: block; margin-bottom: 12px; color: #ccc; font-size: 16px; font-weight: bold;">
+                        ${isSpectator ? 'Display Name:' : 'Trainer Name:'}
+                    </label>
+                    <input type="text" id="trainerNameInput" placeholder="${isSpectator ? 'Enter display name' : 'Enter trainer name'}" style="
+                        width: 100%;
+                        padding: 16px;
+                        border: 2px solid rgba(100, 200, 255, 0.4);
+                        border-radius: 12px;
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #fff;
+                        font-size: 18px;
+                        box-sizing: border-box;
+                        transition: all 0.3s ease;
+                        font-family: inherit;
+                    " value="${defaultName}">
+                </div>
+                
+                ${!isSpectator ? `
+                <div style="margin-bottom: 24px; text-align: left;">
+                    <label style="display: flex; align-items: center; gap: 12px; color: #ccc; font-size: 16px; cursor: pointer; padding: 8px;">
+                        <input type="checkbox" id="coachingModeCheckbox" style="margin: 0; transform: scale(1.3); cursor: pointer;">
+                        <span>Enable coaching mode (board flip)</span>
+                    </label>
+                    <p style="color: #999; font-size: 14px; margin: 8px 0 0 32px; font-style: italic;">
+                        Both players must enable this option
+                    </p>
+                </div>
+                ` : ''}
+                
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                    <button id="confirmJoinRoomBtn" style="
+                        background: linear-gradient(135deg, #4CAF50, #45a049);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+                    ">${roleIcon} Join ${roleText}</button>
+                    
+                    <button id="backToInvitationBtn" style="
+                        background: linear-gradient(135deg, #2196F3, #1976D2);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+                    ">← Back</button>
+                    
+                    <button id="cancelRoomPromptBtn" style="
+                        background: linear-gradient(135deg, #666, #555);
+                        color: white;
+                        border: none;
+                        padding: 16px 32px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        transition: all 0.3s ease;
+                        min-width: 140px;
+                        box-shadow: 0 4px 15px rgba(102, 102, 102, 0.3);
+                    ">Cancel</button>
+                </div>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            currentRoomModal = overlay;
+
+            // Add input focus styling
+            const nameInput = document.getElementById('trainerNameInput');
+            nameInput.addEventListener('focus', () => {
+                nameInput.style.borderColor = 'rgba(100, 200, 255, 0.8)';
+                nameInput.style.boxShadow = '0 0 0 4px rgba(100, 200, 255, 0.2)';
+            });
+            nameInput.addEventListener('blur', () => {
+                nameInput.style.borderColor = 'rgba(100, 200, 255, 0.4)';
+                nameInput.style.boxShadow = 'none';
+            });
+
+            // Add hover effects to buttons
+            const buttons = modal.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'translateY(-3px) scale(1.05)';
+                    btn.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.4)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'translateY(0) scale(1)';
+                    btn.style.boxShadow = btn.style.boxShadow.replace('0 8px 25px rgba(0, 0, 0, 0.4)', '');
+                });
+            });
+
+            // Add event listeners
+            document.getElementById('confirmJoinRoomBtn').addEventListener('click', () => {
+                const trainerName = document.getElementById('trainerNameInput').value.trim();
+                const coachingModeCheckbox = document.getElementById('coachingModeCheckbox');
+                const coachingMode = coachingModeCheckbox ? coachingModeCheckbox.checked : false;
+                
+                if (!trainerName) {
+                    alert('Please enter a name!');
+                    return;
+                }
+                
+                // Check for duplicate names (basic client-side check)
+                // Note: Server should also validate this
+                if (window.roomPlayers && window.roomPlayers.includes(trainerName)) {
+                    // Suggest an alternative name
+                    const availableNames = trainerNames.filter(name => !window.roomPlayers.includes(name));
+                    if (availableNames.length > 0) {
+                        const suggestedName = availableNames[Math.floor(Math.random() * availableNames.length)];
+                        const nameInput = document.getElementById('trainerNameInput');
+                        nameInput.value = suggestedName;
+                        nameInput.style.borderColor = '#ff6b6b';
+                        nameInput.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
+                        
+                        // Show temporary message
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = `
+                            color: #ff6b6b;
+                            font-size: 14px;
+                            margin-top: 8px;
+                            text-align: center;
+                            animation: fadeIn 0.3s ease;
+                        `;
+                        errorMsg.textContent = `"${trainerName}" is taken. Suggested: "${suggestedName}"`;
+                        nameInput.parentNode.appendChild(errorMsg);
+                        
+                        // Remove error styling and message after 3 seconds
+                        setTimeout(() => {
+                            nameInput.style.borderColor = 'rgba(100, 200, 255, 0.4)';
+                            nameInput.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            if (errorMsg.parentNode) {
+                                errorMsg.parentNode.removeChild(errorMsg);
+                            }
+                        }, 3000);
+                        
+                        return;
+                    } else {
+                        alert('This name is already taken in the room. Please choose a different name.');
+                        return;
+                    }
+                }
+                
+                        // Send join room data to chat interface
+                sendToIRCChat('joinRoomFromModal', {
+                    roomId,
+                    playerName: trainerName,
+                    isSpectator,
+                    coachingMode
+                });
+                
+                removeRoomModal();
+            });
+
+            document.getElementById('backToInvitationBtn').addEventListener('click', () => {
+                createRoomInvitationModal(roomId);
+            });
+
+            document.getElementById('cancelRoomPromptBtn').addEventListener('click', () => {
+                removeRoomModal();
+            });
+
+            // Focus on name input
+            setTimeout(() => {
+                nameInput.focus();
+                nameInput.select();
+            }, 100);
+        }
+        
+        function removeRoomModal() {
+            if (currentRoomModal) {
+                document.body.removeChild(currentRoomModal);
+                currentRoomModal = null;
+            }
+            
+            // Also remove any existing modals by ID
+            const invitationOverlay = document.getElementById('roomInvitationOverlay');
+            const joinFormOverlay = document.getElementById('roomJoinFormOverlay');
+            
+            if (invitationOverlay) {
+                document.body.removeChild(invitationOverlay);
+            }
+            if (joinFormOverlay) {
+                document.body.removeChild(joinFormOverlay);
+            }
+            
+            // Clear URL parameters
+            const newUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+        
+        // Check for room parameter in URL on page load
+        function checkUrlForRoom() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get('room');
+            
+            if (roomFromUrl) {
+                console.log('Room found in URL:', roomFromUrl);
+                // Show room invitation modal immediately
+                setTimeout(() => {
+                    createRoomInvitationModal(roomFromUrl);
+                }, 1000); // Small delay to ensure page is loaded
+            }
+        }
+        
+        // Check URL on page load
+        document.addEventListener('DOMContentLoaded', checkUrlForRoom);
+        
+        // Also check when the page becomes visible (in case user navigates back)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkUrlForRoom();
+            }
+        });
+        
+        // Listen for messages from chat interface and custom events
+        function handleMessage(event) {
+            let type, data;
+            
+            if (event.detail) {
+                // Custom event from modal
+                ({ type, data } = event.detail.data);
+            } else if (event.data) {
+                // PostMessage from iframe
+                if (event.origin !== window.location.origin) return;
+                ({ type, data } = event.data);
+            } else {
+                return;
+            }
+            
+            switch (type) {
+                case 'showRoomInvitationModal':
+                    createRoomInvitationModal(data.roomId);
+                    break;
+                case 'showRoomJoinForm':
+                    createRoomJoinForm(data.roomId, data.isSpectator);
+                    break;
+                case 'closeRoomModal':
+                    removeRoomModal();
+                    break;
+                case 'joinRoomFromModal':
+                    // Handle room joining from modal
+                    const { roomId, playerName, isSpectator, coachingMode } = data;
+                    
+                    // Set the values in the original 2P interface
+                    const nameInput = document.getElementById('nameInput');
+                    const roomIdInput = document.getElementById('roomIdInput');
+                    const spectatorCheckbox = document.getElementById('spectatorModeCheckbox');
+                    const coachingCheckbox = document.getElementById('coachingModeCheckbox');
+                    
+                    if (nameInput) nameInput.value = playerName;
+                    if (roomIdInput) roomIdInput.value = roomId;
+                    if (spectatorCheckbox) spectatorCheckbox.checked = isSpectator;
+                    if (coachingCheckbox) coachingCheckbox.checked = coachingMode;
+                    
+                    // Switch to 2P mode
+                    const p2Button = document.getElementById('p2Button');
+                    if (p2Button) {
+                        p2Button.click();
+                    }
+                    
+                    // Set system state
+                    systemState.p2SelfUsername = playerName;
+                    systemState.roomId = roomId;
+                    
+                    // Emit join game event
+                    socket.emit('joinGame', roomId, playerName, isSpectator);
+                    
+                    // Update URL to reflect the room (preserve existing room parameter)
+                    const currentParams = new URLSearchParams(window.location.search);
+                    if (!currentParams.get('room')) {
+                        const newUrl = window.location.origin + window.location.pathname + '?room=' + roomId;
+                        window.history.replaceState({}, '', newUrl);
+                        console.log('Updated URL to:', newUrl);
+                    } else {
+                        console.log('Room parameter already exists in URL, preserving it');
+                    }
+                    
+                    console.log('Joining room from modal:', { roomId, playerName, isSpectator, coachingMode });
+                    
+                    // Send confirmation back to IRC chat
+                    setTimeout(() => {
+                        sendToIRCChat('roomJoined', {
+                            roomId,
+                            playerName
+                        });
+                    }, 500);
+                    break;
+            }
+        }
+        
+        // Add event listeners for both message types
+        window.addEventListener('message', handleMessage);
     </script>
 
 </body>

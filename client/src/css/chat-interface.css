@@ -266,6 +266,61 @@ body.sidebar-open #greyFiller {
     margin-left: 8px;
 }
 
+/* Room Sharing Box */
+.room-sharing-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(60, 60, 80, 0.8);
+    border: 1px solid rgba(100, 200, 255, 0.3);
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 0 8px;
+}
+
+.room-share-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.room-share-label {
+    color: #b0b0b0;
+    font-weight: normal;
+}
+
+.room-share-id {
+    color: #00ccff;
+    font-weight: bold;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: rgba(0, 204, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 204, 255, 0.3);
+}
+
+.room-share-btn {
+    background: rgba(80, 80, 100, 0.8);
+    border: 1px solid rgba(100, 200, 255, 0.3);
+    color: #e0e0e0;
+    width: 24px;
+    height: 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.room-share-btn:hover {
+    background: rgba(100, 200, 255, 0.3);
+    border-color: rgba(100, 200, 255, 0.5);
+    transform: scale(1.05);
+}
+
 .irc-controls {
     display: flex;
     gap: 4px;
@@ -332,6 +387,17 @@ body.sidebar-open #greyFiller {
     border-color: rgba(100, 200, 255, 0.4);
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(100, 200, 255, 0.2);
+}
+
+.irc-tab.has-unread {
+    animation: tabPulse 0.5s ease-in-out;
+    background: rgba(255, 200, 100, 0.3);
+}
+
+@keyframes tabPulse {
+    0% { background: rgba(60, 60, 80, 0.6); }
+    50% { background: rgba(255, 200, 100, 0.4); }
+    100% { background: rgba(255, 200, 100, 0.3); }
 }
 
 .unread-count {

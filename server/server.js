@@ -42,6 +42,7 @@ async function main() {
         'https://admin.socket.io',
         'https://ptcg-sim-meta.pages.dev',
         'http://localhost:3000',
+        'http://localhost:8080',
         'https://meta-ptcg.org',
         'https://test.meta-ptcg.org',
         'https://*.onrender.com', // This will allow any subdomain on onrender.com
@@ -97,6 +98,30 @@ async function main() {
   });
 
   app.use(cors());
+
+  // Add security headers to fix CORB and CSP issues
+  app.use((req, res, next) => {
+    // Allow iframe embedding from same origin
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+
+    // Set CSP to allow unsafe-eval for Socket.IO and inline scripts
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.socket.io; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https:; " +
+        "connect-src 'self' ws: wss:; " +
+        "frame-src 'self';"
+    );
+
+    // Prevent CORB issues
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+
+    next();
+  });
+
   app.use(express.static(clientDir));
 
   app.get('/', (req, res) => {
@@ -220,16 +245,37 @@ async function main() {
         // Check if the user is a spectator or there are fewer than 2 players
         if (isSpectator) {
           room.spectators.add(username);
-          socket.emit('spectatorJoin');
+          socket.emit('spectatorJoin', {
+            roomId,
+            username,
+            playerCount: room.players.size,
+          });
         } else {
           room.players.add(username);
-          socket.emit('joinGame');
+          socket.emit('joinGame', {
+            roomId,
+            username,
+            playerCount: room.players.size,
+          });
           socket.data.disconnectListener = () =>
             disconnectHandler(roomId, username);
           socket.on('disconnect', socket.data.disconnectListener);
         }
+
+        // Notify other players about the new user
+        socket.to(roomId).emit('userJoined', {
+          username,
+          isSpectator,
+          playerCount: room.players.size,
+          spectatorCount: room.spectators.size,
+        });
       } else {
-        socket.emit('roomReject');
+        // Room is full - offer spectator mode
+        socket.emit('roomFull', {
+          roomId,
+          playerCount: room.players.size,
+          spectatorCount: room.spectators.size,
+        });
       }
     });
 
@@ -262,6 +308,7 @@ async function main() {
       'catchUpActions',
       'syncCheck',
       'appendMessage',
+      'message',
       'spectatorActionData',
       'initiateImport',
       'endImport',
