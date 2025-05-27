@@ -154,22 +154,47 @@ ul, li {
   transition: all var(--transition-base);
 }
 
-/* Modern Chat Interface */
+/* Modern Chat Interface - Snapped to bottom left */
 .chat-iframe {
   position: fixed;
-  bottom: var(--space-lg);
-  left: var(--space-lg);
-  width: var(--chat-width);
-  height: var(--chat-height);
+  bottom: 0;
+  left: 0;
+  width: 600px;
+  height: 500px;
   border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2xl);
-  z-index: var(--z-chat);
-  transition: all var(--transition-base);
+  background: transparent;
+  pointer-events: auto;
+  z-index: 1000;
 }
 
-.chat-iframe.minimized {
-  height: 40px;
+/* 3-Panel Layout Support */
+body.sidebar-open {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open .sidebox {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open .self,
+body.sidebar-open .opp {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open #stadium {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open #boardButtonContainer {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open #topButtonContainer {
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open #greyFiller {
+  transition: all 0.3s ease;
 }
 #stadium img {
   max-width: 100%;
@@ -234,40 +259,43 @@ ul, li {
 
 #boardButtonContainer {
   position: fixed;
-  left: 45%;
+  right: 40%;
   top: 50%;
-  transform: translate(-65%, -50%);
+  transform: translate(-15%, -55%);
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: fit-content;
-  min-width: 35%;
+  min-width: 30%;
   max-width: 800px;
-  height: clamp(40px, 6vh, 60px);
-  z-index: var(--z-fixed);
+  height: 6%;
+  z-index: 1000;
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  border: 2px solid rgba(128, 0, 128, 0.3);
+  border: 1px solid rgba(128, 0, 128, 0.3);
   border-radius: 20px;
-  padding: clamp(7px, 1.5vh, 20px) clamp(12px, 2vh, 30px);
+  padding: 8px;
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(128, 0, 128, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(128, 0, 128, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  gap: clamp(8px, 2vh, 20px);
+  gap: 10px;
 }
 
 .player-actions {
   display: flex;
-  gap: clamp(4px, 1vh, 8px);
+  gap: 5px;
   align-items: center;
 }
 
 .center-actions {
-  display: flex;
-  gap: clamp(6px, 1.5vh, 12px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 5px;
   align-items: center;
+  justify-items: center;
 }
 
 .self-actions {
@@ -276,6 +304,13 @@ ul, li {
 
 .opp-actions {
   justify-content: flex-end;
+}
+
+.button-pair {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
 }
 
 #topButtonContainer {

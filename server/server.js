@@ -321,7 +321,7 @@ async function main() {
     }
   });
 
-  const port = 4000;
+  const port = 3000;
   server.listen(port, () => {
     // eslint-disable-next-line no-console
     console.log(`Server is running at http://localhost:${port}`);

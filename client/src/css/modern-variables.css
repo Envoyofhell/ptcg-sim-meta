@@ -43,8 +43,8 @@
   --glass-backdrop: blur(10px);
   
   /* Chat System - MMO Dark Theme */
-  --chat-width: 500px;
-  --chat-height: 600px;
+  --chat-width: 280px;
+  --chat-height: 350px;
   --chat-bg: rgba(15, 15, 25, 0.95);
   --chat-border: rgba(100, 100, 150, 0.3);
   --chat-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);

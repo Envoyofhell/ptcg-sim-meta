@@ -37,6 +37,35 @@ export const spectatorJoin = () => {
     true
   );
 
+  // Notify chat interface about spectator joining
+  const chatInterface = document.getElementById('chatInterface');
+  if (chatInterface && chatInterface.contentWindow) {
+    chatInterface.contentWindow.postMessage(
+      {
+        type: 'roomJoined',
+        data: {
+          roomId: systemState.roomId,
+          playerName: systemState.spectatorUsername,
+          isSpectator: true,
+        },
+      },
+      '*'
+    );
+
+    // Update game state to multiplayer for spectators
+    chatInterface.contentWindow.postMessage(
+      {
+        type: 'updateGameState',
+        data: {
+          isMultiplayer: true,
+          mode: 'Spectating',
+          isConnected: true,
+        },
+      },
+      '*'
+    );
+  }
+
   socketId = '';
   systemState.spectatorCounter = 0;
 };
@@ -71,6 +100,26 @@ socket.on('spectatorActionData', (data) => {
       systemState.selfDeckData = data.selfDeckData;
       systemState.p2OppUsername = data.oppUsername;
       systemState.p2OppDeckData = data.oppDeckData;
+
+      // Update chat interface with current player list
+      const chatInterface = document.getElementById('chatInterface');
+      if (chatInterface && chatInterface.contentWindow) {
+        chatInterface.contentWindow.postMessage(
+          {
+            type: 'updatePlayerList',
+            data: {
+              players: [
+                { id: 'self', name: data.selfUsername },
+                { id: 'opp', name: data.oppUsername },
+              ],
+              spectators: [
+                { id: 'spectator', name: systemState.spectatorUsername },
+              ],
+            },
+          },
+          '*'
+        );
+      }
       const actionData = data.spectatorActionData;
       const missingActions = actionData.slice(systemState.spectatorCounter);
       systemState.spectatorCounter = actionData.length;

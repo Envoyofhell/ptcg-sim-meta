@@ -56,6 +56,58 @@ export const initializeSocketEventListeners = () => {
       document.getElementById('coachingModeCheckbox').checked
     );
 
+    // Notify chat interface that room was joined
+    const chatInterface = document.getElementById('chatInterface');
+    if (chatInterface && chatInterface.contentWindow) {
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'roomJoined',
+          data: {
+            roomId: systemState.roomId,
+            playerName: systemState.p2SelfUsername,
+          },
+        },
+        '*'
+      );
+
+      // Update game state to multiplayer
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'updateGameState',
+          data: {
+            isMultiplayer: true,
+            mode: 'Multiplayer',
+            isConnected: true,
+          },
+        },
+        '*'
+      );
+
+      // Update connection status
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'updateConnectionStatus',
+          data: {
+            connected: true,
+            text: 'Connected',
+          },
+        },
+        '*'
+      );
+
+      // Initial player list (just self for now, opponent will be added when they join)
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'updatePlayerList',
+          data: {
+            players: [{ id: 'self', name: systemState.p2SelfUsername }],
+            spectators: [],
+          },
+        },
+        '*'
+      );
+    }
+
     //initialize sync checker, which will routinely make sure game are synced
     syncCheckInterval = setInterval(() => {
       if (systemState.isTwoPlayer) {

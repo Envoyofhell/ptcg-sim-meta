@@ -6,12 +6,15 @@ export const version = '1.5.1';
 
 // Define server URL based on environment or hostname
 let socketUrl;
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+if (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+) {
   // Local development
-  socketUrl = 'http://localhost:4000';
+  socketUrl = 'http://localhost:3000';
 } else {
   // Production - use the deployed server URL
-  socketUrl = 'https://ptcg-sim-meta.onrender.com'; 
+  socketUrl = 'https://ptcg-sim-meta.onrender.com';
 }
 
 // Create the socket connection

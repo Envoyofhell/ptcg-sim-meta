@@ -41,6 +41,25 @@ export const exchangeData = (
       'announcement',
       false
     );
+
+    // Update chat interface with player list
+    const chatInterface = document.getElementById('chatInterface');
+    if (chatInterface && chatInterface.contentWindow) {
+      chatInterface.contentWindow.postMessage(
+        {
+          type: 'updatePlayerList',
+          data: {
+            players: [
+              { id: 'self', name: systemState.p2SelfUsername },
+              { id: 'opp', name: systemState.p2OppUsername },
+            ],
+            spectators: [],
+          },
+        },
+        '*'
+      );
+    }
+
     reset('opp', true, true, false, false);
 
     if (callback) {

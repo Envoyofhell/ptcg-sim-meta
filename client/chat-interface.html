@@ -3,197 +3,1032 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Interface</title>
+    <title>IRC Chat Interface</title>
     <link rel="stylesheet" href="src/css/modern-variables.css">
     <link rel="stylesheet" href="src/css/modern-components.css">
     <link rel="stylesheet" href="src/css/chat-interface.css">
 </head>
 <body>
-    <div class="chat-container mmo-theme">
-        <!-- Chat Header with Tabs -->
-        <div class="chat-header">
-            <div class="chat-tabs">
-                <button class="chat-tab active" data-tab="main">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <span>Main</span>
-                    <div class="notification-badge" id="mainBadge">0</div>
-                </button>
-                <button class="chat-tab" data-tab="chat">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-                    </svg>
-                    <span>Chat</span>
-                    <div class="notification-badge" id="chatBadge">0</div>
-                </button>
-                <button class="chat-tab" data-tab="logs">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-                    </svg>
-                    <span>Logs</span>
-                    <div class="notification-badge" id="logsBadge">0</div>
-                </button>
+    <!-- Main IRC Chat Window -->
+    <div class="irc-chat-window" id="ircChatWindow">
+        <!-- Title Bar with Drag Handle -->
+        <div class="irc-title-bar" id="ircTitleBar">
+            <div class="irc-title">
+                <span class="irc-icon">💬</span>
+                <span id="ircTitle">PTCG Chat</span>
+                <span class="connection-status" id="connectionStatus">●</span>
             </div>
-            <div class="chat-controls">
-                <button class="control-btn" id="emojiBtn" data-tooltip="Emojis">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-5 6c.83 0 1.5.67 1.5 1.5S7.83 11 7 11s-1.5-.67-1.5-1.5S6.17 8 7 8zm5 9c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zm5-6c-.83 0-1.5-.67-1.5-1.5S16.17 8 17 8s1.5.67 1.5 1.5S17.83 11 17 11z"/>
-                    </svg>
-                </button>
-                <button class="control-btn" id="minimizeBtn" data-tooltip="Minimize">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13H5v-2h14v2z"/>
-                    </svg>
-                </button>
-                <button class="control-btn" id="settingsBtn" data-tooltip="Settings">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Emoji Drawer -->
-        <div class="emoji-drawer" id="emojiDrawer">
-            <div class="emoji-grid">
-                <button class="emoji-btn">😀</button>
-                <button class="emoji-btn">😂</button>
-                <button class="emoji-btn">😎</button>
-                <button class="emoji-btn">😍</button>
-                <button class="emoji-btn">🤔</button>
-                <button class="emoji-btn">😢</button>
-                <button class="emoji-btn">😡</button>
-                <button class="emoji-btn">👍</button>
-                <button class="emoji-btn">👎</button>
-                <button class="emoji-btn">❤️</button>
-                <button class="emoji-btn">⚡</button>
-                <button class="emoji-btn">🔥</button>
-                <button class="emoji-btn">💯</button>
-                <button class="emoji-btn">🎯</button>
-                <button class="emoji-btn">⭐</button>
-                <button class="emoji-btn">💎</button>
-            </div>
-        </div>
-
-        <!-- Chat Content Areas -->
-        <div class="chat-content">
-            <!-- Main Tab Content -->
-            <div class="tab-content active" id="mainContent">
-                <div class="messages-container scrollbar-modern" id="mainMessages">
-                    <div class="welcome-message">
-                        <div class="system-message">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            <span>Welcome to Meta PTCG-sim! All messages and game actions appear here.</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Player Action Buttons for Main Tab -->
-                <div class="player-actions-bar">
-                    <div class="action-group self-group">
-                        <button class="action-btn btn-self" id="mainAttackBtn">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                            Attack
-                        </button>
-                        <button class="action-btn btn-self" id="mainPassBtn">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                            </svg>
-                            Pass
-                        </button>
-                        <button class="action-btn btn-self" id="mainUndoBtn">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
-                            </svg>
-                            Undo
-                        </button>
-                    </div>
-                </div>
-
-                <div class="input-container">
-                    <input type="text" class="message-input mmo-input" id="mainInput" placeholder="Type your message...">
-                    <button class="send-btn btn-primary" id="mainSend">
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Chat Only Tab Content -->
-            <div class="tab-content" id="chatContent">
-                <div class="messages-container scrollbar-modern" id="chatMessages">
-                    <div class="welcome-message">
-                        <div class="system-message">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-                            </svg>
-                            <span>Chat messages only. Spectators can also participate here.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-container">
-                    <input type="text" class="message-input mmo-input" id="chatInput" placeholder="Chat with players and spectators...">
-                    <button class="send-btn btn-primary" id="chatSend">
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Logs Tab Content -->
-            <div class="tab-content" id="logsContent">
-                <div class="messages-container scrollbar-modern" id="logsMessages">
-                    <div class="welcome-message">
-                        <div class="system-message">
-                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-                            </svg>
-                            <span>Game action logs and system messages only.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="logs-controls">
-                    <button class="btn btn-ghost btn-sm" id="clearLogs">
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                        </svg>
-                        Clear
-                    </button>
-                    <button class="btn btn-ghost btn-sm" id="exportLogs">
-                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                        </svg>
-                        Export
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Chat Status Bar -->
-        <div class="chat-status">
-            <div class="connection-status">
-                <div class="status-indicator online" id="connectionStatus"></div>
-                <span id="connectionText">Connected</span>
-            </div>
-            <div class="user-count">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99l-2.98 3.93a.998.998 0 0 0 .27 1.39l1.83 1.18c.3.19.49.52.49.89V22h6zm-11.5-9.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S7 11.17 7 12s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm1.5 16h6v-2.5c0-.37.19-.7.49-.89l1.83-1.18c.3-.19.49-.52.49-.89V14h-2.5l-2.54 7.63A1.5 1.5 0 0 1 9.46 22H7v-6H4.5l2.54-7.63A1.5 1.5 0 0 1 8.46 8H10c.8 0 1.54.37 2.01.99l.93 1.23-.27.18c-.3.19-.49.52-.49.89V22z"/>
-                </svg>
-                <span id="userCount">1</span>
-            </div>
-            <div class="game-mode">
-                <span id="gameModeText">Single Player</span>
-            </div>
+            <div class="irc-controls">
+                <button class="irc-btn irc-btn-minimize" id="minimizeBtn" title="Minimize">_</button>
+                <button class="irc-btn irc-btn-maximize" id="maximizeBtn" title="Maximize">□</button>
+                <button class="irc-btn irc-btn-close" id="closeBtn" title="Close">×</button>
         </div>
     </div>
 
-    <script src="src/js/chat-interface.js"></script>
+        <!-- IRC Channel Tabs -->
+        <div class="irc-channel-tabs" id="ircChannelTabs">
+            <div class="irc-tab active" data-channel="battle" id="battleTab">
+                <span>#battle</span>
+                <span class="unread-count" id="battleUnread">0</span>
+            </div>
+            <div class="irc-tab" data-channel="multiplayer" id="multiplayerTab">
+                <span>#multiplayer</span>
+                <span class="unread-count" id="multiplayerUnread">0</span>
+            </div>
+            <div class="irc-tab" data-channel="system" id="systemTab">
+                <span>#system</span>
+                <span class="unread-count" id="systemUnread">0</span>
+        </div>
+            </div>
+            
+        <!-- IRC Chat Content -->
+        <div class="irc-content" id="ircContent">
+            <!-- Battle Channel -->
+            <div class="irc-channel active" id="battleChannel">
+                <div class="irc-messages" id="battleMessages">
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">Welcome to #battle - Game actions and battle chat</span>
+                    </div>
+                </div>
+                
+                <!-- Battle Action Buttons -->
+                <div class="irc-action-bar">
+                    <button class="action-btn btn-attack" id="ircAttackBtn">⚔️ Attack</button>
+                    <button class="action-btn btn-pass" id="ircPassBtn">⏭️ Pass</button>
+                    <button class="action-btn btn-undo" id="ircUndoBtn">↶ Undo</button>
+                    <button class="action-btn btn-coin" id="ircCoinBtn">🪙 Coin</button>
+                </div>
+                
+                <!-- Emoji Quick Actions -->
+                <div class="emoji-bar">
+                    <button class="emoji-btn" data-emoji="👍" title="Thumbs up">👍</button>
+                    <button class="emoji-btn" data-emoji="👎" title="Thumbs down">👎</button>
+                    <button class="emoji-btn" data-emoji="😄" title="Happy">😄</button>
+                    <button class="emoji-btn" data-emoji="😢" title="Sad">😢</button>
+                    <button class="emoji-btn" data-emoji="🔥" title="Fire">🔥</button>
+                    <button class="emoji-btn" data-emoji="⚡" title="Lightning">⚡</button>
+                    <button class="emoji-btn" data-emoji="💯" title="100">💯</button>
+                    <button class="emoji-btn" data-emoji="🎉" title="Party">🎉</button>
+                    <button class="emoji-btn" data-emoji="😱" title="Shocked">😱</button>
+                    <button class="emoji-btn" data-emoji="🤔" title="Thinking">🤔</button>
+                </div>
+                </div>
+
+            <!-- Multiplayer Channel -->
+            <div class="irc-channel" id="multiplayerChannel">
+                <div class="irc-messages" id="multiplayerMessages">
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">Welcome to #multiplayer - Pokemon-themed rooms and trainer names!</span>
+                    </div>
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">🎲 Generate: Pokemon location + numbers (e.g., PalletTown123)</span>
+                    </div>
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">👤 Auto-trainer: Leave name empty for random Pokemon trainer</span>
+                </div>
+            </div>
+
+                <!-- Multiplayer Controls -->
+                <div class="irc-multiplayer-controls" id="multiplayerControls">
+                    <div class="room-section">
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="playerNameInput" placeholder="Trainer name (auto if empty)" class="irc-input" style="flex: 1;">
+                            <button class="action-btn btn-generate" id="generateTrainerBtn" title="Generate random Pokemon trainer">👤</button>
+                        </div>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="roomIdInput" placeholder="Pokemon Location + Numbers" class="irc-input" style="flex: 1;">
+                            <button class="action-btn btn-generate" id="generateRoomBtn" title="Generate Pokemon location room">🎲</button>
+                        </div>
+                        <button class="action-btn btn-join" id="joinRoomBtn">Join Room</button>
+                    </div>
+                    <div class="room-options">
+                        <label class="irc-checkbox">
+                            <input type="checkbox" id="spectatorMode">
+                            <span>Spectator Mode</span>
+                            </label>
+                        <label class="irc-checkbox">
+                            <input type="checkbox" id="coachingMode">
+                            <span>Coaching Mode</span>
+                            </label>
+                        </div>
+                    <div class="room-info" id="roomInfo" style="display: none;">
+                        <div class="room-header">
+                            <div class="room-details">
+                                <div class="room-name" id="roomTitle">Room: </div>
+                                <div class="room-link" id="roomLink">Share: </div>
+                            </div>
+                            <div class="room-actions">
+                                <button class="action-btn" id="copyRoomBtn" title="Copy Room ID">📋 Copy ID</button>
+                                <button class="action-btn" id="copyLinkBtn" title="Copy Room Link">🔗 Copy Link</button>
+                                <button class="action-btn btn-leave" id="leaveRoomBtn">🚪 Leave</button>
+                            </div>
+                        </div>
+                        <div class="player-list" id="playerList"></div>
+                        <div class="connection-status-bar">
+                            <span class="status-indicator" id="connectionIndicator">🔴 Disconnected</span>
+                            <span class="player-count" id="connectedPlayers">0 players</span>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                    
+            <!-- System Channel -->
+            <div class="irc-channel" id="systemChannel">
+                <div class="irc-messages" id="systemMessages">
+                    <div class="irc-message system">
+                        <span class="timestamp">[00:00]</span>
+                        <span class="nick">*</span>
+                        <span class="message">Welcome to #system - Game logs and system messages</span>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    
+        <!-- IRC Input Area -->
+        <div class="irc-input-area">
+            <div class="irc-input-container">
+                <input type="text" class="irc-message-input" id="ircMessageInput" placeholder="Type a message..." autocomplete="off">
+                <button class="irc-send-btn" id="ircSendBtn">Send</button>
+                    </div>
+            <div class="irc-status-bar">
+                <span class="user-info" id="userInfo">Guest</span>
+                <span class="channel-info" id="channelInfo">#battle</span>
+                <span class="user-count" id="userCount">1 user</span>
+                </div>
+            </div>
+
+        <!-- Resize Handles -->
+        <div class="resize-handle resize-n" data-direction="n"></div>
+        <div class="resize-handle resize-s" data-direction="s"></div>
+        <div class="resize-handle resize-e" data-direction="e"></div>
+        <div class="resize-handle resize-w" data-direction="w"></div>
+        <div class="resize-handle resize-ne" data-direction="ne"></div>
+        <div class="resize-handle resize-nw" data-direction="nw"></div>
+        <div class="resize-handle resize-se" data-direction="se"></div>
+        <div class="resize-handle resize-sw" data-direction="sw"></div>
+                        </div>
+
+    <!-- Minimized Chat Tab -->
+    <div class="irc-minimized-tab" id="ircMinimizedTab" style="display: none;">
+        <div class="minimized-header">
+            <span class="minimized-icon">💬</span>
+            <span class="minimized-text">Chat</span>
+            <span class="minimized-unread" id="minimizedUnread">0</span>
+        </div>
+        <div class="minimized-messages" id="minimizedMessages">
+            <!-- Recent messages will be shown here -->
+        </div>
+    </div>
+
+    <!-- Chat Sidebar (when closed) -->
+    <div class="chat-sidebar" id="chatSidebar">
+        <div class="sidebar-header">
+            <span>💬 Chat Log</span>
+            <button class="irc-btn" id="openChatBtn" title="Open Chat">↗</button>
+            </div>
+        <div class="sidebar-content" id="sidebarContent">
+            <!-- Recent messages will be displayed here -->
+            </div>
+        <div class="sidebar-controls">
+            <button class="sidebar-btn" id="exportChatBtn" title="Export Chat">📄 Export</button>
+            <button class="sidebar-btn" id="copyChatBtn" title="Copy Chat">📋 Copy</button>
+            <button class="sidebar-btn" id="clearSidebarBtn" title="Clear">🗑️ Clear</button>
+        </div>
+    </div>
+
+    <script>
+        // Pokemon data for room generation and usernames
+        const POKEMON_LOCATIONS = [
+            'Pallet Town', 'Viridian City', 'Pewter City', 'Cerulean City', 'Vermilion City',
+            'Lavender Town', 'Celadon City', 'Fuchsia City', 'Saffron City', 'Cinnabar Island',
+            'New Bark Town', 'Cherrygrove City', 'Violet City', 'Azalea Town', 'Goldenrod City',
+            'Ecruteak City', 'Olivine City', 'Cianwood City', 'Mahogany Town', 'Blackthorn City',
+            'Littleroot Town', 'Oldale Town', 'Petalburg City', 'Rustboro City', 'Dewford Town',
+            'Slateport City', 'Mauville City', 'Verdanturf Town', 'Fallarbor Town', 'Fortree City',
+            'Twinleaf Town', 'Sandgem Town', 'Jubilife City', 'Oreburgh City', 'Floaroma Town',
+            'Eterna City', 'Hearthome City', 'Solaceon Town', 'Veilstone City', 'Pastoria City',
+            'Nuvema Town', 'Accumula Town', 'Striaton City', 'Nacrene City', 'Castelia City',
+            'Nimbasa City', 'Driftveil City', 'Mistralton City', 'Icirrus City', 'Opelucid City',
+            'Vaniville Town', 'Aquacorde Town', 'Santalune City', 'Lumiose City', 'Camphrier Town',
+            'Laverre City', 'Dendemille Town', 'Anistar City', 'Couriway Town', 'Snowbelle City',
+            'Iki Town', 'Hau\'oli City', 'Heahea City', 'Konikoni City', 'Malie City',
+            'Postwick', 'Wedgehurst', 'Turffield', 'Hulbury', 'Motostoke', 'Hammerlocke',
+            'Wyndon', 'Circhester', 'Stow-on-Side', 'Ballonlea', 'Mt Moon', 'Victory Road',
+            'Meteor Falls', 'Sky Pillar', 'Lake Verity', 'Lake Valor', 'Lake Acuity'
+        ];
+
+        const POKEMON_TRAINERS = [
+            'Red', 'Ash', 'Leaf', 'Ethan', 'Lyra', 'Brendan', 'May', 'Lucas', 'Dawn',
+            'Hilbert', 'Hilda', 'Nate', 'Rosa', 'Calem', 'Serena', 'Elio', 'Selene',
+            'Victor', 'Gloria', 'Blue', 'Silver', 'Barry', 'Hugh', 'Cheren', 'Bianca',
+            'Brock', 'Misty', 'Lt Surge', 'Erika', 'Koga', 'Sabrina', 'Blaine',
+            'Falkner', 'Bugsy', 'Whitney', 'Morty', 'Chuck', 'Jasmine', 'Pryce', 'Clair',
+            'Roxanne', 'Brawly', 'Wattson', 'Flannery', 'Norman', 'Winona', 'Tate', 'Liza',
+            'Lance', 'Karen', 'Will', 'Bruno', 'Steven', 'Sidney', 'Phoebe', 'Glacia',
+            'Aaron', 'Bertha', 'Flint', 'Lucian', 'Cynthia', 'Alder', 'Diantha', 'Leon',
+            'Giovanni', 'Archie', 'Maxie', 'Cyrus', 'Ghetsis', 'Lysandre', 'Guzma',
+            'Oak', 'Elm', 'Birch', 'Rowan', 'Juniper', 'Sycamore', 'Kukui', 'Magnolia',
+            'Gary', 'Tobias', 'Virgil', 'Sawyer', 'Conway', 'Harrison', 'Ritchie',
+            'Wally', 'Hau', 'Hop', 'Bede', 'Marnie', 'Gladion', 'Trace', 'Paul'
+        ];
+
+        class IRCChatInterface {
+            constructor() {
+                this.isMinimized = false;
+                this.isMaximized = false;
+                this.isDragging = false;
+                this.isResizing = false;
+                this.currentChannel = 'battle';
+                this.unreadCounts = { battle: 0, multiplayer: 0, system: 0 };
+                this.username = 'Guest';
+                this.roomId = null;
+                this.isConnected = false;
+                this.roomJoinedProcessed = false;
+                
+                this.initializeElements();
+                this.initializeEventListeners();
+                this.loadSavedState();
+                this.setupResizing();
+                this.setupDragging();
+                this.initializePokemonDefaults();
+            }
+
+            initializeElements() {
+                this.chatWindow = document.getElementById('ircChatWindow');
+                this.titleBar = document.getElementById('ircTitleBar');
+                this.minimizedTab = document.getElementById('ircMinimizedTab');
+                this.messageInput = document.getElementById('ircMessageInput');
+                this.chatSidebar = document.getElementById('chatSidebar');
+                this.sidebarContent = document.getElementById('sidebarContent');
+                this.channels = {
+                    battle: document.getElementById('battleChannel'),
+                    multiplayer: document.getElementById('multiplayerChannel'),
+                    system: document.getElementById('systemChannel')
+                };
+                this.tabs = {
+                    battle: document.getElementById('battleTab'),
+                    multiplayer: document.getElementById('multiplayerTab'),
+                    system: document.getElementById('systemTab')
+                };
+                this.messages = {
+                    battle: document.getElementById('battleMessages'),
+                    multiplayer: document.getElementById('multiplayerMessages'),
+                    system: document.getElementById('systemMessages')
+                };
+                this.allMessages = []; // Store all messages for export/sidebar
+            }
+
+            initializeEventListeners() {
+                // Window controls
+                document.getElementById('minimizeBtn').addEventListener('click', () => this.minimize());
+                document.getElementById('maximizeBtn').addEventListener('click', () => this.toggleMaximize());
+                document.getElementById('closeBtn').addEventListener('click', () => this.close());
+                
+                // Minimized tab
+                this.minimizedTab.addEventListener('click', () => this.restore());
+                
+                // Sidebar controls
+                document.getElementById('openChatBtn').addEventListener('click', () => this.openFromSidebar());
+                document.getElementById('exportChatBtn').addEventListener('click', () => this.exportChat());
+                document.getElementById('copyChatBtn').addEventListener('click', () => this.copyChat());
+                document.getElementById('clearSidebarBtn').addEventListener('click', () => this.clearSidebar());
+                
+                // Channel tabs
+                Object.keys(this.tabs).forEach(channel => {
+                    this.tabs[channel].addEventListener('click', () => this.switchChannel(channel));
+                });
+                
+                // Message input
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+                document.getElementById('ircSendBtn').addEventListener('click', () => this.sendMessage());
+
+                // Action buttons
+                document.getElementById('ircAttackBtn').addEventListener('click', () => this.sendAction('attack'));
+                document.getElementById('ircPassBtn').addEventListener('click', () => this.sendAction('pass'));
+                document.getElementById('ircUndoBtn').addEventListener('click', () => this.sendAction('undo'));
+                document.getElementById('ircCoinBtn').addEventListener('click', () => this.sendAction('coin'));
+                
+                // Emoji buttons
+                document.querySelectorAll('.emoji-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const emoji = btn.getAttribute('data-emoji');
+                        this.sendEmoji(emoji);
+                    });
+                });
+                
+                // Multiplayer controls
+                document.getElementById('joinRoomBtn').addEventListener('click', () => this.joinRoom());
+                document.getElementById('generateRoomBtn').addEventListener('click', () => this.generateRoomId());
+                document.getElementById('generateTrainerBtn').addEventListener('click', () => this.generateTrainerName());
+                document.getElementById('copyRoomBtn').addEventListener('click', () => this.copyRoomId());
+                document.getElementById('copyLinkBtn').addEventListener('click', () => this.copyRoomLink());
+                document.getElementById('leaveRoomBtn').addEventListener('click', () => this.leaveRoom());
+            }
+
+            setupDragging() {
+                // Dragging disabled - chat window is fixed in position
+            }
+
+            setupResizing() {
+                // Resizing disabled - chat window has fixed size
+            }
+
+            switchChannel(channel) {
+                // Update active channel
+                this.currentChannel = channel;
+                
+                // Update tabs
+                Object.keys(this.tabs).forEach(ch => {
+                    this.tabs[ch].classList.toggle('active', ch === channel);
+                });
+                
+                // Update channels
+                Object.keys(this.channels).forEach(ch => {
+                    this.channels[ch].classList.toggle('active', ch === channel);
+                });
+                
+                // Clear unread count for active channel
+                this.unreadCounts[channel] = 0;
+                this.updateUnreadDisplay();
+                
+                // Update status bar
+                document.getElementById('channelInfo').textContent = '#' + channel;
+                
+                // Focus input
+                this.messageInput.focus();
+            }
+
+            addMessage(channel, type, nick, message, timestamp = null, fromGame = false) {
+                if (!this.messages[channel]) return;
+                
+                const time = timestamp || new Date();
+                const timeStr = time.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                // Enhanced duplicate prevention
+                const messageKey = `${channel}-${type}-${nick}-${message}-${timeStr}`;
+                if (this.lastMessageKey === messageKey) {
+                    console.log('Duplicate message prevented:', messageKey);
+                    return;
+                }
+                this.lastMessageKey = messageKey;
+                
+                // Debug: Check what we're storing
+                console.log('Adding message:', { channel, type, nick, message, fromGame });
+                
+                // Store message for export/sidebar (avoid duplicates from game)
+                if (!fromGame || type !== 'game') {
+                    this.allMessages.push({
+                        channel,
+                        type,
+                        nick,
+                        message: String(message || ''), // Ensure it's a string
+                        time: timeStr,
+                        timestamp: time
+                    });
+                }
+                
+                const messageEl = document.createElement('div');
+                messageEl.className = `irc-message ${type}`;
+                
+                // Add special styling for different message types
+                if (type === 'emoji') {
+                    messageEl.classList.add('emoji-message');
+                } else if (type === 'system' || type === 'announcement') {
+                    messageEl.classList.add('system-message');
+                } else if (type === 'game-action') {
+                    messageEl.classList.add('action-message');
+                }
+                
+                messageEl.innerHTML = `
+                    <span class="timestamp">[${timeStr}]</span>
+                    <span class="nick">${nick}</span>
+                    <span class="message">${message}</span>
+                `;
+                
+                this.messages[channel].appendChild(messageEl);
+                this.messages[channel].scrollTop = this.messages[channel].scrollHeight;
+                
+                // Add animation for new messages
+                messageEl.style.opacity = '0';
+                messageEl.style.transform = 'translateX(-10px)';
+                setTimeout(() => {
+                    messageEl.style.transition = 'all 0.3s ease';
+                    messageEl.style.opacity = '1';
+                    messageEl.style.transform = 'translateX(0)';
+                }, 10);
+                
+                // Update sidebar if it's open
+                if (this.chatSidebar.classList.contains('show')) {
+                    this.updateSidebarContent();
+                }
+                
+                // Update minimized tab if minimized
+                if (this.isMinimized) {
+                    this.updateMinimizedContent();
+                }
+                
+                // Update unread count if not active channel
+                if (channel !== this.currentChannel && !this.isMinimized) {
+                    this.unreadCounts[channel]++;
+                    this.updateUnreadDisplay();
+                }
+            }
+
+            sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+                
+                // Handle IRC commands
+                if (message.startsWith('/')) {
+                    this.handleCommand(message);
+                } else {
+                    // Don't add message locally - let the parent window handle it and send it back
+                    // This prevents duplicate messages
+                    
+                    // Send to parent window for integration
+                    window.parent.postMessage({
+                        type: 'chatMessage',
+                        data: { channel: this.currentChannel, message, username: this.username }
+                    }, '*');
+                }
+                
+                this.messageInput.value = '';
+            }
+
+            sendAction(action) {
+                // Don't add message here - let the parent window handle the action and send back the result
+                // This prevents duplicate messages
+                
+                // Send to parent window
+                window.parent.postMessage({
+                    type: 'playerAction',
+                    data: { action, username: this.username }
+                }, '*');
+            }
+
+            sendEmoji(emoji) {
+                // Send emoji as a special message type
+                window.parent.postMessage({
+                    type: 'chatMessage',
+                    data: { 
+                        channel: this.currentChannel, 
+                        message: emoji, 
+                        username: this.username,
+                        messageType: 'emoji'
+                    }
+                }, '*');
+            }
+
+            handleCommand(command) {
+                const parts = command.split(' ');
+                const cmd = parts[0].toLowerCase();
+                
+                switch (cmd) {
+                    case '/nick':
+                        if (parts[1]) {
+                            const oldNick = this.username;
+                            this.username = parts[1];
+                            this.addMessage(this.currentChannel, 'system', '*', `${oldNick} is now known as ${this.username}`);
+                            document.getElementById('userInfo').textContent = this.username;
+                        }
+                        break;
+                    case '/join':
+                        if (parts[1]) {
+                            const channel = parts[1].replace('#', '');
+                            if (this.channels[channel]) {
+                                this.switchChannel(channel);
+                            }
+                        }
+                        break;
+                    case '/clear':
+                        this.messages[this.currentChannel].innerHTML = '';
+                        break;
+                    case '/help':
+                        this.showHelp();
+                        break;
+                    default:
+                        this.addMessage(this.currentChannel, 'error', '*', `Unknown command: ${cmd}`);
+                }
+            }
+
+            showHelp() {
+                const helpText = `
+                    Available commands:
+                    /nick <name> - Change your nickname
+                    /join <channel> - Switch to a channel
+                    /clear - Clear current channel
+                    /help - Show this help
+                `;
+                this.addMessage(this.currentChannel, 'system', '*', helpText);
+            }
+
+            minimize() {
+                this.isMinimized = true;
+                this.chatWindow.style.display = 'none';
+                this.minimizedTab.style.display = 'flex';
+                this.updateMinimizedContent();
+                this.saveState();
+            }
+
+            restore() {
+                this.isMinimized = false;
+                this.chatWindow.style.display = 'flex';
+                this.minimizedTab.style.display = 'none';
+                this.messageInput.focus();
+                this.saveState();
+            }
+
+                        toggleMaximize() {
+                this.isMaximized = !this.isMaximized;
+                
+                if (this.isMaximized) {
+                    this.chatWindow.style.left = '0px';
+                    this.chatWindow.style.bottom = '0px';
+                    this.chatWindow.style.width = '100vw';
+                    this.chatWindow.style.height = '100vh';
+                } else {
+                    this.loadSavedState();
+                }
+
+                this.saveState();
+            }
+
+            close() {
+                this.chatWindow.style.display = 'none';
+                this.minimizedTab.style.display = 'none';
+                
+                // Show sidebar instead of completely closing
+                this.showSidebar();
+                
+                // Notify parent window
+                window.parent.postMessage({
+                    type: 'chatClosed'
+                }, '*');
+            }
+
+            showSidebar() {
+                this.chatSidebar.classList.add('show');
+                document.body.classList.add('sidebar-open');
+                this.updateSidebarContent();
+                
+                // Notify parent window to adjust layout
+                window.parent.postMessage({
+                    type: 'sidebarOpened'
+                }, '*');
+            }
+
+            hideSidebar() {
+                this.chatSidebar.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+                
+                // Notify parent window to restore layout
+                window.parent.postMessage({
+                    type: 'sidebarClosed'
+                }, '*');
+            }
+
+            openFromSidebar() {
+                this.hideSidebar();
+                this.restore();
+            }
+
+            updateSidebarContent() {
+                // Show recent messages from all channels in sidebar
+                const recentMessages = this.allMessages.slice(-20); // Last 20 messages
+                this.sidebarContent.innerHTML = '';
+                
+                recentMessages.forEach(msg => {
+                    const msgEl = document.createElement('div');
+                    msgEl.className = `sidebar-message ${msg.type}`;
+                    
+                    // Create properly structured message that uses full width
+                    const timeText = `[${msg.time}]`;
+                    const channelText = `#${msg.channel}`;
+                    const nickText = `${msg.nick}:`;
+                    const messageText = String(msg.message || '');
+                    
+                    // Create the full message text in one line for natural wrapping
+                    const fullText = `${timeText} ${channelText} ${nickText} ${messageText}`;
+                    msgEl.textContent = fullText;
+                    
+                    this.sidebarContent.appendChild(msgEl);
+                });
+                
+                this.sidebarContent.scrollTop = this.sidebarContent.scrollHeight;
+            }
+
+            exportChat() {
+                const chatLog = this.allMessages.map(msg => 
+                    `[${msg.time}] #${msg.channel} ${msg.nick}: ${msg.message}`
+                ).join('\n');
+                
+                const blob = new Blob([chatLog], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ptcg-chat-${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            copyChat() {
+                const chatLog = this.allMessages.map(msg => 
+                    `[${msg.time}] #${msg.channel} ${msg.nick}: ${msg.message}`
+                ).join('\n');
+                
+                navigator.clipboard.writeText(chatLog).then(() => {
+                    // Show temporary feedback
+                    const btn = document.getElementById('copyChatBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy chat:', err);
+                });
+            }
+
+            clearSidebar() {
+                this.allMessages = [];
+                this.sidebarContent.innerHTML = '<div class="sidebar-message system">Chat cleared</div>';
+            }
+
+            updateMinimizedContent() {
+                const minimizedMessages = document.getElementById('minimizedMessages');
+                if (!minimizedMessages) return;
+                
+                // Show last 3 messages in minimized tab
+                const recentMessages = this.allMessages.slice(-3);
+                minimizedMessages.innerHTML = '';
+                
+                recentMessages.forEach((msg, index) => {
+                    // Debug: Check message content
+                    console.log('Minimized message:', msg);
+                    
+                    const msgEl = document.createElement('div');
+                    msgEl.className = `minimized-message ${msg.type} ${index === recentMessages.length - 1 ? 'recent' : ''}`;
+                    
+                    const timeSpan = document.createElement('span');
+                    timeSpan.className = 'minimized-time';
+                    timeSpan.textContent = `[${msg.time}] `;
+                    
+                    const nickSpan = document.createElement('span');
+                    nickSpan.className = 'minimized-nick';
+                    nickSpan.textContent = `${msg.nick}: `;
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'minimized-text-content';
+                    // Don't truncate - let CSS handle wrapping
+                    const messageText = String(msg.message || '');
+                    textSpan.textContent = messageText;
+                    
+                    msgEl.appendChild(timeSpan);
+                    msgEl.appendChild(nickSpan);
+                    msgEl.appendChild(textSpan);
+                    
+                    minimizedMessages.appendChild(msgEl);
+                });
+                
+                minimizedMessages.scrollTop = minimizedMessages.scrollHeight;
+            }
+
+            updateUnreadDisplay() {
+                Object.keys(this.unreadCounts).forEach(channel => {
+                    const count = this.unreadCounts[channel];
+                    const unreadEl = document.getElementById(channel + 'Unread');
+                    if (unreadEl) {
+                        unreadEl.textContent = count;
+                        unreadEl.style.display = count > 0 ? 'inline' : 'none';
+                    }
+                });
+                
+                const totalUnread = Object.values(this.unreadCounts).reduce((a, b) => a + b, 0);
+                const minimizedUnread = document.getElementById('minimizedUnread');
+                if (minimizedUnread) {
+                    minimizedUnread.textContent = totalUnread;
+                    minimizedUnread.style.display = totalUnread > 0 ? 'inline' : 'none';
+                }
+            }
+
+            joinRoom() {
+                let playerName = document.getElementById('playerNameInput').value.trim();
+                let roomId = document.getElementById('roomIdInput').value.trim();
+                
+                // If no name provided, use a random Pokemon trainer name
+                if (!playerName) {
+                    playerName = this.generateRandomTrainerName();
+                    document.getElementById('playerNameInput').value = playerName;
+                    this.addMessage('multiplayer', 'system', '*', `Auto-assigned trainer name: ${playerName}`);
+                }
+                
+                // If no room ID provided, generate one automatically
+                if (!roomId) {
+                    const location = POKEMON_LOCATIONS[Math.floor(Math.random() * POKEMON_LOCATIONS.length)];
+                    const numbers = Math.floor(Math.random() * 999) + 1;
+                    roomId = location.replace(/\s+/g, '') + numbers;
+                    document.getElementById('roomIdInput').value = roomId;
+                    this.addMessage('multiplayer', 'system', '*', `Auto-generated room: ${roomId} (${location})`);
+                }
+                
+                this.username = playerName;
+                this.roomId = roomId;
+                
+                // Hide join controls and show room info
+                document.getElementById('multiplayerControls').style.display = 'none';
+                document.getElementById('roomInfo').style.display = 'block';
+                document.getElementById('roomTitle').textContent = `Room: ${roomId}`;
+                
+                // Send to parent window
+                window.parent.postMessage({
+                    type: 'joinRoom',
+                    data: {
+                        playerName,
+                        roomId,
+                        isSpectator: document.getElementById('spectatorMode').checked,
+                        coachingMode: document.getElementById('coachingMode').checked
+                    }
+                }, '*');
+                
+                this.addMessage('multiplayer', 'system', '*', `Joining room ${roomId} as ${playerName}...`);
+            }
+
+            generateRoomId() {
+                // Generate Pokemon location-based room ID with trailing numbers
+                const location = POKEMON_LOCATIONS[Math.floor(Math.random() * POKEMON_LOCATIONS.length)];
+                const numbers = Math.floor(Math.random() * 999) + 1; // 1-999
+                const roomId = location.replace(/\s+/g, '') + numbers; // Remove spaces and add numbers
+                document.getElementById('roomIdInput').value = roomId;
+                
+                this.addMessage('multiplayer', 'system', '*', `Generated room: ${roomId} (${location})`);
+            }
+
+            generateRandomTrainerName() {
+                // Generate random Pokemon trainer name
+                const trainer = POKEMON_TRAINERS[Math.floor(Math.random() * POKEMON_TRAINERS.length)];
+                return trainer;
+            }
+
+            generateTrainerName() {
+                // Generate and set a random Pokemon trainer name
+                const trainerName = this.generateRandomTrainerName();
+                document.getElementById('playerNameInput').value = trainerName;
+                this.addMessage('multiplayer', 'system', '*', `Generated trainer: ${trainerName}`);
+            }
+
+            copyRoomId() {
+                if (this.roomId) {
+                    navigator.clipboard.writeText(this.roomId).then(() => {
+                        // Show temporary feedback
+                        const btn = document.getElementById('copyRoomBtn');
+                        const originalText = btn.textContent;
+                        btn.textContent = '✓ Copied';
+                        btn.style.background = 'rgba(100, 180, 100, 0.8)';
+                        
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                            btn.style.background = '';
+                        }, 1500);
+                        
+                        this.addMessage('multiplayer', 'system', '*', `Room ID copied to clipboard: ${this.roomId}`);
+                    }).catch(err => {
+                        console.error('Failed to copy room ID:', err);
+                        this.addMessage('multiplayer', 'error', '*', 'Failed to copy room ID to clipboard');
+                    });
+                }
+            }
+
+            copyRoomLink() {
+                if (this.roomId) {
+                    const currentUrl = window.location.href.split('?')[0]; // Remove any existing query params
+                    const roomLink = `${currentUrl}?room=${encodeURIComponent(this.roomId)}&trainer=${encodeURIComponent(this.username)}`;
+                    
+                    navigator.clipboard.writeText(roomLink).then(() => {
+                        // Show temporary feedback
+                        const btn = document.getElementById('copyLinkBtn');
+                        const originalText = btn.textContent;
+                        btn.textContent = '✓ Copied';
+                        btn.style.background = 'rgba(100, 180, 100, 0.8)';
+                        
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                            btn.style.background = '';
+                        }, 1500);
+                        
+                        // Update room link display
+                        document.getElementById('roomLink').textContent = `Share: ${roomLink}`;
+                        
+                        this.addMessage('multiplayer', 'system', '*', `Room link copied to clipboard! Share with friends to join directly.`);
+                    }).catch(err => {
+                        console.error('Failed to copy room link:', err);
+                        this.addMessage('multiplayer', 'error', '*', 'Failed to copy room link to clipboard');
+                    });
+                }
+            }
+
+            initializePokemonDefaults() {
+                // Set default trainer name placeholder
+                const nameInput = document.getElementById('playerNameInput');
+                if (nameInput && !nameInput.value.trim()) {
+                    const defaultName = this.generateRandomTrainerName();
+                    nameInput.placeholder = `e.g., ${defaultName}`;
+                }
+                
+                // Set room ID placeholder with example
+                const roomInput = document.getElementById('roomIdInput');
+                if (roomInput && !roomInput.value.trim()) {
+                    const exampleLocation = POKEMON_LOCATIONS[Math.floor(Math.random() * POKEMON_LOCATIONS.length)];
+                    const exampleNumbers = Math.floor(Math.random() * 999) + 1;
+                    roomInput.placeholder = `e.g., ${exampleLocation.replace(/\s+/g, '')}${exampleNumbers}`;
+                }
+            }
+
+            leaveRoom() {
+                if (this.roomId) {
+                    window.parent.postMessage({
+                        type: 'leaveRoom'
+                    }, '*');
+                    
+                    this.addMessage('multiplayer', 'system', '*', `Left room ${this.roomId}`);
+                    this.roomId = null;
+                    this.roomJoinedProcessed = false;
+                    
+                    // Show join controls and hide room info
+                    document.getElementById('multiplayerControls').style.display = 'block';
+                    document.getElementById('roomInfo').style.display = 'none';
+                    
+                    // Clear the input fields
+                    document.getElementById('playerNameInput').value = '';
+                    document.getElementById('roomIdInput').value = '';
+                    
+                    // Reset placeholders
+                    this.initializePokemonDefaults();
+                }
+            }
+
+            // Handle messages from parent window
+            receiveMessage(type, data) {
+                console.log('IRC Chat received message:', type, data);
+                switch (type) {
+                    case 'gameMessage':
+                        // Route game messages to battle channel
+                        this.addMessage('battle', data.type || 'game', data.username || 'Game', data.message, null, true);
+                        break;
+                    case 'newMessage':
+                        // Handle new message format from the game - only if not already processed
+                        if (!data.processed) {
+                            // Enhanced message routing logic
+                            let channel = 'battle'; // Default to battle
+                            let messageType = data.type || 'system';
+                            const username = data.username || 'Game';
+                            const message = data.content || data.message || '';
+                            
+                            // Route messages based on content and type
+                            if (data.tab) {
+                                channel = data.tab; // Use specified tab if provided
+                            } else {
+                                // Auto-route based on message content and type
+                                if (messageType === 'self' || messageType === 'opp') {
+                                    // Player messages go to multiplayer if in multiplayer mode
+                                    channel = this.roomId ? 'multiplayer' : 'battle';
+                                } else if (message.includes('joined') || message.includes('left') || 
+                                          message.includes('room') || message.includes('connected') ||
+                                          message.includes('disconnected')) {
+                                    // Connection/room messages go to system
+                                    channel = 'system';
+                                    messageType = 'system';
+                                } else if (messageType === 'announcement' || messageType === 'game-action') {
+                                    // Game actions stay in battle
+                                    channel = 'battle';
+                                } else if (messageType === 'system') {
+                                    // System messages go to system channel
+                                    channel = 'system';
+                                }
+                            }
+                            
+                            this.addMessage(channel, messageType, username, message, null, true);
+                            data.processed = true; // Mark as processed
+                        }
+                        break;
+                    case 'playerMessage':
+                        // Player-to-player messages always go to multiplayer
+                        this.addMessage('multiplayer', 'opp', data.username, data.message);
+                        break;
+                    case 'systemMessage':
+                        // System messages go to system channel
+                        this.addMessage('system', 'system', 'System', data.message);
+                        break;
+                    case 'roomJoined':
+                        // Only process once to prevent duplicate messages
+                        if (!this.roomJoinedProcessed) {
+                            this.addMessage('system', 'system', '*', `Successfully connected to room ${data.roomId}`);
+                            this.addMessage('multiplayer', 'system', '*', `Welcome to room ${data.roomId}! You can now chat with other players.`);
+                            this.roomJoinedProcessed = true;
+                        }
+                        // UI changes are already handled in joinRoom() function
+                        break;
+                    case 'playerJoined':
+                        // Player join notifications go to both system and multiplayer
+                        this.addMessage('system', 'system', '*', `${data.username} joined the room`);
+                        this.addMessage('multiplayer', 'system', '*', `${data.username} joined the room`);
+                        break;
+                    case 'playerLeft':
+                        // Player leave notifications go to both system and multiplayer
+                        this.addMessage('system', 'system', '*', `${data.username} left the room`);
+                        this.addMessage('multiplayer', 'system', '*', `${data.username} left the room`);
+                        break;
+                    case 'multiplayerMessage':
+                        // Explicit multiplayer messages
+                        this.addMessage('multiplayer', data.messageType || 'opp', data.username, data.message);
+                        break;
+                }
+            }
+
+            saveState() {
+                const state = {
+                    position: {
+                        left: this.chatWindow.style.left,
+                        bottom: this.chatWindow.style.bottom,
+                        width: this.chatWindow.style.width,
+                        height: this.chatWindow.style.height
+                    },
+                    isMinimized: this.isMinimized,
+                    isMaximized: this.isMaximized,
+                    currentChannel: this.currentChannel,
+                    username: this.username
+                };
+                
+                localStorage.setItem('ircChatState', JSON.stringify(state));
+            }
+
+            loadSavedState() {
+                const saved = localStorage.getItem('ircChatState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    
+                    if (state.position) {
+                        this.chatWindow.style.left = state.position.left || '20px';
+                        this.chatWindow.style.bottom = state.position.bottom || '20px';
+                        this.chatWindow.style.width = state.position.width || '400px';
+                        this.chatWindow.style.height = state.position.height || '300px';
+                    }
+                    
+                    if (state.currentChannel) {
+                        this.switchChannel(state.currentChannel);
+                    }
+                    
+                    if (state.username) {
+                        this.username = state.username;
+                        document.getElementById('userInfo').textContent = this.username;
+                    }
+                    
+                    if (state.isMinimized) {
+                        this.minimize();
+                    }
+                }
+            }
+        }
+
+        // Initialize IRC Chat Interface
+        const ircChat = new IRCChatInterface();
+        
+        // Simple setup - chat is always interactive
+        console.log('IRC Chat interface loaded and ready');
+            
+                    // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            // Filter out unwanted messages (like Metamask)
+            if (!event.data || typeof event.data !== 'object') return;
+            if (event.data.name === 'metamask-provider') return;
+            
+            const { type, data } = event.data;
+            if (!type) return; // Ignore messages without a type
+            
+            // No special activation handling needed
+            
+            ircChat.receiveMessage(type, data);
+        });
+
+        // Make it available globally
+        window.ircChat = ircChat;
+    </script>
 </body>
 </html> 

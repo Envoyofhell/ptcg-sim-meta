@@ -144,6 +144,44 @@ export const initializeRoomButtons = () => {
       handleSpectatorButtons();
       removeSyncIntervals();
       systemState.spectatorId = '';
+
+      // Notify chat interface that room was left
+      const chatInterface = document.getElementById('chatInterface');
+      if (chatInterface && chatInterface.contentWindow) {
+        chatInterface.contentWindow.postMessage(
+          {
+            type: 'roomLeft',
+            data: {},
+          },
+          '*'
+        );
+        
+        // Reset to single player mode
+        chatInterface.contentWindow.postMessage(
+          {
+            type: 'updateGameState',
+            data: {
+              isMultiplayer: false,
+              mode: 'Single Player',
+              isConnected: false,
+            },
+          },
+          '*'
+        );
+        
+        // Update connection status
+        chatInterface.contentWindow.postMessage(
+          {
+            type: 'updateConnectionStatus',
+            data: {
+              connected: false,
+              text: 'Offline',
+            },
+          },
+          '*'
+        );
+      }
+
       // add the deck data back to the actiondata list
       if (systemState.selfDeckData) {
         processAction('self', true, 'loadDeckData', [systemState.selfDeckData]);

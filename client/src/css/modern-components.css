@@ -14,12 +14,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(2px, 0.5vh, 6px);
-  padding: clamp(3px, 1vh, 8px) clamp(6px, 1.5vh, 12px);
+  gap: clamp(2px, 0.4vh, 4px);
+  padding: clamp(4px, 0.8vh, 6px) clamp(8px, 1.2vh, 10px);
   border: none;
-  border-radius: clamp(8px, 2vh, 12px);
+  border-radius: clamp(6px, 1.2vh, 8px);
   font-family: var(--font-family-base);
-  font-size: clamp(9px, 2.5vh, 14px);
+  font-size: clamp(10px, 2vh, 12px);
   font-weight: 500;
   line-height: 1.5;
   text-decoration: none;
@@ -28,9 +28,10 @@
   user-select: none;
   position: relative;
   overflow: hidden;
-  min-height: clamp(24px, 4vh, 36px);
-  max-height: clamp(32px, 6vh, 48px);
-  height: clamp(28px, 5vh, 42px);
+  min-height: clamp(20px, 3vh, 28px);
+  max-height: clamp(28px, 4vh, 36px);
+  height: clamp(24px, 3.5vh, 32px);
+  opacity: 0.7;
 }
 
 .btn:active {
@@ -39,8 +40,8 @@
 }
 
 .btn .icon {
-  width: clamp(10px, 2vh, 16px);
-  height: clamp(10px, 2vh, 16px);
+  width: clamp(8px, 1.5vh, 12px);
+  height: clamp(8px, 1.5vh, 12px);
 }
 
 .btn::before {
@@ -84,6 +85,7 @@
 .btn-primary:hover {
   background: rgba(128, 0, 128, 0.1);
   transform: translateY(-1px);
+  opacity: 1;
   box-shadow: 
     0 0 10px rgba(128, 0, 128, 0.6),
     0 0 15px rgba(128, 0, 128, 0.5),
@@ -110,6 +112,7 @@
 .btn-secondary:hover {
   background: rgba(255, 85, 100, 0.1);
   transform: translateY(-1px);
+  opacity: 1;
   box-shadow: 
     0 0 10px rgba(255, 85, 100, 0.6),
     0 0 15px rgba(255, 85, 100, 0.5),
@@ -130,6 +133,7 @@
 .btn-neutral:hover {
   background: rgba(128, 0, 128, 0.1);
   transform: translateY(-1px);
+  opacity: 1;
   box-shadow: 
     0 0 10px rgba(128, 0, 128, 0.6),
     0 0 15px rgba(128, 0, 128, 0.5),
@@ -155,6 +159,7 @@
 .btn-self:hover {
   background: rgba(0, 123, 255, 0.1);
   transform: translateY(-1px);
+  opacity: 1;
   box-shadow: 
     0 0 10px rgba(0, 123, 255, 0.6),
     0 0 15px rgba(0, 123, 255, 0.5),
@@ -189,6 +194,7 @@
 .btn-opp:hover {
   background: rgba(255, 85, 100, 0.1);
   transform: translateY(-1px);
+  opacity: 1;
   box-shadow: 
     0 0 10px rgba(255, 85, 100, 0.6),
     0 0 15px rgba(255, 85, 100, 0.5),
@@ -218,6 +224,7 @@
 .btn-ghost:hover {
   background: var(--gray-100);
   border-color: var(--gray-400);
+  opacity: 1;
 }
 
 /* Button Sizes */
@@ -229,6 +236,13 @@
 .btn-lg {
   padding: var(--space-md) var(--space-xl);
   font-size: var(--font-size-lg);
+}
+
+.btn-compact {
+  padding: clamp(1px, 0.4vh, 3px) clamp(2px, 0.6vh, 4px);
+  font-size: clamp(4px, 1.2vh, 6px);
+  min-width: clamp(12px, 2vh, 16px);
+  flex: 1;
 }
 
 /* Modern Card System */

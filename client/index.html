@@ -19,19 +19,19 @@
     
     <!-- Viewport and Favicon -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/src/assets/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="src/assets/favicon.ico" type="image/x-icon">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="src/css/modern-variables.css">
     <link rel="stylesheet" href="src/css/modern-components.css">
     <link rel="stylesheet" href="src/css/index.css">
-    <link rel="stylesheet" href="../src/css/glow.css">
+    <link rel="stylesheet" href="src/css/glow.css">
     
     <!-- External Libraries -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     
     <!-- Main Application Script -->
-    <script type="module" src="/src/front-end.js"></script>
+    <script type="module" src="src/front-end.js"></script>
     
     <!-- Mobile Detection Script -->
     <script>
@@ -90,6 +90,22 @@
 
         <!-- Center Actions -->
         <div class="center-actions">
+            <div class="tooltip-modern" id="boardAttackButton" data-tooltip="Attack">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    Attack
+                </button>
+            </div>
+            <div class="tooltip-modern" id="boardPassButton" data-tooltip="Pass turn">
+                <button class="btn btn-neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                    Pass
+                </button>
+            </div>
             <div class="tooltip-modern" id="turnButton" data-tooltip="Start turn">
                 <button class="btn btn-neutral">
                     <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
@@ -106,12 +122,22 @@
                     Coin
                 </button>
             </div>
-            <div class="tooltip-modern" id="flipBoardButton" data-tooltip="Flip board">
-                <button class="btn btn-neutral">
-                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
-                    </svg>
-                </button>
+            <div class="button-pair">
+                <div class="tooltip-modern" id="flipBoardButton" data-tooltip="Flip board">
+                    <button class="btn btn-neutral btn-compact">
+                        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="tooltip-modern" id="refreshButton" data-tooltip="Refresh images">
+                    <button class="btn btn-neutral btn-compact">
+                        <svg class="icon" id="refreshIcon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        <div id="loadingCircle" style="display: none;"></div>
+                    </button>
+                </div>
             </div>
             <div class="tooltip-modern" id="boardUndoButton" data-tooltip="Undo last action">
                 <button class="btn btn-neutral">
@@ -119,14 +145,6 @@
                         <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
                     </svg>
                     Undo
-                </button>
-            </div>
-            <div class="tooltip-modern" id="refreshButton" data-tooltip="Refresh images">
-                <button class="btn btn-neutral">
-                    <svg class="icon" id="refreshIcon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                    </svg>
-                    <div id="loadingCircle" style="display: none;"></div>
                 </button>
             </div>
         </div>
@@ -573,13 +591,335 @@
         import { VSTARGXFunction } from './src/actions/general/VSTAR-GX.js';
         import { appendMessage } from './src/setup/chatbox/append-message.js';
         import { determineUsername } from './src/setup/general/determine-username.js';
+        import { socket, systemState } from './src/front-end.js';
+        import { attack, pass } from './src/actions/chat-buttons/chat-buttons.js';
         
         // Simple undo function for board button that just adds a message
         const boardUndo = (user) => {
             console.log(`Board undo called for user: ${user}`);
             const message = determineUsername(user) + ' took back their last move!';
-            appendMessage(user, message, 'announcement', false);
+            boardAppendMessage(user, message, 'announcement', false);
         };
+        
+        // Chat region tracking for pointer events
+        let chatRegions = [];
+        
+        // Function to check if a point is within any chat region
+        function isPointInChatRegion(x, y) {
+            return chatRegions.some(region => 
+                x >= region.left && x <= region.right && 
+                y >= region.top && y <= region.bottom
+            );
+        }
+        
+        // Handle iframe pointer events dynamically with smart click detection
+        function setupDynamicPointerEvents() {
+            const chatFrame = document.getElementById('chatInterface');
+            if (!chatFrame) return;
+            
+            // Global click handler for smart activation
+            document.addEventListener('mousedown', (e) => {
+                const clickedInChat = isPointInChatRegion(e.clientX, e.clientY);
+                
+                if (clickedInChat) {
+                    // Enable iframe pointer events for chat interaction
+                    chatFrame.style.pointerEvents = 'auto';
+                    console.log('Chat region clicked - enabling iframe interaction');
+                    
+                    // Disable after a short delay to prevent blocking other elements
+                    setTimeout(() => {
+                        chatFrame.style.pointerEvents = 'none';
+                    }, 200);
+                } else {
+                    // Clicked outside chat - ensure iframe doesn't block
+                    chatFrame.style.pointerEvents = 'none';
+                    
+                    // Check if we clicked on a board button
+                    const boardButton = e.target.closest('#boardButtonContainer button, .btn');
+                    if (boardButton) {
+                        console.log('Board button clicked while chat inactive:', boardButton.textContent);
+                        
+                        // Send deactivation message to chat
+                        if (chatFrame.contentWindow) {
+                            chatFrame.contentWindow.postMessage({
+                                type: 'deactivateChat'
+                            }, '*');
+                        }
+                    }
+                }
+            });
+            
+            // Handle double-click for chat activation
+            document.addEventListener('dblclick', (e) => {
+                if (isPointInChatRegion(e.clientX, e.clientY)) {
+                    chatFrame.style.pointerEvents = 'auto';
+                    setTimeout(() => {
+                        chatFrame.style.pointerEvents = 'none';
+                    }, 500);
+                }
+            });
+        }
+        
+        // IRC Chat interface message handler
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            const { type, data } = event.data;
+            
+            switch (type) {
+                case 'chatRegions':
+                    // Update chat regions for pointer event handling
+                    chatRegions = data.regions || [];
+                    console.log('Updated chat regions:', chatRegions);
+                    break;
+                case 'joinRoom':
+                    // Connect IRC chat interface join room to original 2P system
+                    const { playerName, roomId, isSpectator, coachingMode } = data;
+                    
+                    // Set the values in the original 2P interface
+                    const nameInput = document.getElementById('nameInput');
+                    const roomIdInput = document.getElementById('roomIdInput');
+                    const spectatorCheckbox = document.getElementById('spectatorModeCheckbox');
+                    const coachingCheckbox = document.getElementById('coachingModeCheckbox');
+                    
+                    if (nameInput) nameInput.value = playerName;
+                    if (roomIdInput) roomIdInput.value = roomId;
+                    if (spectatorCheckbox) spectatorCheckbox.checked = isSpectator;
+                    if (coachingCheckbox) coachingCheckbox.checked = coachingMode;
+                    
+                    // Set system state
+                    systemState.p2SelfUsername = playerName;
+                    systemState.roomId = roomId;
+                    
+                    // Emit join game event
+                    socket.emit('joinGame', roomId, playerName, isSpectator);
+                    
+                    // Send confirmation back to IRC chat
+                    const chatFrame = document.getElementById('chatInterface');
+                    if (chatFrame && chatFrame.contentWindow) {
+                        chatFrame.contentWindow.postMessage({
+                            type: 'roomJoined',
+                            data: { roomId, playerName }
+                        }, '*');
+                    }
+                    break;
+                    
+                case 'leaveRoom':
+                    // Handle leave room from IRC chat interface
+                    const leaveRoomButton = document.getElementById('leaveRoomButton');
+                    if (leaveRoomButton) {
+                        leaveRoomButton.click();
+                    }
+                    break;
+                    
+                case 'chatMessage':
+                    // Handle chat messages from IRC interface
+                    const { channel, message, username: chatUsername, messageType } = data;
+                    
+                    // Determine message type and format
+                    let displayMessage = message;
+                    let msgType = 'message';
+                    
+                    if (messageType === 'emoji') {
+                        displayMessage = message; // Just the emoji
+                        msgType = 'emoji';
+                        // Use the original appendMessage function directly to avoid double processing
+                        originalAppendMessage('self', `${chatUsername}: ${displayMessage}`, msgType);
+                    } else {
+                        // Regular message
+                        originalAppendMessage('self', `${chatUsername}: ${displayMessage}`, msgType);
+                    }
+                    
+                    // Send the message back to IRC chat to display it there
+                    sendToIRCChat('newMessage', {
+                        type: 'self',
+                        content: displayMessage,
+                        username: chatUsername,
+                        timestamp: new Date().toISOString(),
+                        tab: channel,
+                        messageType: msgType,
+                        processed: false
+                    });
+                    
+                    // If in multiplayer, send to other players
+                    if (systemState.isTwoPlayer && socket) {
+                        socket.emit('message', displayMessage);
+                    }
+                    break;
+                    
+                case 'playerAction':
+                    // Handle player actions from IRC interface
+                    const { action, username: actionUsername } = data;
+                    
+                    // Execute the actual action (this will generate its own message)
+                    switch (action) {
+                        case 'attack':
+                            const attackButton = systemState.isTwoPlayer ? 
+                                document.getElementById('p2AttackButton') : 
+                                document.getElementById('attackButton');
+                            if (attackButton) attackButton.click();
+                            break;
+                        case 'pass':
+                            const passButton = systemState.isTwoPlayer ? 
+                                document.getElementById('p2PassButton') : 
+                                document.getElementById('passButton');
+                            if (passButton) passButton.click();
+                            break;
+                        case 'undo':
+                            boardUndo('self');
+                            break;
+                        case 'coin':
+                            // Add coin flip functionality
+                            const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+                            boardAppendMessage('self', `${actionUsername} flipped a coin: ${result}!`, 'announcement');
+                            break;
+                    }
+                    break;
+                    
+                case 'chatClosed':
+                    // Handle chat window being closed
+                    console.log('IRC Chat window closed');
+                    break;
+                    
+                case 'sidebarOpened':
+                    // Adjust main layout for 3-panel view
+                    document.body.classList.add('sidebar-open');
+                    console.log('Sidebar opened - adjusting to 3-panel layout');
+                    break;
+                    
+                case 'sidebarClosed':
+                    // Restore main layout to 2-panel view
+                    document.body.classList.remove('sidebar-open');
+                    console.log('Sidebar closed - restoring 2-panel layout');
+                    break;
+            }
+        });
+        
+        // Function to send messages to IRC chat
+        window.sendToIRCChat = function(type, data) {
+            const chatFrame = document.getElementById('chatInterface');
+            if (chatFrame && chatFrame.contentWindow) {
+                try {
+                    chatFrame.contentWindow.postMessage({ type, data }, '*');
+                    console.log('Sent to IRC chat:', type, data);
+                } catch (error) {
+                    console.error('Failed to send message to IRC chat:', error);
+                }
+            } else {
+                console.warn('IRC chat frame not available');
+            }
+        };
+        
+        // Send game messages to IRC chat (without overriding the global function)
+        const originalAppendMessage = appendMessage;
+        
+        // Create a wrapper function that also sends to IRC chat
+        const appendMessageWithIRC = function(user, message, type, isFromSocket = false) {
+            console.log('appendMessageWithIRC called:', { user, message, type, isFromSocket });
+            
+            // Call original function
+            originalAppendMessage(user, message, type, isFromSocket);
+            
+            // Enhanced duplicate prevention - skip messages that are already from IRC chat interface
+            const isFromIRCChat = message.includes(':') && (
+                message.includes('You:') || 
+                message.includes('Player') || 
+                message.includes('Opponent:') ||
+                message.includes('Guest:') ||
+                /^[A-Za-z]+:/.test(message) // Any username pattern
+            );
+            
+            // Skip if message is from IRC, socket, or contains certain patterns
+            if (!message.includes('[battle]') && 
+                !isFromSocket && 
+                !message.includes('IRC Chat') && 
+                !isFromIRCChat &&
+                !message.includes('copied to clipboard') &&
+                !message.includes('Generated room:') &&
+                !message.includes('Auto-assigned trainer')) {
+                
+                // Enhanced duplicate prevention with timestamp
+                const timestamp = new Date().getTime();
+                const messageKey = `${user}-${message}-${type}-${Math.floor(timestamp / 1000)}`; // Group by second
+                
+                if (window.lastSentMessage !== messageKey) {
+                    window.lastSentMessage = messageKey;
+                    
+                    setTimeout(() => {
+                        let channel = 'battle';
+                        let messageType = 'system';
+                        
+                        // Better message type classification
+                        if (type === 'announcement') {
+                            channel = 'battle';
+                            messageType = 'announcement';
+                        } else if (type === 'message') {
+                            channel = systemState.isTwoPlayer ? 'multiplayer' : 'battle';
+                            messageType = user === 'self' ? 'self' : 'opp';
+                        } else if (type === 'player') {
+                            channel = 'battle';
+                            messageType = 'game-action';
+                        } else if (type === 'emoji') {
+                            channel = 'battle';
+                            messageType = 'emoji';
+                        } else {
+                            messageType = 'system';
+                        }
+                        
+                        // Determine username for display
+                        let displayUsername = 'System';
+                        if (type === 'player' || type === 'message') {
+                            displayUsername = user === 'self' ? 
+                                (systemState.p2SelfUsername || systemState.selfUsername || 'You') :
+                                (systemState.p2OppUsername || systemState.oppUsername || 'Opponent');
+                        }
+                        
+                        // Send in the new message format that the IRC chat expects
+                        sendToIRCChat('newMessage', {
+                            type: messageType,
+                            content: message,
+                            username: displayUsername,
+                            timestamp: new Date().toISOString(),
+                            tab: channel,
+                            processed: false
+                        });
+                    }, 50);
+                    
+                    // Clear the duplicate check after a short delay
+                    setTimeout(() => {
+                        if (window.lastSentMessage === messageKey) {
+                            window.lastSentMessage = null;
+                        }
+                    }, 2000);
+                }
+            }
+        };
+        
+        // Use the wrapper for board button actions
+        const boardAppendMessage = appendMessageWithIRC;
+        
+        // Ensure IRC chat iframe is loaded
+        const chatFrame = document.getElementById('chatInterface');
+        if (chatFrame) {
+            chatFrame.addEventListener('load', function() {
+                console.log('IRC Chat iframe loaded');
+                
+                // Setup dynamic pointer events
+                setTimeout(() => {
+                    setupDynamicPointerEvents();
+                }, 200);
+                
+                // Send a test message to verify communication
+                setTimeout(() => {
+                    sendToIRCChat('gameMessage', {
+                        channel: 'system',
+                        type: 'system',
+                        username: 'System',
+                        message: 'IRC Chat interface connected'
+                    });
+                }, 500);
+            });
+        }
         
         // Wait for the page to load
         document.addEventListener('DOMContentLoaded', function() {
@@ -593,8 +933,19 @@
             const oppVSTARButton = document.getElementById('oppVSTARButton');
             const oppForteButton = document.getElementById('oppForteButton');
             
-            // Center buttons
-            const boardUndoButton = document.getElementById('boardUndoButton');
+            // Center buttons (get the actual button elements inside the tooltip divs)
+            const boardUndoButton = document.querySelector('#boardUndoButton button');
+            const boardAttackButton = document.querySelector('#boardAttackButton button');
+            const boardPassButton = document.querySelector('#boardPassButton button');
+            const flipCoinButton = document.querySelector('#flipCoinButton button');
+            
+            // Coin flip function
+            const flipCoin = (user) => {
+                const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+                const username = determineUsername(user);
+                const message = `${username} flipped a coin: ${result}!`;
+                boardAppendMessage(user, message, 'announcement', false);
+            };
             
             // Add event listeners for self buttons
             if (selfGXButton) {
@@ -618,9 +969,18 @@
                 oppForteButton.addEventListener('click', () => VSTARGXFunction('opp', 'Forte'));
             }
             
-            // Add event listener for undo button
+            // Add event listeners for center buttons
             if (boardUndoButton) {
                 boardUndoButton.addEventListener('click', () => boardUndo('self'));
+            }
+            if (boardAttackButton) {
+                boardAttackButton.addEventListener('click', () => attack('self'));
+            }
+            if (boardPassButton) {
+                boardPassButton.addEventListener('click', () => pass('self'));
+            }
+            if (flipCoinButton) {
+                flipCoinButton.addEventListener('click', () => flipCoin('self'));
             }
         });
     </script>
