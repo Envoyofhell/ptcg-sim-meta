@@ -11,6 +11,7 @@ import { determineUsername } from '../general/determine-username.js';
 import { processAction } from '../general/process-action.js';
 import { show } from '../home-header/header-toggle.js';
 import { getCardType } from './find-type.js';
+import { protectedImageLoader } from '../../utils/protected-image-loader.js';
 
 const decklistTable = document.getElementById('decklistTable');
 const altDeckImportInput = document.getElementById('altDeckImportInput');
@@ -364,26 +365,32 @@ export const importDecklist = (user) => {
       const url = `https://limitlesstcg.nyc3.digitaloceanspaces.com/tpci/${firstPart.replace(/ /g, '/')}/${firstPart.replace(/ /g, '_')}_${paddedSecondPart}_R_${language}.png`;
 
       return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          entry[5] = url;
-          entry[6] = getCardType(firstPart, secondPart);
-          resolve(true);
-        };
-        img.onerror = () => {
-          const alternateUrl = `https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/${firstPart}/${firstPart}_${paddedSecondPart}_R_JP_LG.png`;
-          const altImg = new Image();
-          altImg.onload = () => {
-            entry[5] = alternateUrl;
-            entry[6] = getCardType(firstPart, secondPart);
-            resolve(true);
-          };
-          altImg.onerror = () => {
+        // Use protected image loader to check CORS
+        protectedImageLoader
+          .loadImage(url)
+          .then((protectedUrl) => {
+            if (protectedUrl) {
+              entry[5] = protectedUrl;
+              entry[6] = getCardType(firstPart, secondPart);
+              resolve(true);
+            } else {
+              // Try alternate URL if first one is blocked
+              const alternateUrl = `https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/${firstPart}/${firstPart}_${paddedSecondPart}_R_JP_LG.png`;
+              return protectedImageLoader.loadImage(alternateUrl);
+            }
+          })
+          .then((altProtectedUrl) => {
+            if (altProtectedUrl) {
+              entry[5] = altProtectedUrl;
+              entry[6] = getCardType(firstPart, secondPart);
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(() => {
             resolve(false);
-          };
-          altImg.src = alternateUrl;
-        };
-        img.src = url;
+          });
       });
     } else if (energyUrl) {
       entry[5] = energyUrl;
@@ -781,18 +788,23 @@ changeCardBackButton.addEventListener('click', () => {
   ) {
     userInput = 'https://ptcgsim.online/src/assets/cardback.png';
   }
-  const img = new Image();
-  img.onload = () => {
-    if (user === 'self' || !systemState.isTwoPlayer) {
-      changeCardBack(user, userInput);
-    } else {
-      changeCardBack(user, userInput, false);
-    }
-  };
-  img.onerror = () => {
-    alert('Please enter a valid image URL.');
-  };
-  img.src = userInput;
+  // Use protected image loader for card back
+  protectedImageLoader
+    .loadImage(userInput)
+    .then((protectedUrl) => {
+      if (protectedUrl) {
+        if (user === 'self' || !systemState.isTwoPlayer) {
+          changeCardBack(user, protectedUrl);
+        } else {
+          changeCardBack(user, protectedUrl, false);
+        }
+      } else {
+        alert('Please enter a valid image URL.');
+      }
+    })
+    .catch(() => {
+      alert('Please enter a valid image URL.');
+    });
 });
 
 // ************ logic for changing language********************//
