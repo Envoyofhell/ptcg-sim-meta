@@ -4,43 +4,16 @@
  * Uses global variables: CORS_ALLOWED_ORIGINS, CORS_LIMITED_ORIGINS, CORS_BLOCKED_ORIGINS, CORS_ORIGINS_LIMITS
  */
 
-// Global CORS Configuration - reads from environment variables
+// Global CORS Configuration - will be loaded from server API
+// Client-side starts with empty config, gets populated from server
 const corsConfig = {
-  // Your existing secret variable (always allowed)
-  allowedOrigins: process.env.CORS_ALLOWED_ORIGINS
-    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
-    : [
-        'https://admin.socket.io',
-        'https://ptcg-sim-meta.pages.dev',
-        'http://localhost:3000',
-        'https://meta-ptcg.org',
-        'https://test.meta-ptcg.org',
-        'https://*.onrender.com',
-      ],
-
-  // Domains to limit after X images
-  limitedOrigins: process.env.CORS_LIMITED_ORIGINS
-    ? process.env.CORS_LIMITED_ORIGINS.split(',').map((origin) => origin.trim())
-    : ['*.duckdns.org', '*.ngrok.io'],
-
-  // Domains to always block
-  blockedOrigins: process.env.CORS_BLOCKED_ORIGINS
-    ? process.env.CORS_BLOCKED_ORIGINS.split(',').map((origin) => origin.trim())
-    : ['malicious-site.com', 'spam-domain.org', 'phishing-site.net'],
-
-  // JSON object with limits per domain (default: 5)
-  originsLimits: process.env.CORS_ORIGINS_LIMITS
-    ? JSON.parse(process.env.CORS_ORIGINS_LIMITS)
-    : {
-        '*.duckdns.org': 5,
-        '*.ngrok.io': 3,
-        default: 5,
-      },
-
-  // System configuration
-  enabled: process.env.CORS_ENABLED === 'true',
-  debugMode: process.env.CORS_DEBUG_MODE === 'true',
-  consoleLogging: process.env.CORS_CONSOLE_LOGGING === 'true',
+  allowedOrigins: [],
+  limitedOrigins: [],
+  blockedOrigins: [],
+  originsLimits: { default: 5 },
+  enabled: false,
+  debugMode: false,
+  consoleLogging: false,
 };
 
 /**
