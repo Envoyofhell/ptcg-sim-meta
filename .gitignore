@@ -2,3 +2,6 @@ node_modules/
 server/database/db.sqlite
 /client/dist
 pnpm-lock.yaml # Ensure this is NOT ignored at the root level
+
+# Test folder - contains deployment scripts and CORS configuration files
+Test/

@@ -3,6 +3,7 @@ import { determineDeckData } from '../general/determine-deckdata.js';
 import { getZone } from '../zones/get-zone.js';
 import { Card } from './card.js';
 import { Cover } from './cover.js';
+import { protectedImageLoader } from '../../utils/protected-image-loader.js';
 
 export const buildDeck = (user) => {
   const deckData = determineDeckData(user);
@@ -23,10 +24,23 @@ export const buildDeck = (user) => {
   const cover = new Cover(user, 'deckCover', targetCardBackSrc);
   deck.elementCover.appendChild(cover.image);
 
-  deck.array.forEach((card) => {
-    const img = new Image();
-    img.src = card.image.src;
-    document.body.appendChild(img);
-    document.body.removeChild(img);
-  });
+  // Preload images with CORS protection
+  const imageUrls = deck.array.map(card => card.image.src);
+  const cardData = deck.array.map(card => ({
+    name: card.name,
+    type: card.type,
+    user: card.user
+  }));
+  
+  protectedImageLoader.preloadImages(imageUrls, cardData)
+    .then(results => {
+      console.log(`Preloaded ${results.length} images with CORS protection`);
+      const blockedCount = results.filter(r => r.blocked).length;
+      if (blockedCount > 0) {
+        console.log(`${blockedCount} images were blocked by CORS rules`);
+      }
+    })
+    .catch(error => {
+      console.warn('Error preloading images:', error);
+    });
 };

@@ -29,23 +29,101 @@ function generateRandomKey(length) {
   return key;
 }
 
+// Server-side CORS checking function
+function checkCORSRequest(domain, corsConfig) {
+  // Check if domain matches any pattern in a list
+  function matchesPattern(domain, patterns) {
+    return patterns.some((pattern) => {
+      if (pattern.includes('*')) {
+        const regexPattern = pattern.replace(/\*/g, '.*');
+        const regex = new RegExp(`^${regexPattern}$`, 'i');
+        return regex.test(domain);
+      }
+      return domain === pattern;
+    });
+  }
+
+  // 1. Check if domain is in ALLOWED_ORIGINS (always allowed)
+  if (matchesPattern(domain, corsConfig.allowedOrigins)) {
+    return {
+      allowed: true,
+      reason: 'In allowed origins',
+      category: 'allowed',
+      domain,
+    };
+  }
+
+  // 2. Check if domain is in BLOCKED_ORIGINS (always blocked)
+  if (matchesPattern(domain, corsConfig.blockedOrigins)) {
+    return {
+      allowed: false,
+      reason: 'In blocked origins',
+      category: 'blocked',
+      domain,
+    };
+  }
+
+  // 3. Check if domain is in LIMITED_ORIGINS (would need client-side tracking)
+  if (matchesPattern(domain, corsConfig.limitedOrigins)) {
+    return {
+      allowed: true,
+      reason: 'In limited origins - client will track usage',
+      category: 'limited',
+      domain,
+    };
+  }
+
+  // 4. Default behavior for unknown domains
+  return {
+    allowed: true,
+    reason: 'Unknown domain - client will apply default limits',
+    category: 'default',
+    domain,
+  };
+}
+
 async function main() {
   const app = express();
   // HTTP Server Setup
   const server = http.createServer(app);
 
-  // Socket.IO Server Setup
+  // CORS Configuration from environment variables
+  const corsConfig = {
+    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS
+      ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((origin) =>
+          origin.trim()
+        )
+      : [
+          'https://admin.socket.io',
+          'https://ptcg-sim-meta.pages.dev',
+          'http://localhost:3000',
+          'https://meta-ptcg.org',
+          'https://test.meta-ptcg.org',
+          'https://*.onrender.com',
+        ],
+    limitedOrigins: process.env.CORS_LIMITED_ORIGINS
+      ? process.env.CORS_LIMITED_ORIGINS.split(',').map((origin) =>
+          origin.trim()
+        )
+      : ['*.duckdns.org', '*.ngrok.io'],
+    blockedOrigins: process.env.CORS_BLOCKED_ORIGINS
+      ? process.env.CORS_BLOCKED_ORIGINS.split(',').map((origin) =>
+          origin.trim()
+        )
+      : ['malicious-site.com', 'spam-domain.org'],
+    originsLimits: process.env.CORS_ORIGINS_LIMITS
+      ? JSON.parse(process.env.CORS_ORIGINS_LIMITS)
+      : { '*.duckdns.org': 5, '*.ngrok.io': 3, default: 5 },
+    enabled: process.env.CORS_ENABLED === 'true',
+    debugMode: process.env.CORS_DEBUG_MODE === 'true',
+    consoleLogging: process.env.CORS_CONSOLE_LOGGING === 'true',
+  };
+
+  // Socket.IO Server Setup with dynamic CORS origins
   const io = new Server(server, {
     connectionStateRecovery: {},
     cors: {
-      origin: [
-        'https://admin.socket.io',
-        'https://ptcg-sim-meta.pages.dev',
-        'http://localhost:3000',
-        'https://meta-ptcg.org',
-        'https://test.meta-ptcg.org',
-        'https://*.onrender.com', // This will allow any subdomain on onrender.com
-      ],
+      origin: corsConfig.allowedOrigins,
       credentials: true,
     },
   });
@@ -109,6 +187,48 @@ async function main() {
       return res.status(400).json({ error: 'Key parameter is missing' });
     }
     res.sendFile(path.join(clientDir, 'import.html'));
+  });
+
+  // CORS API endpoints
+  app.get('/api/cors/config', (req, res) => {
+    // Return sanitized CORS configuration (no sensitive domain lists)
+    res.json({
+      enabled: corsConfig.enabled,
+      debugMode: corsConfig.debugMode,
+      consoleLogging: corsConfig.consoleLogging,
+      // Only return counts, not actual domains
+      allowedOriginsCount: corsConfig.allowedOrigins.length,
+      limitedOriginsCount: corsConfig.limitedOrigins.length,
+      blockedOriginsCount: corsConfig.blockedOrigins.length,
+      hasCustomLimits: Object.keys(corsConfig.originsLimits).length > 1,
+    });
+  });
+
+  app.post('/api/cors/check', (req, res) => {
+    const { imageUrl, domain } = req.body;
+
+    if (!imageUrl && !domain) {
+      return res.status(400).json({ error: 'imageUrl or domain required' });
+    }
+
+    const targetDomain =
+      domain || (imageUrl ? new URL(imageUrl).hostname : null);
+
+    if (!targetDomain) {
+      return res.status(400).json({ error: 'Could not determine domain' });
+    }
+
+    // Server-side CORS validation
+    const corsCheck = checkCORSRequest(targetDomain, corsConfig);
+
+    res.json({
+      allowed: corsCheck.allowed,
+      reason: corsCheck.reason,
+      category: corsCheck.category,
+      domain: targetDomain,
+      currentCount: corsCheck.currentCount,
+      maxImages: corsCheck.maxImages,
+    });
   });
 
   app.get('/api/importData', (req, res) => {

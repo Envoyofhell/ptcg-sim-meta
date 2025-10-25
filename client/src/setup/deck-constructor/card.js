@@ -17,6 +17,7 @@ import {
   setDragState,
   setRightClickState,
 } from '../image-logic/hover-preview.js';
+import { protectedImageLoader } from '../../utils/protected-image-loader.js';
 
 export class Card {
   name;
@@ -28,24 +29,61 @@ export class Card {
     this.user = user;
     this.name = name;
     this.type = type;
-    this.imageAttributes = {
-      user: user,
-      type: type,
-      src: imageURL,
-      alt: name,
-      draggable: true,
-      click: imageClick,
-      dblclick: doubleClick,
-      dragstart: dragStart,
-      dragover: dragOver,
-      dragleave: dragLeave,
-      dragend: dragEnd,
-      contextmenu: openCardContextMenu,
-      mouseenter: handleCardHoverStart,
-      mouseleave: handleCardHoverEnd,
-      mousemove: handleCardHoverMove,
-    };
-    this.buildImage(this.imageAttributes);
+    this.originalImageURL = imageURL;
+    
+    // Use protected image loader to check CORS rules
+    this.loadProtectedImage(imageURL);
+  }
+
+  async loadProtectedImage(imageURL) {
+    try {
+      // Check CORS rules and get allowed URL
+      const allowedURL = await protectedImageLoader.loadImage(imageURL, {
+        name: this.name,
+        type: this.type,
+        user: this.user
+      });
+      
+      this.imageAttributes = {
+        user: this.user,
+        type: this.type,
+        src: allowedURL,
+        alt: this.name,
+        draggable: true,
+        click: imageClick,
+        dblclick: doubleClick,
+        dragstart: dragStart,
+        dragover: dragOver,
+        dragleave: dragLeave,
+        dragend: dragEnd,
+        contextmenu: openCardContextMenu,
+        mouseenter: handleCardHoverStart,
+        mouseleave: handleCardHoverEnd,
+        mousemove: handleCardHoverMove,
+      };
+      this.buildImage(this.imageAttributes);
+    } catch (error) {
+      console.warn(`Failed to load protected image for ${this.name}:`, error);
+      // Fallback to original URL if CORS check fails
+      this.imageAttributes = {
+        user: this.user,
+        type: this.type,
+        src: imageURL,
+        alt: this.name,
+        draggable: true,
+        click: imageClick,
+        dblclick: doubleClick,
+        dragstart: dragStart,
+        dragover: dragOver,
+        dragleave: dragLeave,
+        dragend: dragEnd,
+        contextmenu: openCardContextMenu,
+        mouseenter: handleCardHoverStart,
+        mouseleave: handleCardHoverEnd,
+        mousemove: handleCardHoverMove,
+      };
+      this.buildImage(this.imageAttributes);
+    }
   }
 
   buildImage(imageAttributes) {
