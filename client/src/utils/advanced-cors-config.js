@@ -58,15 +58,20 @@ class AdvancedCORSManager {
       }
     } catch (error) {
       // Fallback to environment variables
-      if (this.config.debugMode) {
-        console.log(
-          '🔒 CORS config loaded from environment variables (server API unavailable)'
-        );
-      }
+      console.log('🔒 CORS config fallback: server API unavailable');
     }
 
     // Fallback to environment variables
     this.config = { ...corsConfig };
+  }
+
+  /**
+   * Ensure config is initialized before any operation
+   */
+  ensureConfig() {
+    if (!this.config) {
+      this.config = { ...corsConfig };
+    }
   }
 
   /**
@@ -143,6 +148,8 @@ class AdvancedCORSManager {
    * This is the main function that hooks into your existing image loading
    */
   checkImageRequest(imageUrl) {
+    this.ensureConfig(); // Ensure config is initialized
+
     // Reset counts if needed
     this.resetCountsIfNeeded();
 
@@ -261,6 +268,8 @@ class AdvancedCORSManager {
    * Get current configuration status (sanitized for client)
    */
   getStatus() {
+    this.ensureConfig(); // Ensure config is initialized
+
     return {
       enabled: this.config.enabled,
       debugMode: this.config.debugMode,
