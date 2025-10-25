@@ -191,16 +191,17 @@ async function main() {
 
   // CORS API endpoints
   app.get('/api/cors/config', (req, res) => {
-    // Return sanitized CORS configuration (no sensitive domain lists)
+    // Return CORS configuration needed for client-side operation
     res.json({
       enabled: corsConfig.enabled,
       debugMode: corsConfig.debugMode,
       consoleLogging: corsConfig.consoleLogging,
-      // Only return counts, not actual domains
+      // Return actual limits configuration (needed for client-side enforcement)
+      originsLimits: corsConfig.originsLimits,
+      // Only return counts for domains (not actual domain lists for security)
       allowedOriginsCount: corsConfig.allowedOrigins.length,
       limitedOriginsCount: corsConfig.limitedOrigins.length,
       blockedOriginsCount: corsConfig.blockedOrigins.length,
-      hasCustomLimits: Object.keys(corsConfig.originsLimits).length > 1,
     });
   });
 

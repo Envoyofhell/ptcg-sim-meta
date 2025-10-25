@@ -32,15 +32,9 @@ export const buildDeck = (user) => {
     user: card.user
   }));
   
+  // Preload images silently (no console logging)
   protectedImageLoader.preloadImages(imageUrls, cardData)
-    .then(results => {
-      console.log(`Preloaded ${results.length} images with CORS protection`);
-      const blockedCount = results.filter(r => r.blocked).length;
-      if (blockedCount > 0) {
-        console.log(`${blockedCount} images were blocked by CORS rules`);
-      }
-    })
     .catch(error => {
-      console.warn('Error preloading images:', error);
+      // Silent error handling
     });
 };

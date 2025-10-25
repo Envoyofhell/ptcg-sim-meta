@@ -42,30 +42,81 @@ class ProtectedImageLoader {
 
   /**
    * Preload multiple images with CORS checking
-   * Useful for deck imports
+   * Useful for deck imports - limits images per domain
    */
   async preloadImages(imageUrls, cardDataArray = []) {
     const results = [];
+    const domainCounts = new Map(); // Track counts per domain during import
     
     for (let i = 0; i < imageUrls.length; i++) {
       const imageUrl = imageUrls[i];
       const cardData = cardDataArray[i] || null;
       
       try {
+        // Extract domain for counting
+        let domain;
+        try {
+          domain = new URL(imageUrl).hostname;
+        } catch (error) {
+          domain = 'unknown';
+        }
+        
+        // Check if we've already loaded max images from this domain during import
+        const currentCount = domainCounts.get(domain) || 0;
+        
+        // Get the limit from CORS configuration
+        let maxImages = 5; // Default fallback
+        if (advancedCORSManager && advancedCORSManager.config) {
+          // Check for specific domain limit first
+          for (const [pattern, limit] of Object.entries(advancedCORSManager.config.originsLimits)) {
+            if (pattern === 'default') continue;
+            
+            if (pattern.includes('*')) {
+              const regexPattern = pattern.replace(/\*/g, '.*');
+              const regex = new RegExp(`^${regexPattern}$`, 'i');
+              if (regex.test(domain)) {
+                maxImages = limit;
+                break;
+              }
+            } else if (domain === pattern) {
+              maxImages = limit;
+              break;
+            }
+          }
+          
+          // Use default limit if no specific limit found
+          if (maxImages === 5) {
+            maxImages = advancedCORSManager.config.originsLimits.default || 5;
+          }
+        }
+        
+        if (currentCount >= maxImages) {
+          // Skip this image - we've already loaded 5 from this domain
+          results.push({
+            originalUrl: imageUrl,
+            allowedUrl: this.fallbackImage,
+            blocked: true,
+            reason: `Import limit reached (${currentCount}/${maxImages})`
+          });
+          continue;
+        }
+        
+        // Load the image and increment count
         const allowedUrl = await this.loadImage(imageUrl, cardData);
+        domainCounts.set(domain, currentCount + 1);
+        
         results.push({
           originalUrl: imageUrl,
           allowedUrl: allowedUrl,
-          blocked: !corsCheck.allowed,
-          reason: corsCheck.reason || 'Allowed'
+          blocked: false,
+          reason: 'Allowed'
         });
       } catch (error) {
         results.push({
           originalUrl: imageUrl,
           allowedUrl: this.fallbackImage,
           blocked: true,
-          reason: 'Error loading image',
-          error: error.message
+          reason: 'Error loading image'
         });
       }
     }
