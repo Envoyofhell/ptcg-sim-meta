@@ -5,13 +5,13 @@
  */
 
 // Global CORS Configuration - will be loaded from server API
-// Client-side starts with empty config, gets populated from server
+// Client-side starts with permissive config, gets updated from server
 const corsConfig = {
   allowedOrigins: [],
   limitedOrigins: [],
   blockedOrigins: [],
   originsLimits: { default: 5 },
-  enabled: false,
+  enabled: false, // CORS is disabled by default - allows all images
   debugMode: false,
   consoleLogging: false,
 };
@@ -169,9 +169,6 @@ class AdvancedCORSManager {
 
     // 1. Check if domain is in ALLOWED_ORIGINS (always allowed)
     if (this.matchesPattern(domain, this.config.allowedOrigins)) {
-      if (this.config.consoleLogging) {
-        console.log(`✅ CORS ALLOWED: ${domain} - In allowed origins list`);
-      }
       return {
         allowed: true,
         reason: 'In allowed origins',
@@ -182,9 +179,6 @@ class AdvancedCORSManager {
 
     // 2. Check if domain is in BLOCKED_ORIGINS (always blocked)
     if (this.matchesPattern(domain, this.config.blockedOrigins)) {
-      if (this.config.consoleLogging) {
-        console.log(`❌ CORS BLOCKED: ${domain} - In blocked origins list`);
-      }
       return {
         allowed: false,
         reason: 'In blocked origins',
@@ -199,11 +193,6 @@ class AdvancedCORSManager {
       const limit = this.getImageLimit(domain);
 
       if (currentCount > limit) {
-        if (this.config.consoleLogging) {
-          console.log(
-            `❌ CORS LIMITED: ${domain} - Exceeded limit (${currentCount}/${limit})`
-          );
-        }
         return {
           allowed: false,
           reason: `Exceeded limit (${currentCount}/${limit})`,
@@ -212,12 +201,6 @@ class AdvancedCORSManager {
           currentCount,
           maxImages: limit,
         };
-      }
-
-      if (this.config.consoleLogging) {
-        console.log(
-          `⚠️ CORS LIMITED: ${domain} - Within limit (${currentCount}/${limit})`
-        );
       }
       return {
         allowed: true,
@@ -234,11 +217,6 @@ class AdvancedCORSManager {
     const defaultLimit = this.config.originsLimits.default || 5;
 
     if (currentCount > defaultLimit) {
-      if (this.config.consoleLogging) {
-        console.log(
-          `❌ CORS DEFAULT: ${domain} - Exceeded default limit (${currentCount}/${defaultLimit})`
-        );
-      }
       return {
         allowed: false,
         reason: `Exceeded default limit (${currentCount}/${defaultLimit})`,
@@ -247,12 +225,6 @@ class AdvancedCORSManager {
         currentCount,
         maxImages: defaultLimit,
       };
-    }
-
-    if (this.config.consoleLogging) {
-      console.log(
-        `✅ CORS DEFAULT: ${domain} - Within default limit (${currentCount}/${defaultLimit})`
-      );
     }
     return {
       allowed: true,
@@ -294,9 +266,7 @@ class AdvancedCORSManager {
     this.requestCounts.clear();
     this.lastResetTime = Date.now();
 
-    if (this.config.consoleLogging) {
-      console.log('🔄 CORS counts cleared');
-    }
+    // Counts cleared silently
   }
 
   /**
@@ -306,9 +276,7 @@ class AdvancedCORSManager {
     this.imageCounts.delete(domain);
     this.requestCounts.delete(domain);
 
-    if (this.config.consoleLogging) {
-      console.log(`🔄 CORS counts cleared for domain: ${domain}`);
-    }
+    // Domain counts cleared silently
   }
 }
 

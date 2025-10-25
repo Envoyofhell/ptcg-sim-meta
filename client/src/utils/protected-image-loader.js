@@ -20,26 +20,23 @@ class ProtectedImageLoader {
       return this.fallbackImage;
     }
 
-    // Check CORS rules
-    const corsCheck = advancedCORSManager.checkImageRequest(imageUrl);
-    
-    if (!corsCheck.allowed) {
-      // Image is blocked by CORS rules
-      this.blockedImages.add(imageUrl);
+    // Check CORS rules (only if CORS manager is available and enabled)
+    if (advancedCORSManager && advancedCORSManager.config && advancedCORSManager.config.enabled) {
+      const corsCheck = advancedCORSManager.checkImageRequest(imageUrl);
       
-      if (corsConfig.debugMode) {
-        console.log(`🚫 CORS Blocked: ${imageUrl} - ${corsCheck.reason}`);
+      if (!corsCheck.allowed) {
+        // Image is blocked by CORS rules - return fallback image (no console logging)
+        this.blockedImages.add(imageUrl);
+        return this.fallbackImage;
       }
-      
-      // Return fallback image
-      return this.fallbackImage;
-    }
 
-    // Image is allowed, return original URL
-    if (corsConfig.debugMode) {
-      console.log(`✅ CORS Allowed: ${imageUrl} - ${corsCheck.reason}`);
+      // Image is allowed - no console logging unless debug mode
+      if (advancedCORSManager.config.debugMode) {
+        console.log(`✅ CORS Allowed: ${imageUrl} - ${corsCheck.reason}`);
+      }
     }
     
+    // Always return original URL (CORS is just for notifications/logging)
     return imageUrl;
   }
 

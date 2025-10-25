@@ -31,8 +31,22 @@ export class Card {
     this.type = type;
     this.originalImageURL = imageURL;
     
-    // Use protected image loader to check CORS rules
-    this.loadProtectedImage(imageURL);
+    // Create image element immediately (CORS disabled for now)
+    this.imageAttributes = {
+      user: this.user,
+      type: this.type,
+      src: imageURL, // Use original URL directly
+      alt: this.name,
+      draggable: true,
+      click: imageClick,
+      dblclick: doubleClick,
+      dragstart: dragStart,
+      dragover: dragOver,
+      dragleave: dragLeave,
+      dragend: dragEnd,
+      contextmenu: openCardContextMenu,
+    };
+    this.buildImage(this.imageAttributes);
   }
 
   async loadProtectedImage(imageURL) {
